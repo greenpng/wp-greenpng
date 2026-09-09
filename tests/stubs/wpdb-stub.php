@@ -77,7 +77,8 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         }
 
         /**
-         * Prepare stand-in: sprintf-style substitution, recorded.
+         * Prepare stand-in: mirrors core's quoting for %s and int casting
+         * for %d, then sprintf-substitutes; the built SQL is recorded.
          *
          * @param string $query Query template with %s/%d placeholders.
          * @param mixed  ...$args Replacement values.
@@ -88,7 +89,16 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
                 return $query;
             }
 
-            $sql           = vsprintf( $query, $args );
+            $values = array();
+            foreach ( $args as $arg ) {
+                if ( is_int( $arg ) || is_float( $arg ) ) {
+                    $values[] = $arg;
+                } else {
+                    $values[] = "'" . addslashes( (string) $arg ) . "'";
+                }
+            }
+
+            $sql             = vsprintf( $query, $values );
             $this->queries[] = (string) $sql;
 
             return (string) $sql;

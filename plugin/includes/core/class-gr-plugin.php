@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
 
 /**
@@ -33,6 +34,13 @@ final class Gr_Plugin {
      * @var Gr_Plugin|null
      */
     private static ?Gr_Plugin $instance = null;
+
+    /**
+     * Event dispatch service, wired at construction.
+     *
+     * @var Gr_Event_Dispatcher
+     */
+    private Gr_Event_Dispatcher $events;
 
     /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
@@ -64,9 +72,21 @@ final class Gr_Plugin {
 
     /**
      * Private on purpose: the only sanctioned construction path is
-     * instance(), which keeps gr() a true container accessor.
+     * instance(), which keeps gr() a true container accessor. Services
+     * join here as their phases land (docs/02 §2.1 explicit wiring).
      */
     private function __construct() {
+        $this->events = new Gr_Event_Dispatcher( new Gr_Event_Repository() );
+    }
+
+    /**
+     * Event dispatch service (docs/03 §2), exposed for the gr_dispatch_event
+     * and gr_get_recent_events facades.
+     *
+     * @return Gr_Event_Dispatcher
+     */
+    public function events(): Gr_Event_Dispatcher {
+        return $this->events;
     }
 
     /**

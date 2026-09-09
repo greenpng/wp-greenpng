@@ -75,16 +75,48 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
             'data'     => array(),
             'autoload' => array(),
         );
-        $GLOBALS['gr_stub_transients']    = array();
-        $GLOBALS['gr_stub_cron']          = array();
-        $GLOBALS['gr_stub_actions']       = array();
-        $GLOBALS['gr_stub_fired_actions'] = array();
-        $GLOBALS['wpdb']                  = new Gr_Stub_Wpdb();
+        $GLOBALS['gr_stub_transients']        = array();
+        $GLOBALS['gr_stub_cron']              = array();
+        $GLOBALS['gr_stub_actions']           = array();
+        $GLOBALS['gr_stub_fired_actions']     = array();
+        $GLOBALS['gr_stub_fired_action_args'] = array();
+        $GLOBALS['gr_stub_filters']           = array();
+        $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
     }
 }
 
 if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
     define( 'HOUR_IN_SECONDS', 3600 );
+}
+
+if ( ! defined( 'ARRAY_A' ) ) {
+    define( 'ARRAY_A', 'ARRAY_A' );
+}
+
+if ( ! function_exists( 'current_time' ) ) {
+    /**
+     * Clock stand-in, fixed so event stamps are deterministic in tests.
+     *
+     * @param string $type Time format type ('mysql' expected).
+     * @return string
+     */
+    function current_time( $type ) {
+        return '2026-09-10 00:00:00';
+    }
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+    /**
+     * JSON encoding stand-in mirroring the core signature.
+     *
+     * @param mixed $data    Value to encode.
+     * @param int   $options json_encode options.
+     * @param int   $depth   Maximum depth.
+     * @return string|false
+     */
+    function wp_json_encode( $data, $options = 0, $depth = 512 ) {
+        return json_encode( $data, $options, $depth );
+    }
 }
 
 if ( ! function_exists( 'get_transient' ) ) {
@@ -233,6 +265,42 @@ if ( ! function_exists( 'add_action' ) ) {
     }
 }
 
+if ( ! function_exists( 'add_filter' ) ) {
+    /**
+     * Filter registration (recorded, priority ignored).
+     *
+     * @param string                $hook_name     Hook to observe.
+     * @param callable|string|array $callback      Callback.
+     * @param int                   $priority      Priority.
+     * @param int                   $accepted_args Accepted argument count.
+     * @return bool
+     */
+    function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+        $GLOBALS['gr_stub_filters'][ $hook_name ][] = $callback;
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+    /**
+     * Filter execution: callbacks run in registration order with the
+     * accumulated value.
+     *
+     * @param string $hook_name Hook to apply.
+     * @param mixed  $value     Initial value.
+     * @param mixed  ...$extra_args Optional extra arguments.
+     * @return mixed
+     */
+    function apply_filters( $hook_name, $value, ...$extra_args ) {
+        foreach ( $GLOBALS['gr_stub_filters'][ $hook_name ] ?? array() as $callback ) {
+            $value = $callback( $value, ...$extra_args );
+        }
+
+        return $value;
+    }
+}
+
 if ( ! function_exists( 'do_action' ) ) {
     /**
      * Hook execution (recorded only; callbacks are not invoked).
@@ -242,6 +310,10 @@ if ( ! function_exists( 'do_action' ) ) {
      * @return void
      */
     function do_action( $hook_name, ...$extra_args ) {
-        $GLOBALS['gr_stub_fired_actions'][] = $hook_name;
+        $GLOBALS['gr_stub_fired_actions'][]     = $hook_name;
+        $GLOBALS['gr_stub_fired_action_args'][] = array(
+            'hook' => $hook_name,
+            'args' => $extra_args,
+        );
     }
 }

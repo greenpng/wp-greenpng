@@ -57,6 +57,8 @@ add_action('gr_event', [Scoring_Service::class, 'on_event']);
 ```
 **理由**：第三方开发者用已知的 WP API 即可扩展；Query Monitor 等工具天然可观测；零自维护成本。wp-plug 自建总线的 `ksort` 每派发重排序等问题不复存在。
 
+> 落地形态（2026-09-10，C1 实装）：DTO 经 `Gr_Event::create()` 构造——payload 中 7 个上下文键（visitor/session/event_id/event_group/ab_*）提升为列且从 payload_json 剔除，并按列宽截断；落库开关为 `gr_persist_event` 过滤器（默认开）；派发次序固定为 落库 → `do_action('gr_event', $event)`，订阅者可读到行 id。读侧 `gr_get_recent_events()` 仓储 LIMIT 钳制 1..500 并解码 payload_json。
+
 ### 2.3 仓储模式隔离 $wpdb
 - 只有 `includes/storage/` 下的 Repository 类允许出现 `$wpdb`。
 - 领域层只面对 Repository 的方法签名（返回数组或 DTO），可脱离 WordPress 单测。
