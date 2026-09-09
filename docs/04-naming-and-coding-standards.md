@@ -2,12 +2,13 @@
 
 > **强制级别**：全部条目为强制。代码评审以本文件为准。
 > **适用范围**：`plugin/` 下所有 PHP、JS、CSS、SQL、模板文件。
+> **修订记录**：2026-09-09 依据 ADR-0007——新增 §3.11 双向兼容规范（PHP 7.4~8.5+ / WP 6.0~7.1+）；修正 §8 红线表（`str_*` 三函数因 WP 核心 polyfill 解禁）。
 
 ---
 
 ## 1. 前缀总表（唯一真源）
 
-**唯一允许的前缀是 `gr` / `GR` / `greenpng`。** 任何其他前缀（尤其是 `agy` / `AGY`）一律不得出现。
+**唯一允许的前缀是 `gr` / `GR_` / `greenpng`。** 任何其他前缀（尤其是 `agy` / `AGY`）一律不得出现。
 
 | 类别 | 规则 | 正确示例 | 错误示例 |
 | :--- | :--- | :--- | :--- |
@@ -15,7 +16,7 @@
 | Text Domain | `greenpng`（必须等于 slug） | `__('Blocked', 'greenpng')` | `__('Blocked', 'gr')` |
 | PHP 常量 | `GR_` + 大写下划线 | `GR_VERSION`、`GR_PLUGIN_DIR` | `GREENPNG_VERSION` |
 | PHP 命名空间 | 根 `GreenPNG\` | `GreenPNG\Security\Firewall` | `Gr\Security\Firewall` |
-| 全局函数 | `gr_` + 小写下划线 | `gr_get_client_ip()` | `greenpng_get_client_ip()` |
+| 全局函数 | `gr_` + 小写下划线 | `gr_get_client_ip()` | `greenpng_get_client_ip()`` |
 | 类文件名 | `class-gr-<slug>.php` | `class-gr-firewall.php` | `Firewall.php` |
 | 数据表 | `{$wpdb->prefix}gr_<名词复数>` | `wp_gr_security_logs` | `wp_greenpng_logs` |
 | Option 键 | `gr_<模块>_<字段>` | `gr_security_settings` | `security_settings` |
@@ -59,13 +60,14 @@ plugin/                                  # 插件根，打包时此目录内容�
 │   ├── class-gr-plugin.php              # 主控：注册钩子，不含业务逻辑
 │   ├── class-gr-activator.php           # 激活/升级：dbDelta、默认 option、cron 注册
 │   ├── class-gr-deactivator.php         # 停用：清 cron，不删数据
-│   ├── core/                            # 基础设施：DB、缓存、日志、加密、HTTP
-│   ├── security/                        # 域：流量安全
+│   ├── core/                            # 基础设施：DB、缓存、日志、加密、HTTP、队列
+│   ├── security/                        # 域：流量安全（含 UA 引擎数据文件）
 │   ├── attribution/                     # 域：营销归因
 │   ├── funnel/                          # 域：转化漏斗
 │   ├── behavior/                        # 域：行为与 CRM 评分
 │   ├── integrations/                    # 域：第三方与生态集成
 │   │   ├── capi/                        #   出网 CAPI
+│   │   ├── geoip/                       #   DB-IP Lite 本地查询
 │   │   └── ecosystem/                   #   WP 插件桥接
 │   ├── rest/                            # REST 控制器，一个资源一个类
 │   └── privacy/                         # WP 隐私 API 导出/擦除
@@ -77,6 +79,7 @@ plugin/                                  # 插件根，打包时此目录内容�
 ├── assets/
 │   ├── css/  (gr-admin.css, gr-front.css)
 │   ├── js/   (gr-admin.js, gr-probe.js)
+│   ├── data/ (geoip/ DB-IP 国家库文本数据 + NOTICE)
 │   └── vendor/                          # 第三方前端库 + 同名未压缩源码
 └── languages/
     └── greenpng.pot
@@ -197,23 +200,11 @@ register_rest_route('greenpng/v1', '/security/logs', [
 
 ### 3.7 出网请求
 ```php
-$response = wp_safe_remote_post(
-    $endpoint,
-    [
-        'timeout'     => 5,
-        'blocking'    => true,
-        'headers'     => ['Content-Type' => 'application/json'],
-        'body'        => wp_json_encode($payload),
-        'user-agent'  => 'greenpng/' . GR_VERSION . '; ' . home_url('/'),
-    ]
-);
-if (is_wp_error($response)) {
-    // 必须处理，禁止忽略
-}
+$response = GreenPNG\Core\Http_Client::post('meta_capi', $endpoint, $payload);
+// 内部：wp_safe_remote_post()，timeout ≤ 5s，熔断 + 退避重试
 ```
-- 用 `wp_safe_remote_*`（带 SSRF 防护），不用 `wp_remote_*`，不用 cURL/`file_get_contents`。
-- `timeout` ≤ 5 秒。
-- **禁止**在前台请求生命周期内同步出网。走 `wp_schedule_single_event()`。
+- 业务代码**禁止**直接调用 `wp_remote_*` / `wp_safe_remote_*` / cURL / `file_get_contents`——统一经 `Http_Client`（`07` §2）。
+- **禁止**在前台请求生命周期内同步出网。出网经 `Gr_Queue::enqueue()`（自适应 AS / WP-Cron，ADR-0007）。
 - 未配置凭据时必须返回明确的"未配置"错误。**禁止**像 wp-plug 原型那样用 `mock_` 默认值让调用静默返回成功。
 
 ### 3.8 密钥存储
@@ -228,21 +219,34 @@ $token = GreenPNG\Core\Secrets::get('meta_capi_token');
 - 任何可能持续增长的数据**禁止**放 option。
 - 必须显式指定 autoload：`add_option($k, $v, '', 'no')`。
 - 全插件 autoload option 总量 ≤ 8 KB。
-- 计数器、在线访客集合等高频写入数据**禁止**用"读-改-写单个 transient"模式（wp-plug 原型的 `agy_live_visitors` 就是此错误：并发下丢失更新，且无对象缓存时造成 `wp_options` 写争用）。改用独立表 + `INSERT ... ON DUPLICATE KEY UPDATE`。
+- 计数器、在线访客集合等高频写入数据**禁止**用"读-改-写单个 transient"模式（wp-plug 原型的 `agy_live_visitors` 就是此错误：并发下丢失更新，且无对象缓存时造成 `wp_options` 写争用）。改用独立表 + `INSERT ... ON DUPLICATE KEY UPDATE`（MySQL 原生，ADR-0007）。
 
 ### 3.10 钩子优先级约定
 | 优先级 | 用途 |
 | :--- | :--- |
 | `plugins_loaded` / 1 | 读取允许列表与阻断列表（最早期放行判断） |
 | `plugins_loaded` / 5 | 插件 boot |
-| `init` / 10 | 常规注册（默认，不要随意提前） |
+| `init` / 10 | 常规注册（默认，不要随意提前）；`load_plugin_textdomain`（JIT i18n 兼容，见 §3.11） |
 | `template_redirect` / 10 | 前台归因捕获、探针注入 |
 | `admin_menu` / 10 | 菜单注册 |
 | `shutdown` / 10 | 批量落盘 |
 
 **禁止**使用 `PHP_INT_MIN`、`-9999` 等极端优先级。
 
----
+### 3.11 双向兼容规范（ADR-0007：PHP 7.4~8.5+ / WP 6.0~7.1+）
+
+**向下兼容（不产生语法错误）**：`mixed` / `match` / `enum` / `readonly` / 构造器属性提升 / 命名参数 / 联合类型 / `?->` 一律禁用（§8、`AGENTS.md` §4）。
+
+**向上防御（不产生废弃警告与运行时异常）**：
+
+1. **动态属性零容忍（PHP 8.2+ 废弃）**：所有类显式声明全部属性；PHPStan level 6 强制零动态属性赋值。`#[\AllowDynamicProperties]` 注解（PHP 7.4 下解析为注释、跨版本安全）**仅允许**用于无法显式声明的边界容器类，并须注释说明原因——首选纪律，不首选注解。
+2. **内部函数 null 防御（PHP 8.1+ 废弃）**：输入可能为 null 的内部函数调用前先兜底。提供门面 `gr_safe_strlen($str)` / `gr_safe_trim($str)`（`includes/gr-functions.php`），或调用点先 `(string)` 强转。
+3. **`count()` 防御**：`(is_array($items) || $items instanceof \Countable) ? count($items) : 0`。
+4. **`str_contains` / `str_starts_with` / `str_ends_with` 允许直接使用**：WP 6.0+ 核心自带 polyfill（`wp-includes/compat.php`，`14` §1 实核），无需自建门面；PHPCompatibilityWP 的 WP 规则集认可（S9 实测收口）。其余 PHP 8 函数仍禁用。
+5. **JIT i18n**：`load_plugin_textdomain()` 挂 `init@10`——WP 6.5+ 即时翻译加载合规（过早调用触发 `_doing_it_wrong`），WP 6.0 正常加载。
+6. **WooCommerce HPOS 通用写法**：一律 `wc_get_order($id)` + `$order->update_meta_data()` + `$order->save()`（经典/HPOS 双轨通用）；**禁止** `update_post_meta` 分支（多余且随 WC 演进漂移）。
+7. **WooCommerce 双结账挂载**：经典 `woocommerce_checkout_update_order_meta` + Blocks `woocommerce_store_api_checkout_update_order_from_request`（WC 11.1 实核存在）+ 终态 `woocommerce_payment_complete`（幂等锁在此）。
+8. **dbDelta 纪律**：每字段独占一行、关键字大写、`PRIMARY KEY  (id)` 双空格（WP 7.1 解析器已放宽为 `\s+`，双空格为 6.0 下界零成本保险）、索引字符列 ≤191、建表语句禁用外键。
 
 ## 4. JavaScript 规范
 
@@ -258,9 +262,7 @@ $token = GreenPNG\Core\Secrets::get('meta_capi_token');
   });
   ```
 - DOM 写入用 `textContent`。必须写 HTML 时，先过 `GreenPNG.escapeHtml()`。
-- 前台探针 (`gr-probe.js`) 硬约束：压缩后 ≤ 8 KB、`defer` 加载、只用 `navigator.sendBeacon`、不阻塞渲染、无第三方依赖。
-
----
+- 前台探针 (`gr-probe.js`) 硬约束：压缩后 ≤ 8 KB（安全+行为模块合计）、`defer` 加载、只用 `navigator.sendBeacon`、不阻塞渲染、无第三方依赖、**无指纹原始串出客户端**（仅结论值，ADR-0007）。
 
 ## 5. CSS 规范
 
@@ -271,8 +273,7 @@ $token = GreenPNG\Core\Secrets::get('meta_capi_token');
 - **禁止** `!important`（例外：覆盖第三方库，需注释说明原因）。
 - 颜色只用 WordPress 官方调色板 CSS 变量或 `--gr-*` 变量，禁止散落的十六进制字面量。
 - 后台样式必须限定在 `.gr-page` 作用域内，避免影响其他插件页面。
-
----
+- 漏斗流失图（v1.1）用纯 CSS Flexbox 阶梯条 + `dashicons`，不引入 JS 图表库（`06` §2.3）。
 
 ## 6. 资源加载规范
 
@@ -290,8 +291,7 @@ public function enqueue_admin(string $hook): void {
 - **禁止**从任何 CDN 加载 JS / CSS / 字体 / 图片（含 Google Fonts、Gravatar 硬编码 `<img>`）。头像用核心 `get_avatar()`。
 - 图表库只在真正绘图的页面加载。wp-plug 原型在全部 40 页无条件加载 Chart.js（208 KB）与 Tailwind 运行时（407 KB），其中多页一个图表都没有。
 - 打包的第三方压缩库必须同目录附带**同版本未压缩源码**，否则 WordPress.org 审核不通过。
-
----
+- **随包数据文件**（DB-IP 国家库、UA 引擎规则）放 `assets/data/`，包内 NOTICE 声明来源、许可（CC BY 4.0 / MIT）与数据日期（ADR-0007）。
 
 ## 7. 提交前必过检查
 
@@ -318,7 +318,9 @@ find plugin -name '*.php' -print0 | xargs -0 grep -n "esc_html__\|__(" | grep -v
 
 | 禁止 | 正确做法 |
 | :--- | :--- |
-| `str_contains` / `str_starts_with` / `mixed` / `match` / `enum` | PHP 7.4 等价写法，见 `AGENTS.md` §4 |
+| `mixed` / `match` / `enum` / `readonly` / 构造器属性提升 / 命名参数 / 联合类型 / `?->` | PHP 7.4 等价写法，见 `AGENTS.md` §4。**例外**：`str_contains` / `str_starts_with` / `str_ends_with` 因 WP 6.0+ 核心 polyfill 而**允许**（§3.11.4） |
+| 未声明属性的动态赋值 | 显式声明属性（PHP 8.2+ 废弃，§3.11.1） |
+| 向内部函数传可能为 null 的参数 | `gr_safe_*` 门面或先强转（§3.11.2） |
 | 运行时 `CREATE TABLE` | 只在 activator 里 `dbDelta()` |
 | 裸 `$wpdb->query("... $var ...")` | `$wpdb->prepare()` |
 | `permission_callback => '__return_true'` | `current_user_can()` |
@@ -328,8 +330,10 @@ find plugin -name '*.php' -print0 | xargs -0 grep -n "esc_html__\|__(" | grep -v
 | 硬编码界面文案 | `__()` + text domain `greenpng` |
 | 明文存 API token | `GreenPNG\Core\Secrets` |
 | `autoload=yes` 存增长型数据 | 独立表 |
-| 读-改-写单 transient 做计数 | 独立表 + 原子 UPSERT |
-| 前台同步 `wp_remote_*` | `wp_schedule_single_event()` |
+| 读-改-写单 transient 做计数 | 独立表 + MySQL 原子 UPSERT |
+| 业务代码直接 `wp_remote_*` 出网 | `Http_Client` + `Gr_Queue`（§3.7） |
+| HPOS 场景 `update_post_meta` 分支 | `wc_get_order` + `update_meta_data`（§3.11.6） |
+| 对目标插件做版本号锁定 / 样本库式检测 | 公开 Hook/API + 回退告警（铁律 6） |
 | 未配置凭据时返回成功 | 返回明确"未配置"错误 |
 | 公开无鉴权调试/测试端点 | 删除，或 `current_user_can` + nonce |
 | 界面中出现竞品名 / 无实测支撑的数字 | 删除 |

@@ -2,6 +2,7 @@
 
 > **用途**：每次提交 WordPress.org 审核前逐项自查；CI 能自动化的项标注 🤖。
 > **依据**：WordPress.org Plugin Guidelines（提交时以官网最新版为准复核编号）。
+> **修订记录**：2026-09-09 依据 ADR-0007——新增打包数据文件归属、探针默认开披露、安全日志完整 IP 披露三项自查。
 
 ---
 
@@ -12,6 +13,7 @@
 - [ ] 所有打包的第三方代码与 GPLv2 兼容（当前决议：**零运行时第三方 PHP 依赖**）
 - [ ] 若未来引入 LGPL-3/Apache-2.0 依赖 → 先走 ADR 并整体转 GPLv3
 - [ ] 所有自创代码可由项目以 GPL 发布（无从非许可源复制的代码；BotD 等 BSL 源码零复制）
+- [ ] **打包的第三方数据文件**（CrawlerDetect 规则种子 MIT、DB-IP Lite 国家库 CC BY 4.0）在包内 NOTICE 与 readme 做归属、版本与数据日期声明
 
 ## 2. 代码可读性（Guideline 4 类）
 
@@ -23,18 +25,19 @@
 
 - [ ] 🤖 静态扫描：代码库中无任何指向本项目自有域名的 URL
 - [ ] 无版本检查心跳、无遥测、无统计上报、无 License 校验调用
-- [ ] 全部第三方集成**默认关闭**；逐一核对设置默认值
+- [ ] 全部第三方集成**默认关闭**；逐一核对设置默认值（例外登记：DB-IP 查询为本地零外呼，随包预置开箱即用）
 - [ ] 首次后台访问无外呼；启用某集成前不发生任何对应请求
-- [ ] 蜘蛛 IP 段订阅默认关闭（参考项目设计为默认每 7 天外呼——本项目修正为 opt-in）
+- [ ] 蜘蛛 IP 段订阅默认关闭；DB-IP 数据更新仅经站长显式按钮（点击才出网）
 - [ ] 无广告拦截器规避端点；无伪装采集路径
-- [ ] 追踪脚本（gr-probe.js）仅在站长启用且访客同意（WP Consent API）后输出
+- [ ] **gr-probe.js 双模块披露**：安全模块默认输出（安全用途、GDPR 合法利益 Recital 49、无持久标识符、设置页一键关、readme 隐私段披露）；行为模块仅在站长启用**且**访客同意（WP Consent API）后输出
 
 ## 4. 数据与隐私
 
 - [ ] 实现 `wp_privacy_personal_data_exporters` + `wp_privacy_personal_data_erasers`
-- [ ] `wp_add_privacy_policy_content()` 提供建议隐私政策文本
-- [ ] IP 默认匿名化；安全与营销身份分离
-- [ ] 无 Canvas/WebGL/Audio 指纹追踪（安全用途的有限信号检测为 opt-in）
+- [ ] `wp_add_privacy_policy_content()` 提供建议隐私政策文本（含探针与安全 IP 双轨说明）
+- [ ] **IP 双轨（ADR-0007）**：营销轨默认匿名化；安全轨完整 IP + 展示脱敏 + 匿名化开关，readme 披露合法利益依据
+- [ ] 无指纹营销画像（跨站标识符、可逆识别个人）；安全探针为有限自动化信号（webdriver/渲染器**类别**等），无指纹标识符串、无 Canvas/Audio 原始数据出客户端
+- [ ] 安全结论进 CRM 仅限布尔 + 标签（`sys:suspected_bot`），原始信号永不入联系人画像
 - [ ] 弃购邮件默认关闭，开启需同意勾选
 - [ ] `uninstall.php` 存在且默认不删用户数据（删除需站长显式开启选项）
 
@@ -62,14 +65,16 @@
 ## 7. readme.txt 与元数据
 
 - [ ] 通过官方 readme 校验器（含 `Contributors`、`Tags` ≤5 个、`Requires at least: 6.0`、`Tested up to`、`Requires PHP: 7.4`、`Stable tag`）
-- [ ] 名称与 slug 不含他人商标开头（Google/Meta/WooCommerce…）
+- [ ] 名称与 slug 不含他人商标开头（Google/Meta/WooCommerce/DB-IP…）
 - [ ] 截图存在且为真实界面
 - [ ] `== Frequently Asked Questions ==` 含数据存放位置说明
+- [ ] DB-IP Lite 归属声明（CC BY 4.0）与数据日期在 readme 可见
 
 ## 8. 打包与发布
 
 - [ ] ZIP 由 `tools/build-zip.sh` 产出：排除 `vendor/`（dev）、`tests/`、`docs/`、`.git*`
 - [ ] 包内无 `.zip`、`node_modules`、测试夹具（除非有意）、构建缓存
+- [ ] **DB-IP 数据文件与 CrawlerDetect 数据文件入包**，NOTICE/归属就位
 - [ ] 版本号三处一致（文件头 / `GR_VERSION` / readme `Stable tag`）
 - [ ] SVN 提交信息与 Git tag 对应
 
@@ -82,3 +87,5 @@
 | 伪造交互层（alert 假成功、假 API 面板） | 零容忍，评审即拒 |
 | 未鉴权测试端点 | 零容忍，静态扫描 |
 | 默认开启的爬虫拦截致 Googlebot 误封 | 安全模块默认**仅记录**，拦截需站长逐项开启 |
+| **探针默认开引发审核问询（ADR-0007 新增）** | readme 隐私段 + 设置页一键关 + 无标识符披露三件套就位后再提交 |
+| **打包数据文件被质疑体积/许可** | DB-IP ~4MB 文本 + CC BY 4.0 归属声明；CrawlerDetect MIT + NOTICE |

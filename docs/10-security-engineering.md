@@ -57,6 +57,7 @@ final class Ip_Resolver {
 - `?author=<int>` 是 WP 核心的作者归档 URL：防枚举的正确做法是**重定向到作者 slug 页或按设置隐藏**，不是 403。
 - 登录防爆破：失败计数 + 递增锁定（transient，键含 IP+用户名哈希）；管理员可通过允许列表恢复，提供 WP-CLI 解锁命令，永不出现"站长锁死自己且无救"的状态。
 - FCrDNS 爬虫验证：**失败开放**。`gethostbyaddr`/`gethostbyname` + `dns_get_record(DNS_AAAA)`；前台只读缓存结论，未命中异步入队，**绝不在前台同步做 DNS**（原型缺陷 P5）。任何验证失败仅标记，不拦截。
+- **安全数据留存（ADR-0007）**：`gr_security_logs` 存**完整 IP**（合法利益，GDPR Recital 49；`05` §3.1）；后台展示默认脱敏（末段遮蔽）；`gr_security_log_anonymize` 开关（默认 0=完整存储）；站长开启匿名化时 UI 明示"封禁将降级为网段级"；readme 隐私披露段说明依据。iss-04 指出"匿名化后无法精准封禁"成立，据此修正。
 
 ## 5. 写入面安全
 

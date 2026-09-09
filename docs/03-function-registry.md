@@ -96,6 +96,7 @@
 | `gr_capi_build_payload()` | `gr_capi_build_payload(string $channel, array $event): array` | 纯本地 payload 构建 | 改名 |
 | `gr_webhook_dispatch()` | `gr_webhook_dispatch(string $hook_id, array $payload): bool` | HMAC-SHA256 签名出网；`timestamp.body` 签名串；`hash_equals` 验签文档化 | 新增 |
 | `gr_query_ip_reputation()` | `gr_query_ip_reputation(string $ip): array` | AbuseIPDB 等可选情报查询；24h transient 缓存；429/超时熔断（继承 wp-plug 档案中最好的弹性设计） | 新增 |
+| `gr_geoip_country()` | `gr_geoip_country(string $ip): string` | DB-IP Lite 本地国家库查询（**v1.0 随包预置**，ADR-0007）；每请求 L1 静态缓存；**零外呼**；库更新仅经站长显式按钮 | 新增（ADR-0007） |
 
 ## 8. 审计（Audit）
 

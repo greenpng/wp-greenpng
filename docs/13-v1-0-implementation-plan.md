@@ -1,6 +1,7 @@
 # 13. v1.0 实施清单 (v1.0 Implementation Plan)
 
-> 本文把 `12-roadmap-free-v1.md` 的 v1.0 范围拆解为**可独立验收的任务序列**，是 v1.0 开发期的工作真源：任务只做清单内的事，验收只认清单内的标准。
+> 本文把 `12-roadmap-free-v1.md`（2026-09-09 四支柱修订版）的 v1.0 范围拆解为**可独立验收的任务序列**，是 v1.0 开发期的工作真源：任务只做清单内的事，验收只认清单内的标准。
+> **修订记录**：2026-09-09 依据 ADR-0007 重构——新增客户端探针（C13）、A/B 引擎（C14–C15）、出网支柱（I1–I5）、独立 Settings 页（U13）、UA 引擎升级（W2）等；任务 61 → 85 项；§8 开放问题全部收口。
 > 状态图例：⬜ 未开始 · 🔧 进行中 · ✅ 已验收（AGENTS.md §3.3 四项检查通过 **且** 验收标准实测达标）。
 > 更新纪律：每完成一个任务，本表状态列随该任务的代码提交一并更新；禁止提前打勾；验收数字必须实测可复现（`AGENTS.md` §3.4）。
 
@@ -10,17 +11,15 @@
 
 | 阶段 | 内容 | 任务 | 依赖 |
 | :--- | :--- | :--- | :--- |
-| Phase 0 | 开发与验证环境（ADR-0006） | E1–E8 | — |
+| Phase 0 | 开发与验证环境（ADR-0006/0007） | E1–E9 | — |
 | Phase 1 | 插件骨架与存储底座 | S1–S10 | Phase 0 |
-| Phase 2 | 核心运行时 + 采集与归因 | C1–C12 | Phase 1 |
-| Phase 3 | 流量安全（保守档） | W1–W11 | Phase 1（W4/W6 依赖 C2） |
-| Phase 4 | 汇总与后台 9 页 | U1–U13 | Phase 2、3 |
-| Phase 5 | 隐私合规与维护 | V1–V5 | Phase 2、3 |
+| Phase 2 | 核心运行时 + 采集 / 归因 / A-B | C1–C15 | Phase 1 |
+| Phase 3 | 流量安全与 RPA 识别 | W1–W14 | Phase 1（W4/W6/W14 依赖 C2/C5） |
+| Phase 4 | 汇总与后台 14 页 | U1–U17 | Phase 2、3、5 |
+| Phase 5 | 出网支柱 + 隐私合规 | I1–I5、V1–V5 | Phase 1（I2–I4 依赖 C10 转化链路） |
 | Phase 6 | 测试收口与发布准备 | T1–T10 | 全部 |
 
-总体线性推进；Phase 2 与 Phase 3 可交错（归因链路与安全链路互不依赖，但都依赖 Phase 1 底座）。
-
----
+共 85 项。Phase 1 先行；Phase 2 / 3 / 5 三线可并行（互不依赖）；Phase 4 依赖前三者的读接口。
 
 ## 1. Phase 0 — 环境准备
 
@@ -33,7 +32,8 @@
 | E5 | WP-CLI 工作方式固化 | ✅ | `greenpng-dev/NOTES.md` 已记录 PHPRC 内存方案、服务启停、环境事实 |
 | E6 | agy-suite 停用预案 | ⬜ | greenpng 首次装入任一测试站前执行 `wp plugin deactivate agy-suite`（站长已确认；在 S 骨架可激活时执行） |
 | E7 | greenpng 插件目录链接 | ⬜ | S1 完成后创建 `greenpng-dev/wordpress/wp-content/plugins/greenpng -> /Users/macos/greenpng/plugin` |
-| E8 | SQLite 兼容站保留 | ✅ | 现有 `:8090` 站（WP 7.1 + SQLite）原样保留为次要兼容环境，不作 v1.0 门禁 |
+| E8 | 参考环境保留 | ✅ | `:8090` SQLite 站原样保留，仅作参考环境（ADR-0007：不承诺 SQLite 兼容，不设兼容门禁任务） |
+| E9 | 常用插件补装（OQ-4） | ⬜ | 从 wordpress.org 下载安装：Contact Form 7、WPForms、Elementor、WP Super Cache（或等价缓存插件）、Yoast SEO（或等价）；`wp plugin list` 实测就位；激活时机随对应适配器/共存测试任务 |
 
 ## 2. Phase 1 — 插件骨架与存储底座
 
@@ -41,58 +41,64 @@
 | :--- | :--- | :--- | :--- | :--- |
 | S1 | 主入口 | `plugin/greenpng.php`：插件头（`Requires at least: 6.0`、`Requires PHP: 7.4`、GPLv2+）、`GR_VERSION`、ABSPATH 守卫、PHP/WP 门槛不满足时仅 admin notice 不致命 | `php -l` 通过；主验证站激活成功 | `04` |
 | S2 | Autoloader | `includes/core/class-gr-autoloader.php`：`GreenPNG\` → `includes/<模块>/class-gr-<slug>.php` 映射，无 Composer | 任意注册类可加载；触发 spl_autoload 无警告 | `04`、ADR-0003 |
-| S3 | 主控类 | `includes/core/class-gr-plugin.php`：`plugins_loaded@10` 显式构造 ≤12 个服务注入构造函数，无 DI 容器 | 服务清单静态可查（PHPStan 覆盖） | `02` §2.1 |
-| S4 | 设置服务 | `includes/core/class-gr-settings.php`：唯一 autoload=yes 的 `gr_settings`（默认值集中定义，≤8KB） | 激活后 option 存在；无第二个 autoload=yes 项 | `05` §6 |
-| S5 | Schema | `includes/storage/class-gr-schema.php`：`DB_VERSION=1`；15 个物理对象 DDL 经 dbDelta；`gr_db_version` autoload=no；激活 + `admin_init` 双挂载 | 激活后 15 表存在；连续激活两次零 DDL 变更；前台请求零 DDL | `05` |
+| S3 | 主控类 | `includes/core/class-gr-plugin.php`：`plugins_loaded@10` 显式构造 ≤14 个服务（含 `Gr_Queue`）注入构造函数，无 DI 容器 | 服务清单静态可查（PHPStan 覆盖） | `02` §2.1 |
+| S4 | 设置服务 | `includes/core/class-gr-settings.php`：唯一 autoload=yes 的 `gr_settings`（默认值集中定义，≤8KB），含安全/探针/归因/隐私默认 | 激活后 option 存在；无第二个 autoload=yes 项 | `05` §6 |
+| S5 | Schema | `includes/storage/class-gr-schema.php`：`DB_VERSION=1`；15 个物理对象 DDL 经 dbDelta；**补索引**：`gr_sessions(last_active)`、`gr_contact_tags(tag_id, contact_id)`、`gr_daily_stats` UNIQUE `(stat_date, metric_type, metric_key)`；`PRIMARY KEY` 双空格保险写法；`gr_db_version` autoload=no；激活 + `admin_init` 双挂载 | 激活后 15 表 + 3 处索引存在；连续激活两次零 DDL 变更；前台请求零 DDL | `05`、ADR-0007 |
 | S6 | 生命周期 | `class-gr-activator.php` / `class-gr-deactivator.php` / `uninstall.php` | 停用清 cron 不删数据；卸载默认保留数据，`gr_delete_data_on_uninstall=1` 时清空全部表与 option | `05` §4–5 |
-| S7 | WP-Cron + CLI | 每日 `gr_cron_daily_maintenance` 注册；`wp greenpng maintenance` 命令骨架 | 停用后 scheduled event 清除 | `02` §2.4 |
+| S7 | 自适应队列 | `Gr_Queue` 门面：运行时嗅探 Action Scheduler（`function_exists('as_schedule_single_action')`）则入 AS；否则 `wp_schedule_single_event` + transient 互斥锁（TTL 300s）；`wp greenpng maintenance` 命令 | 双后端各实测一次任务派发；互斥锁防重入实测；停用后事件清除 | `02` §2.4、ADR-0007 |
 | S8 | readme + pot | `plugin/readme.txt`（含 `== External services ==` 段）、`languages/greenpng.pot` | readme 结构自查通过；text domain 一律 `greenpng` | `08` |
-| S9 | 规范工具链 | `composer.json`（仅 dev 依赖）+ `phpcs.xml.dist` + vendor 安装 | AGENTS §3.3 四项命令全部可运行（phpunit 允许空套件通过） | `11` §2 |
-| S10 | 打包脚本 | `tools/build-zip.sh`、`tools/bump-version.sh` | 产包排除 vendor/测试/文档；版本三处同步（greenpng.php / GR_VERSION / readme Stable tag） | `02` §5 |
+| S9 | 规范工具链 | `composer.json`（仅 dev 依赖）+ `phpcs.xml.dist` + vendor 安装 | AGENTS §3.3 四项命令全部可运行（phpunit 允许空套件通过）；PHPCompatibilityWP 对 `str_*` 核心函数不误报（polyfill 白名单确认，`14` §1） | `11` §2 |
+| S10 | 打包脚本 | `tools/build-zip.sh`、`tools/bump-version.sh` | 产包排除 vendor/测试/文档；版本三处同步；DB-IP 数据文件与 CrawlerDetect 数据文件入包且 NOTICE 就位 | `02` §5 |
 
-## 3. Phase 2 — 核心运行时 + 采集与归因（v1.0 范围）
+## 3. Phase 2 — 核心运行时 + 采集 / 归因 / A-B
 
 | ID | 任务 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- |
 | C1 | 事件 DTO 与门面 | `class-gr-event.php`（私有属性+getter）+ `gr_dispatch_event()` / `gr_get_recent_events()` | 派发即 `do_action('gr_event', …)`；门面 ≤3 行转发 | `03` §2 |
-| C2 | 表名解析 + 容器门面 | `Database::table()` + `gr()` | 全仓库检索不到硬编码 `{$wpdb->prefix}gr_` 之外的表名拼法 | `02` §2.3 |
+| C2 | 表名解析 + 容器门面 | `Database::table()` + `gr()` | 全仓库检索不到硬编码表名拼法 | `02` §2.3 |
 | C3 | IP 解析 | `Ip_Resolver` + `gr_get_client_ip()` | 默认仅 `REMOTE_ADDR`；伪造 XFF 无效；可信代理开启后右扫；4 场景单测 | `10`、`03` §1 |
 | C4 | 密钥与签名 | `Secrets`（wp_salt 派生）+ `gr_hash_pii` / `gr_sign_hmac` / `gr_generate_event_id` / `gr_get_user_agent` | 密钥明文不落库；HMAC 输出确定性可测 | `10` |
-| C5 | 会话与访客哈希 | `gr_sessions` 仓储 + visitor_hash（每日旋转盐 + 匿名化 IP + UA） | 在线数走 `SELECT COUNT`，无 transient 读改写 | `05` §3.2 |
-| C6 | REST 采集端点 | `greenpng/v1/collect`：日盐令牌（`hash_equals`）、每 IP 限流（对象缓存优先）、8KB body 上限、严格 schema、`nocache_headers()` | 无/错令牌 401；超频 429；超体 413；未知事件名拒绝；sendBeacon JSON 可解析 | `02` §2.5、`11` §3.1 |
-| C7 | 归因监听 | Attribution_Listener（`template_redirect@10`；`wp_has_consent('marketing')` 门控；`gr_attr` 签名 cookie，HttpOnly + SameSite=Lax） | 无同意：不写 cookie、不落触点；有 UTM 且有同意：触点行落库 | `02` §4、ADR-0005 |
+| C5 | 身份与会话 | **身份双轨**：`gr_attr` cookie（签名 visitor_id，30 天，同意门控，HttpOnly + SameSite=Lax）为主身份；无 cookie 回退 = 每日旋转盐哈希（无跨天关联，`05` §3.2）。`gr_sessions` 仓储；在线数走 `last_active` 索引 COUNT | 有/无 cookie 两链路单测；在线数查询 EXPLAIN 走索引 | ADR-0007、`05` §3.2 |
+| C6 | REST 采集端点 | `greenpng/v1/collect`：日盐令牌（`hash_equals`）、每 IP 限流、8KB body 上限、严格 schema（白名单含探针安全信号字段：`bot_score` 与自动化标志集，**仅结论值，不收指纹原始串**）、`nocache_headers()` | 无/错令牌 401；超频 429；超体 413；未知事件名拒绝；sendBeacon JSON 可解析 | `02` §2.5、`11` §3.1 |
+| C7 | 归因监听 | Attribution_Listener（`template_redirect@10`；`wp_has_consent('marketing')` 门控；UTM/点击 ID → 触点落库；cookie 仅在同意后写） | 无同意：不写 cookie、不落触点；有 UTM 且有同意：触点行落库且 visitor_id 跨天稳定 | `02` §4、ADR-0005/0007 |
 | C8 | 归因参数与模型 | `gr_parse_attribution_params()` + `gr_calculate_attribution()`（first/last/linear/40-20-40/time-decay 7 日半衰） | 5 模型在手工算好的期望序列上全对（单测） | `03` §4 |
 | C9 | 转化幂等绑定 | `gr_bind_conversion()` | UNIQUE `source_unique` + meta 锁双防线；双回调仅一条记录 | `05` §3.3、`11` §3.2 |
-| C10 | WooCommerce 适配器 | `Adapter_Interface` 首个实现（`woocommerce_payment_complete`；HPOS 安全 meta 写法；`\Throwable` 隔离） | WC 不存在时零加载零报错；适配器内抛错不影响站点其余部分 | `02` §2.6、`11` §3.4 |
-| C11 | 表单适配器 | Fluent Forms / CF7 / WPForms 三个适配器 | 主验证站实测 Fluent Forms；CF7/WPForms 未安装时零加载 | `12` v1.0 |
+| C10 | WooCommerce 适配器 | **三挂载**：`woocommerce_checkout_update_order_meta`（经典）+ `woocommerce_store_api_checkout_update_order_from_request`（Blocks/Store API，WC 11.1 实核存在）+ `woocommerce_payment_complete`；HPOS 通用写法：`wc_get_order` + `update_meta_data` + `save()`（不用 `update_post_meta` 分支）；`\Throwable` 隔离 | WC 不存在时零加载零报错；适配器内抛错不影响站点其余部分；经典/Blocks 两路径实测 | `02` §2.6、ADR-0007、`14` §1 |
+| C11 | 表单适配器 | Fluent Forms / CF7 / WPForms 三个适配器（主 Hook + 回退 Hook，漂移告警） | 主验证站实测 Fluent Forms；CF7/WPForms（E9 装入后）各实测；未安装时零加载 | `12` v1.0、ADR-0007 |
 | C12 | 语义提取与生态检测 | `gr_uif_extract_fields()` + `gr_uif_detect_ecosystem()` | 夹具样本（含 `auto:email` 等）提取正确 | `03` §7 |
+| C13 | 客户端安全探针 | `gr-probe.js` 安全模块（v1.0 部分）：`navigator.webdriver`、WebGL 渲染器类别（SwiftShader/llvmpipe/Software）、无头窗口特征、语言栈异常 → bot_score；**默认开、合法利益、设置页可关、readme 披露**；仅结论值经 C6 回传；无持久标识符、无指纹串 | 禁 JS 后站点正常；探针 gzip ≤8KB；bot_score 服务端校验拒绝越界值；关闭开关后零输出 | ADR-0007、`08`、`09` §1.1 |
+| C14 | A/B 分流引擎 | `gr_ab_assign_variant()` 一致性哈希稳定分桶 + URL 参数（`?gr_variant=`）+ 短码分流；实验定义存非 autoload option | 同 visitor 多次请求分桶稳定；URL 参数强制分桶可测 | `03` §5、`05` §2 |
+| C15 | A/B 记录与显著性 | `gr_ab_record()`（impression/conversion 落 `gr_events`）+ `gr_ab_significance()`（双比例 Z 检验，n<30 返回样本不足） | 手工期望值单测；显著/不显著/样本不足三态正确 | `03` §5、`11` §3 |
 
-## 4. Phase 3 — 流量安全（保守档：默认仅记录不拦截）
+## 4. Phase 3 — 流量安全与 RPA 识别（保守档：默认仅记录不拦截）
 
 | ID | 任务 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- |
 | W1 | 请求检查器 | Security_Request_Inspector（`init@10`，默认仅记录） | 检查器异常时静默跳过，前台渲染不受影响 | `02` §2.7 |
-| W2 | 扫描器 UA | `gr_is_scanner_ua()` 本地特征表 | 夹具 UA 全命中；零外呼 | `03` §3 |
+| W2 | UA 引擎升级 | `gr_is_scanner_ua()` 数据层升级：以 CrawlerDetect（MIT，1492 行规则实核）规则为种子本地化为自维护数据文件（保留 MIT 版权头 + NOTICE）；Exclusions 白名单短路；**无外呼** | 夹具 UA 全命中且白名单不误伤；单请求匹配耗时实测入报告；数据文件入包 | `07` §3、`14` §1 |
 | W3 | CIDR 匹配 | `gr_match_cidr()`（IPv4 位运算 + IPv6 前缀） | /32、/0、/24 跨界与 IPv6 前缀单测全过 | `11` §3.1 |
-| W4 | 访问规则 | `gr_access_rules` 仓储 + `gr_is_trusted_ip()` / `gr_is_ip_blocked()` / `gr_is_url_allowed()`；`plugins_loaded` 读一次 L1 静态缓存 | 前台总 SQL 在 ≤2 条预算内 | `05` §2、`09` |
+| W4 | 访问规则 | `gr_access_rules` 仓储 + `gr_is_trusted_ip()` / `gr_is_ip_blocked()` / `gr_is_url_allowed()`；`plugins_loaded` 读一次 L1 静态缓存 | 前台稳态总 SQL 在分层预算内（`09` §1.1） | `05` §2、`09` |
 | W5 | 临时封禁 | `gr_block_ip()` / `gr_unblock_ip()` | transient TTL 生效；WP-CLI 可解锁 | `03` §3 |
-| W6 | 浪涌折叠日志 | `gr_log_security_event()`：fold_key = md5(ip+rule+小时窗)，可移植 upsert（先 UPDATE 后 INSERT） | N 次命中 = 1 行且 `hit_count=N`（实测断言行数，不宣称压缩率） | `05` §3.1、`11` §3.1、OQ-2 |
-| W7 | 登录保护 | `gr_check_login_lockout()` / `gr_record_login_failure()`（`wp_login_failed`） | 阈值、递增锁定时长、允许列表恢复单测；默认仅记录模式明确 | `03` §3 |
-| W8 | 蜜罐（opt-in） | `gr_render_honeypot()`（`aria-hidden="true"` + `tabindex="-1"`）/ `gr_check_honeypot()` | 默认关；开启后登录/注册表单生效；屏幕阅读器不朗读 | `03` §3、`06` §4 |
+| W6 | 浪涌折叠日志 | `gr_log_security_event()`：fold_key = md5(ip+rule+小时窗)，**MySQL 原生 `INSERT ... ON DUPLICATE KEY UPDATE` 原子自增**（ADR-0007，弃可移植写法） | 并发 N 次命中 = 1 行且 `hit_count=N`（实测断言行数，不宣称压缩率）；并发压测无 1062 错误 | `05` §3.1、`11` §3.1 |
+| W7 | 登录保护 | `gr_check_login_lockout()` / `gr_record_login_failure()`（`wp_login_failed`；梯度递增锁定） | 阈值、递增锁定时长、允许列表恢复单测；默认仅记录模式明确 | `03` §3、PEER-01 |
+| W8 | 蜜罐（opt-in） | `gr_render_honeypot()`（动态混淆字段名 + `aria-hidden="true"` + `tabindex="-1"`）+ `gr_check_honeypot()`（陷阱字段非空 **或提交耗时 <2s** 判自动化，默认仅记录） | 默认关；开启后登录/注册表单生效；屏幕阅读器不朗读；时间差夹具单测 | `03` §3、`06` §4、PEER-01 |
 | W9 | 载荷检查 | `gr_inspect_request_payload()` 保守高置信规则集 | 命中默认仅标记不拦截；误报样本不命中 | `03` §3、`10` §4 |
-| W10 | FCrDNS | `gr_verify_crawler()`（PTR + 正查含 DNS_AAAA；24h transient 缓存；失败=「无法验证」） | **绝不在前台请求路径同步 DNS**：首见入队，日维护任务/工具页触发验证 | `03` §3、铁律 3 |
-| W11 | 安全总熔断 | `gr_settings` 安全总开关 + `GR_SECURITY_OFF` 常量紧急逃生 | 开启后全部 inspect 跳过（修复参考项目 WAF 误杀无逃生缺陷） | `10` §4 |
+| W10 | FCrDNS | `gr_verify_crawler()`（PTR + 正查含 DNS_AAAA；24h transient 缓存；失败=「无法验证」） | **绝不在前台请求路径同步 DNS**：首见入队（Gr_Queue），日维护任务/工具页触发验证 | `03` §3、铁律 3 |
+| W11 | 安全总熔断 | `gr_settings` 安全总开关 + `GR_SECURITY_OFF` 常量紧急逃生 | 开启后全部 inspect 跳过 | `10` §4 |
+| W12 | Blackhole 陷阱（opt-in） | robots.txt 声明陷阱路由 + 虚拟陷阱端点；命中记日志 + 可选封禁（默认关、默认仅记录） | 合法蜘蛛（遵守 robots.txt）不受影响；默认关闭；开启后命中实测 | PEER-01、`10` §4 |
+| W13 | 安全→质量结论通道 | `gr_event` 携带安全**结论**（`suspected_bot` 布尔 + 分数档位）；v1.1 CRM 消费打标 `sys:suspected_bot`；**原始信号/指纹明细永不进联系人画像** | 事件payload 仅含结论字段（schema 断言）；单测 | ADR-0007、`07` §4 |
+| W14 | 完整 IP 与脱敏 | `gr_security_logs` 存完整 `VARBINARY(16)`（`inet_pton`）；后台展示默认脱敏（末段遮蔽）；`gr_security_log_anonymize` 开关（默认 0=完整存储，开启则入库存截断值且 UI 明示封禁降级为网段级） | 完整/匿名两模式入库实测；展示脱敏截图自查；封禁联动实测 | ADR-0007、`05` §3.1、`10` |
 
-## 5. Phase 4 — 汇总与后台页面（v1.0 页面子集 = 9 页）
+## 5. Phase 4 — 汇总与后台页面（v1.0 页面子集 = 14 页）
 
-v1.0 页面：Dashboard、Traffic & Security（3 标签）、Access Rules、Login Protection、Campaigns（4 标签）、URL Builder、Audit Log、Data Retention、Status & Diagnostics。Bot & Device Signals、Funnels & Goals、Audience、Integrations 各页随 v1.1/v1.2 交付；FCrDNS 记录模式的结果暂在「威胁事件」标签呈现。
+v1.0 页面：Dashboard、Traffic & Security（3 标签）、Access Rules、Login Protection、Bot & Device Signals（爬虫验证标签）、Campaigns（4 标签）、URL Builder、Funnels & Goals（A/B 标签先行）、Settings（独立页）、Analytics & CAPI、IP Intelligence（GeoIP 部分）、Audit Log、Data Retention、Status & Diagnostics。其余 6 页随 v1.1/v1.2 交付。
 
 | ID | 任务 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- |
-| U1 | 日汇总 | `gr_daily_stats` 聚合任务（cron 幂等 upsert） | 瘦身后报表读数不变（单测） | `05` §1 |
+| U1 | 日汇总 | `gr_daily_stats` 聚合任务（Gr_Queue 每日；UNIQUE 键幂等 upsert） | 瘦身后报表读数不变（单测）；重复执行不翻倍 | `05` §1 |
 | U2 | 图表库 | uPlot 本地打包（≤20KB min + 未压缩源码同目录） | 仅图表页 enqueue；零 CDN | `06` §2.3 |
-| U3 | Dashboard | KPI + 趋势图 + `screen-reader-text` 表格视图 | 只读 `gr_daily_stats`，零直查原始表 | `06` |
-| U4 | gr-datagrid.js | 由参考项目 `agy-datagrid.js` 修复移植：fetch + `X-WP-Nonce`；`textContent` 替代 innerHTML；无 JS 服务端降级 | XSS 注入夹具不执行；禁 JS 后页面可用 | `06` §2.2 |
+| U3 | Dashboard | KPI + 趋势图 + 国家分布（DB-IP 开箱即有）+ `screen-reader-text` 表格视图 | 只读 `gr_daily_stats`，零直查原始表 | `06`、I5 |
+| U4 | gr-datagrid.js | 由参考项目组件修复移植：fetch + `X-WP-Nonce`；`textContent` 替代 innerHTML；无 JS 服务端降级 | XSS 注入夹具不执行；禁 JS 后页面可用 | `06` §2.2 |
 | U5 | Traffic & Security | 实时流 / 威胁事件 / 欺诈审计 3 标签 | 全部 WP 原生组件；只读 REST 亦需 `manage_options` | `06` |
 | U6 | Access Rules | 封禁 / 允许列表（`WP_List_Table` + Settings 表单） | 每个写操作 nonce + 能力双校验 | `06` §2.1 |
 | U7 | Login Protection | 爆破审计 + 会话管理 | CLI 解锁指引在页面可见 | `06` |
@@ -100,42 +106,57 @@ v1.0 页面：Dashboard、Traffic & Security（3 标签）、Access Rules、Logi
 | U9 | URL Builder | 本地 UTM 链接构建器 | 零外呼；输出 `esc_url` | `06` |
 | U10 | Audit Log | `gr_audit_diff()` / `gr_audit_log()` / `gr_audit_query()` + 页面 | 递归 diff 单测；列表分页服务端 | `03` §8 |
 | U11 | Data Retention | 保留期/行数上限设置 + 手动 OPTIMIZE 按钮 | cron 绝不自动 OPTIMIZE | `05` §5 |
-| U12 | Status & Diagnostics | `gr_export_diagnostics()`（脱敏导出）、`gr_get_table_stats()`、适配器状态 | 导出含 PHP/WP/DB 版本，无任何凭据/敏感值 | `03` §10 |
-| U13 | 全局设置区块 | 隐私默认（IP 匿名化/同意模式）与安全总开关的统一 UI | **OQ-1 待确认**：建议并入 Status & Diagnostics 页新增 Settings 标签（不突破 19 页上限） | `06` 缺口 |
+| U12 | Status & Diagnostics | `gr_export_diagnostics()`（脱敏导出）、`gr_get_table_stats()`、适配器状态、**队列后端显示（AS / WP-Cron）与真实 cron 引导** | 导出含 PHP/WP/DB 版本，无任何凭据/敏感值 | `03` §10、`09` §4 |
+| U13 | **Settings 独立页**（OQ-1 决议） | 顶级菜单第一子页；标签：General（隐私默认/数据保留入口）、Security（安全总开关/可信代理/安全日志匿名化开关/探针开关）、Attribution（cookie 窗口/默认模型）；Settings API + nonce | 每个设置写操作双校验；默认值与 ADR-0007 一致；探针开关实测生效 | ADR-0007、`06` |
+| U14 | Bot & Device Signals | 爬虫验证标签：FCrDNS 结果、UA 引擎统计、bot_score 分布（v1.0）；设备信号标签 v1.3 再交付 | 页面 WP 原生；数据只读汇总表 | `06`、`12` |
+| U15 | Analytics & CAPI 页 | Meta / GA4 凭据录入（Secrets 加密）+ 连通性自检按钮 + 同意门控与披露文案 | 未配置时明确"未配置"；凭据不明文回显 | `07` §5 |
+| U16 | IP Intelligence 页 | GeoIP（DB-IP）管理：归属披露、数据版本显示、**显式"立即更新"按钮**（opt-in 外呼）；AbuseIPDB 区块 v1.2 启用 | 更新按钮需 nonce + 点击才外呼；无任何静默外呼 | `07` §5.7、铁律 1 |
+| U17 | Funnels & Goals 页（v1.0 部分） | A/B 标签：实验列表 / 分流预览 / 显著性结果；漏斗/目标标签 v1.1 | A/B 数据读 `gr_events` 聚合；Z 检验结果三态正确显示 | `06`、`03` §5 |
 
-## 6. Phase 5 — 隐私合规与维护
+## 6. Phase 5 — 出网支柱与隐私合规
 
 | ID | 任务 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- |
-| V1 | IP 匿名化 | 默认开启；/24 //48 截断或盐哈希（设置可选） | 存储值实测为匿名形态 | ADR-0005 |
+| I1 | Http_Client | `GreenPNG\Core\Http_Client`：每服务独立配置（timeout≤5s、连续 3 次失败熔断 300s、429 读 Retry-After、退避 30s/2m/15m 三次后放弃记审计）；`wp_safe_remote_*` | 未配置返回 `gr_not_configured`；熔断状态机单测；全站无绕过此类的直接出网 | `07` §2 |
+| I2 | Meta CAPI | 版本常量 `GR_META_API_VERSION` + filter；PII 经 `gr_hash_pii()`；**仅回传通过流量质量过滤的事件**；经 `Gr_Queue` 异步派发 | 凭据未配置零外呼；payload 构建纯本地可单测；重试路径实测 | `07` §5.1 |
+| I3 | GA4 MP | 无 `_ga` client_id 不回传；debug 端点连通性自检按钮 | 自检按钮显式触发；垃圾会话数据防御单测 | `07` §5.2 |
+| I4 | event_id 双端去重 | 浏览器 Pixel 事件与服务端 CAPI 使用相同 `event_id`（`gr_generate_event_id` 派生） | 同一转化双端同 ID 实测；文档化 48h 去重机制（不承诺 EMQ 分数） | `07` §5.1、PEER-02 |
+| I5 | GeoIP 开箱 | DB-IP Lite 国家库数据文件随包分发（CC BY 4.0，readme + NOTICE 归属声明，数据日期标注）；`gr_geoip_country()` 查询（每请求 L1 静态缓存）；站长显式更新按钮 | 激活后 Dashboard 国家分布非空（实测样本 IP）；查询零外呼；更新按钮 opt-in 外呼披露 | `07` §5.7、ADR-0007 |
+| V1 | 隐私双轨落地 | 安全轨：完整 IP + 探针信号（合法利益、展示脱敏、开关）；营销轨：同意门控 + IP 匿名化默认开（营销数据） | 两轨数据流分别实测；设置变更即时生效 | ADR-0007 |
 | V2 | WP 隐私 API | 导出器/擦除器注册（会话/触点/转化/联系人） | WP 核心隐私工具界面可见并可执行 | ADR-0005 |
 | V3 | 瘦身执行 | `gr_prune_table()`（分批 2000 + 100ms 间隔 + 10s 时间预算） | 构造超龄数据实测删至保留线 | `03` §10、`05` §5 |
-| V4 | readme 披露定稿 | `== External services ==` 逐项（v1.0 = 声明零默认外呼） | 与 `07` 清单逐项一致 | `07`、`08` |
-| V5 | 同意门控复核 | 全链 `wp_has_consent` 检查点清单化 | 逐点实测开/关两态行为 | ADR-0005 |
+| V4 | readme 披露定稿 | `== External services ==` 逐项：Meta CAPI / GA4 MP / DB-IP 更新按钮 /（v1.2 预告：AbuseIPDB、蜘蛛段订阅）；另设隐私披露段：探针（安全用途、合法利益、可关）、安全日志完整 IP 依据 | 与 `07` 清单逐项一致；`08` §3/§4 专项自查通过 | `07`、`08` |
+| V5 | 同意门控复核 | 营销链路 `wp_has_consent` 检查点清单化；安全链路开关化 | 逐点实测开/关两态行为 | ADR-0005/0007 |
 
 ## 7. Phase 6 — 测试收口与发布准备
 
 | ID | 任务 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- |
-| T1 | 单元测试集 | CIDR / 归因 5 模型 / 浪涌折叠 / 登录锁定 / 提取器 / 递归 diff / 参数解析 | 核心域 ≥70% 门槛；全绿 | `11` §3 |
-| T2 | 集成测试集 | 采集端点五情形 / WC 双回调幂等 / HPOS 两模式 / dbDelta 幂等 / 卸载两模式 | MySQL 主验证站实测全绿 | `11` §3 |
-| T3 | 性能基准 | `tests/benchmarks/front-request.php` 装前/装后 P95 对比 | 实测差值 ≤5ms、≤2 SQL；数字写入报告 | `09`、`11` §6 |
-| T4 | PHPStan | level 6 + 基线文件 | 零未处理错误 | `11` §2 |
-| T5 | 兼容性静态检查 | PHPCompatibilityWP（testVersion 7.4-） | 零 PHP 8+ 语法（本机无 7.4 运行时，运行时验证归 CI） | ADR-0003/0006 |
+| T1 | 单元测试集 | CIDR / 归因 5 模型 / 浪涌折叠并发 / 登录锁定 / 提取器 / 递归 diff / 参数解析 / **A/B 分流稳定性与 Z 检验 / UA 引擎命中 / 队列互斥** | 核心域 ≥70% 门槛；全绿 | `11` §3 |
+| T2 | 集成测试集（含常用插件矩阵） | 采集端点五情形 / WC 双回调幂等 / **HPOS 开×关 × 经典/Blocks 结账四组合** / CF7、Fluent Forms、WPForms 桥接 / Elementor 前台共存 / 缓存插件下 collect 端点 nocache / dbDelta 幂等 / 卸载两模式 | MySQL 主验证站实测全绿；矩阵结果如实记录 | `11` §3/§5、ADR-0007 |
+| T3 | 性能基准 | `tests/benchmarks/front-request.php` 装前/装后 P95 对比 | **分层预算口径**（`09` §1.1：稳态 ≤2 SQL、归因落地 ≤4、collect 独立口径）；数字写入报告 | `09`、`11` §6 |
+| T4 | PHPStan | level 6 + 基线文件 | 零未处理错误；**零动态属性赋值** | `11` §2、ADR-0007 |
+| T5 | 兼容性静态检查 | PHPCompatibilityWP（testVersion 7.4-） | 零 PHP 8+ 语法；`str_*` 核心函数不误报（polyfill 白名单，S9 已确认） | ADR-0003/0007 |
 | T6 | 生命周期冒烟 | activate / deactivate / uninstall / 升级幂等 | 主验证站 WP-CLI 实测 | `11` §1 |
-| T7 | SQLite 兼容冒烟 | 在 `:8090` 站跑 T6 子集 | 结果如实记录，不作门禁 | ADR-0006 |
-| T8 | 版本与打包 | `tools/bump-version.sh` → 1.0.0；`tools/build-zip.sh` | 版本三处同步；包内无 vendor/测试/文档 | `02` §5、`08` |
-| T9 | WP.org 自查 | `08` 清单逐项打勾记录 | 全项通过记录在案 | `08` |
+| T7 | 常用插件共存冒烟（原 SQLite 冒烟任务已废止） | E9 插件集 + 已装 9 生态插件全激活跑 T6 子集 | 共存结果如实记录；适配器漂移告警可见 | ADR-0007、`11` §5 |
+| T8 | 版本与打包 | `tools/bump-version.sh` → 1.0.0；`tools/build-zip.sh` | 版本三处同步；包内无 vendor/测试/文档；**DB-IP 与 CrawlerDetect 数据文件入包且 NOTICE/归属就位** | `02` §5、`08` §8 |
+| T9 | WP.org 自查 | `08` 清单逐项打勾记录（含新增：探针披露、完整 IP 披露、打包数据归属） | 全项通过记录在案 | `08` |
 | T10 | 提交上线 | WordPress.org svn 提交（人工执行） | — | `08` |
 
-## 8. 开放问题（实现前需确认）
+## 8. 决议记录（原开放问题已全部收口）
 
-| 编号 | 问题 | 当前建议 |
+| 编号 | 决议（2026-09-09） | 落点 |
 | :--- | :--- | :--- |
-| OQ-1 | 全局设置 UI 位置：`06` 的 19 页无独立 Settings 页，但隐私默认/安全总开关需要统一入口 | 并入 Status & Diagnostics 页新增 Settings 标签，不突破 19 页 |
-| OQ-2 | SQLite 方言取舍：`ON DUPLICATE KEY UPDATE` 等为 MySQL 方言 | v1.0 以 MySQL 为准（ADR-0006）；折叠 upsert 用可移植「先 UPDATE 后 INSERT」；SQLite 冒烟仅记录 |
-| OQ-3 | WP 6.0 下界本地未覆盖（本地两站均 WP 7.1） | 6.0 下界验证归 CI 矩阵；必要时后续增搭 6.0 站 |
-| OQ-4 | WooCommerce 11.x 双结账路径（Blocks/经典）× HPOS 组合 | 主验证站从「经典 + HPOS 默认」起步；Store API/Blocks 覆盖程度在 T2 如实记录 |
+| OQ-1 | 独立 Settings 页设立，页面上限解除（19→20 页，去重纪律保留） | ADR-0007 / `06` / U13 |
+| OQ-2 | MySQL-only，不做 SQLite 兼容承诺；浪涌折叠用 MySQL 原生 upsert | ADR-0007 / `05` / W6 |
+| OQ-3 | WP 6.0 下界维持；兼容成本被证实过高时经复审上调（触发点已记录于 ADR-0007） | ADR-0007 |
+| OQ-4 | 测试矩阵覆盖站长常用插件（E9 补装 + T2/T7 矩阵） | ADR-0007 / `11` |
+| Q-安全IP | 完整 IP 存储 + 展示脱敏 + 匿名化开关（默认完整） | ADR-0007 / `05` / W14 / V1 |
+| Q-访客身份 | cookie visitor_id（30 天，同意门控）为主 + 无 cookie 每日盐回退 | ADR-0007 / `05` / C5 |
+| Q-任务队列 | `Gr_Queue` 自适应（AS 嗅探 → WP-Cron + 互斥锁回落）；不打包 AS | ADR-0007 / `02` / S7 |
+| Q-v1.0 范围 | **四支柱首发**：探针 / A-B / CAPI / GeoIP 全进 v1.0 | ADR-0007 / `12` / 本表 |
+
+仍开放（非 v1.0 阻塞）：DB-IP 数据月度更新与构建流程（T8 前定稿）；Turnstile 渐进阈值（v1.2）；设备信号标签独立隐私评审（v1.3）。
 
 ## 9. 提交与验收纪律
 
