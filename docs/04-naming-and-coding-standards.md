@@ -246,7 +246,7 @@ $token = GreenPNG\Core\Secrets::get('meta_capi_token');
 5. **JIT i18n**：`load_plugin_textdomain()` 挂 `init@10`——WP 6.5+ 即时翻译加载合规（过早调用触发 `_doing_it_wrong`），WP 6.0 正常加载。
 6. **WooCommerce HPOS 通用写法**：一律 `wc_get_order($id)` + `$order->update_meta_data()` + `$order->save()`（经典/HPOS 双轨通用）；**禁止** `update_post_meta` 分支（多余且随 WC 演进漂移）。
 7. **WooCommerce 双结账挂载**：经典 `woocommerce_checkout_update_order_meta` + Blocks `woocommerce_store_api_checkout_update_order_from_request`（WC 11.1 实核存在）+ 终态 `woocommerce_payment_complete`（幂等锁在此）。
-8. **dbDelta 纪律**：每字段独占一行、关键字大写、`PRIMARY KEY  (id)` 双空格（WP 7.1 解析器已放宽为 `\s+`，双空格为 6.0 下界零成本保险）、索引字符列 ≤191、建表语句禁用外键。
+8. **dbDelta 纪律**：每字段独占一行且**以逗号分隔**（末行除外——dbDelta 对新表按原文执行 CREATE，无逗号即整表建表失败，MariaDB 12.3 实测）、整数类型带核心同款显示宽度（`BIGINT(20)` / `INT(10)` / `TINYINT(3)`；dbDelta 逐字比对 `DESCRIBE` 输出，MariaDB 全版本与 MySQL <8.0.17 宽度失配即每轮 `CHANGE COLUMN`，MySQL ≥8.0.17 由 dbDelta 显式忽略纯宽度差异）、关键字大写、`PRIMARY KEY  (id)` 双空格（WP 7.1 解析器已放宽为 `\s+`，双空格为 6.0 下界零成本保险）、索引字符列 ≤191、建表语句禁用外键。
 
 ## 4. JavaScript 规范
 

@@ -2,7 +2,7 @@
 
 > **唯一真源**：greenpng 的全部数据表以本文件为准。参考项目的 5/13/14/15 张表互相矛盾（见 `01` §5.1），本文件终结这种不一致。
 > **硬约束**：建表/改表只允许在激活与版本升级例程中通过 `dbDelta()` 执行；索引字符串列 ≤191 字符；一律 `$wpdb->get_charset_collate()`；运行时零 DDL。
-> **修订记录**：2026-09-09 依据 ADR-0007——安全日志完整 IP；身份双轨（visitor_id 主 + 每日盐回退）；补三处索引；明确 MySQL-only 方言。
+> **修订记录**：2026-09-09 依据 ADR-0007——安全日志完整 IP；身份双轨（visitor_id 主 + 每日盐回退）；补三处索引；明确 MySQL-only 方言。2026-09-10 S5 实测——整数列补显示宽度、字段行逗号分隔（dbDelta 幂等纪律，见 §3 引注）。
 
 ---
 
@@ -42,12 +42,14 @@
 ## 3. 关键表 DDL（示例基线）
 
 > 全部 DDL 经 `dbDelta()` 注册。**`PRIMARY KEY` 后写两个空格**（`PRIMARY KEY  (id)`）——WP 7.1 解析器已放宽为 `\s+`（`14` §1 实核），双空格为 WP 6.0 下界的保险写法，成本为零。其余表在实现时按同一模板补齐并在本文件登记。
+>
+> **整数显示宽度与逗号**（2026-09-10 S5 实测，MariaDB 12.3 / WP 7.1）：整数类型一律带核心同款显示宽度——`BIGINT(20)` / `INT(10)` / `TINYINT(3)`，显式 `TINYINT(1)` 布尔保持原样。dbDelta 逐字比对 `DESCRIBE` 输出：宽度失配在 MariaDB（全版本）与 MySQL <8.0.17 上每轮触发 `CHANGE COLUMN`；MySQL ≥8.0.17 由 dbDelta 显式忽略纯宽度差异（`wp-admin/includes/upgrade.php` 实核）。字段行以逗号分隔（末行除外）——dbDelta 对新表按原文执行 CREATE，无逗号即整表建表失败。
 
 ### 3.1 `gr_security_logs`（浪涌折叠日志）
 
 ```sql
 CREATE TABLE {$wpdb->prefix}gr_security_logs (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   fold_key CHAR(32) NOT NULL,
   ip VARBINARY(16) NOT NULL,
   rule_id VARCHAR(64) NOT NULL,
@@ -55,7 +57,7 @@ CREATE TABLE {$wpdb->prefix}gr_security_logs (
   user_agent VARCHAR(191) NOT NULL DEFAULT '',
   reason VARCHAR(191) NOT NULL DEFAULT '',
   action_taken VARCHAR(16) NOT NULL DEFAULT 'logged',
-  hit_count INT UNSIGNED NOT NULL DEFAULT 1,
+  hit_count INT(10) UNSIGNED NOT NULL DEFAULT 1,
   first_seen DATETIME NOT NULL,
   last_seen DATETIME NOT NULL,
   PRIMARY KEY  (id),
@@ -73,10 +75,10 @@ CREATE TABLE {$wpdb->prefix}gr_security_logs (
 
 ```sql
 CREATE TABLE {$wpdb->prefix}gr_sessions (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   visitor_id CHAR(64) NOT NULL,
   session_id CHAR(36) NOT NULL,
-  user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  user_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
   channel VARCHAR(32) NOT NULL DEFAULT 'direct',
   utm_source VARCHAR(191) NOT NULL DEFAULT '',
   utm_medium VARCHAR(191) NOT NULL DEFAULT '',
@@ -88,8 +90,8 @@ CREATE TABLE {$wpdb->prefix}gr_sessions (
   ua_family VARCHAR(64) NOT NULL DEFAULT '',
   country_code CHAR(2) NOT NULL DEFAULT '',
   is_bot TINYINT(1) NOT NULL DEFAULT 0,
-  bot_score TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  pageviews INT UNSIGNED NOT NULL DEFAULT 1,
+  bot_score TINYINT(3) UNSIGNED NOT NULL DEFAULT 0,
+  pageviews INT(10) UNSIGNED NOT NULL DEFAULT 1,
   started_at DATETIME NOT NULL,
   last_active DATETIME NOT NULL,
   PRIMARY KEY  (id),
@@ -111,15 +113,15 @@ CREATE TABLE {$wpdb->prefix}gr_sessions (
 
 ```sql
 CREATE TABLE {$wpdb->prefix}gr_conversions (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   source_type VARCHAR(16) NOT NULL,
-  source_id BIGINT UNSIGNED NOT NULL,
+  source_id BIGINT(20) UNSIGNED NOT NULL,
   session_id CHAR(36) NOT NULL DEFAULT '',
   visitor_id CHAR(64) NOT NULL DEFAULT '',
   amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   currency CHAR(3) NOT NULL DEFAULT 'USD',
-  first_touch_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  last_touch_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  first_touch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+  last_touch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
   model_weights TEXT NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY  (id),
