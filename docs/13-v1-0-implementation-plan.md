@@ -27,10 +27,10 @@
 | ID | 任务 | 状态 | 验收标准（实测） |
 | :--- | :--- | :--- | :--- |
 | E1 | MariaDB 安装（Homebrew） | ✅ | `mysql --version` 返回 MariaDB；安装日志无错误 |
-| E2 | MariaDB 服务 + 库/账号 | ⬜ | `mysql -e 'SELECT VERSION()'` 成功；`greenpng_site` 库与 `gr_site` 账号存在；凭据只存 `greenpng-dev/CREDENTIALS.txt`（仓库外，不入 git） |
-| E3 | MySQL 主验证站 | ⬜ | `http://localhost:8091` HTTP 200；`wp core version` 正常；站点位于 `/Users/macos/greenpng-dev/wordpress`（与仓库分离） |
-| E4 | 生态插件链接与激活 | ⬜ | 9 个生态插件 symlink 就位；激活 v1.0 相关的 woocommerce / fluentform / limit-login-attempts-reloaded；其余装入不激活 |
-| E5 | WP-CLI 工作方式固化 | ⬜ | `greenpng-dev/NOTES.md` 记录 PHPRC 内存方案与常用命令 |
+| E2 | MariaDB 服务 + 库/账号 | ✅ | 实测 2026-09-09：TCP 127.0.0.1:3306 `SELECT VERSION()` = 12.3.3-MariaDB；`greenpng_site` 库与 `gr_site`/`gr_admin` 账号存在；凭据只存 `greenpng-dev/CREDENTIALS.txt`（仓库外，600 权限，不入 git）。注：MariaDB 12 默认 skip-networking，已用 `/usr/local/etc/my.cnf.d/gr-dev.cnf` 显式 bind 127.0.0.1 + port 3306 开启 TCP |
+| E3 | MySQL 主验证站 | ✅ | 实测 2026-09-09：`http://localhost:8091` HTTP 200；`wp core version` = 7.1；站点位于 `/Users/macos/greenpng-dev/wordpress`（与仓库分离，frankenphp php-server :8091） |
+| E4 | 生态插件链接与激活 | ✅ | 实测 2026-09-09：9 个生态插件 symlink 就位；激活 woocommerce 11.1.0 / fluentform 6.2.13 / limit-login-attempts-reloaded 3.3.7；automatorwp / cartflows / fluent-crm / wp-slimstat / stream / user-submitted-posts 装入未激活 |
+| E5 | WP-CLI 工作方式固化 | ✅ | `greenpng-dev/NOTES.md` 已记录 PHPRC 内存方案、服务启停、环境事实 |
 | E6 | agy-suite 停用预案 | ⬜ | greenpng 首次装入任一测试站前执行 `wp plugin deactivate agy-suite`（站长已确认；在 S 骨架可激活时执行） |
 | E7 | greenpng 插件目录链接 | ⬜ | S1 完成后创建 `greenpng-dev/wordpress/wp-content/plugins/greenpng -> /Users/macos/greenpng/plugin` |
 | E8 | SQLite 兼容站保留 | ✅ | 现有 `:8090` 站（WP 7.1 + SQLite）原样保留为次要兼容环境，不作 v1.0 门禁 |
