@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
+use GreenPNG\Security\Gr_Ip_Resolver;
 
 if ( ! function_exists( 'gr' ) ) {
     /**
@@ -25,6 +26,17 @@ if ( ! function_exists( 'gr' ) ) {
      */
     function gr(): Gr_Plugin {
         return Gr_Plugin::instance();
+    }
+}
+
+if ( ! function_exists( 'gr_get_client_ip' ) ) {
+    /**
+     * Client IP under the trust policy (docs/03 §1, docs/10 §1).
+     *
+     * @return string
+     */
+    function gr_get_client_ip(): string {
+        return Gr_Ip_Resolver::resolve();
     }
 }
 

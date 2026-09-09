@@ -43,6 +43,13 @@ final class Gr_Plugin {
     private Gr_Event_Dispatcher $events;
 
     /**
+     * Settings service, wired at construction.
+     *
+     * @var Gr_Settings
+     */
+    private Gr_Settings $settings;
+
+    /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
      * every plugin file has loaded, so service wiring sees the full
      * runtime, including any Action Scheduler the host provides.
@@ -71,12 +78,24 @@ final class Gr_Plugin {
     }
 
     /**
+     * Test seam: drops the shared instance so the next instance() call
+     * rebuilds every service against fresh stub state. Production code
+     * never calls this — the container is request-scoped.
+     *
+     * @return void
+     */
+    public static function reset_instance(): void {
+        self::$instance = null;
+    }
+
+    /**
      * Private on purpose: the only sanctioned construction path is
      * instance(), which keeps gr() a true container accessor. Services
      * join here as their phases land (docs/02 §2.1 explicit wiring).
      */
     private function __construct() {
-        $this->events = new Gr_Event_Dispatcher( new Gr_Event_Repository() );
+        $this->events   = new Gr_Event_Dispatcher( new Gr_Event_Repository() );
+        $this->settings = new Gr_Settings();
     }
 
     /**
@@ -87,6 +106,16 @@ final class Gr_Plugin {
      */
     public function events(): Gr_Event_Dispatcher {
         return $this->events;
+    }
+
+    /**
+     * Settings service (docs/05 §6), exposed for gr() callers such as the
+     * IP resolver.
+     *
+     * @return Gr_Settings
+     */
+    public function settings(): Gr_Settings {
+        return $this->settings;
     }
 
     /**

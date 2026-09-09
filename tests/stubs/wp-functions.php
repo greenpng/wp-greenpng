@@ -82,6 +82,12 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_fired_action_args'] = array();
         $GLOBALS['gr_stub_filters']           = array();
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
+
+        // Services memoize their view of the stub stores, so the container
+        // itself restarts with them; harmless when nothing was built yet.
+        if ( class_exists( 'GreenPNG\Core\Gr_Plugin' ) ) {
+            GreenPNG\Core\Gr_Plugin::reset_instance();
+        }
     }
 }
 
@@ -91,6 +97,22 @@ if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
 
 if ( ! defined( 'ARRAY_A' ) ) {
     define( 'ARRAY_A', 'ARRAY_A' );
+}
+
+if ( ! function_exists( 'wp_unslash' ) ) {
+    /**
+     * Slash-stripping stand-in mirroring core's recursive behavior.
+     *
+     * @param string|array $value Value to unslash.
+     * @return string|array
+     */
+    function wp_unslash( $value ) {
+        if ( is_array( $value ) ) {
+            return array_map( 'wp_unslash', $value );
+        }
+
+        return stripslashes( (string) $value );
+    }
 }
 
 if ( ! function_exists( 'current_time' ) ) {

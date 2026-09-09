@@ -31,6 +31,8 @@ final class Ip_Resolver {
 - 后台设置项：`trusted_proxy_enabled`（默认关）、`trusted_proxy_cidrs`（默认空，预填按钮可一键填入 Cloudflare 官方段）。
 - Cloudflare 场景优先引导站长配置可信代理段，而不是盲信 `CF-Connecting-IP`。
 
+> 落地形态（2026-09-10，C3 实装）：设置键以 docs/05 §6 注册表为准——`trust_proxy_headers` / `trusted_proxies`（本节伪代码键名 `trusted_proxy_enabled` / `trusted_proxy_cidrs` 为示意写法）。CIDR 匹配原语为 `Gr_Ip_Matcher::match()` / `match_cidr()`（inet_pton 字节比较，IPv4 位运算与 IPv6 前缀同一循环；裸 IP 视为 /32 或 /128；v4/v6 永不互配）。右扫语义补充：无效跳（非 IP）与全可信链均回退 `REMOTE_ADDR`（不可伪造的底值）。
+
 ## 2. 凭据存储（修正缺陷 S3/S4）
 
 - 第三方 token 经 `Gr_Core_Secrets`（AES-256-GCM，密钥派生自 `wp_salt()`）加密后存 `autoload=no` 的 option。
