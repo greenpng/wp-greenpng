@@ -19,3 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! defined( 'GR_PLUGIN_DIR' ) ) {
     define( 'GR_PLUGIN_DIR', dirname( __DIR__ ) . '/plugin/' );
 }
+
+require_once __DIR__ . '/stubs/wp-functions.php';
+gr_stub_reset_options();
+
+require_once dirname( __DIR__ ) . '/plugin/includes/core/class-gr-autoloader.php';
+spl_autoload_register( array( 'GreenPNG\Core\Gr_Autoloader', 'load' ) );
