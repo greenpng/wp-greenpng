@@ -81,7 +81,8 @@
 ### 3.3 改完代码后（必须执行，不得跳过）
 ```bash
 # 1. 语法检查（全部 PHP 文件）
-find plugin -name '*.php' -print0 | xargs -0 -n1 php -l
+#    本机 php 为 FrankenPHP 构建，不支持 -l 旗标；插件文件首屏 ABSPATH 守卫使直接执行等价于 lint（全量编译 + 静默退出，语法错误即非零退出；详见 greenpng-dev/NOTES.md）
+find plugin -name '*.php' -print0 | xargs -0 -n1 php
 
 # 2. 编码规范检查
 vendor/bin/phpcs --standard=phpcs.xml.dist
