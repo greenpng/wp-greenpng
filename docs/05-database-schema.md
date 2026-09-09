@@ -107,6 +107,8 @@ CREATE TABLE {$wpdb->prefix}gr_sessions (
   - 主链路（同意门控）：`gr_attr` cookie 中的**签名 visitor_id**（30 天），跨天多触点归因据此计算；
   - 回退链路（无 cookie/无同意）：**每日旋转盐 + 匿名化 IP + UA 的 SHA-256**，无跨天关联（隐私收敛，文档与 UI 如实标注该口径差异）。
 - 在线访客数 = `SELECT COUNT(*) WHERE last_active > NOW() - 300`，走 `last_active` 索引范围扫描（iss-02 指出原设计缺该索引，正确，已补），**不写共享 transient**。
+
+> 落地形态（2026-09-10，C5 实装）：会话载体为 `gr_session` cookie（UUID、30 分钟滑窗，命名遵循 docs/04 §1 `gr_<用途>`）；回退轨身份 = `sha256(wp_salt | 当日 | 域分隔符 | 匿名化IP | UA)`；无 Consent API 宿主的营销同意回落 `marketing_consent_fallback` 设置开关（默认关，ADR-0005 §1）；在线数 cutoff 以显式 UTC `DateTime` 计算（对运行时时区变化免疫），实测 EXPLAIN type=range key=last_active。
 - `bot_score`/`is_bot`：探针安全结论（仅分值档位与布尔，无指纹明细）。
 
 ### 3.3 `gr_conversions`（转化与归因绑定）

@@ -57,6 +57,20 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         public array $results = array();
 
         /**
+         * Canned scalar returned by get_var(); tests set these per case.
+         *
+         * @var string|null
+         */
+        public $var_result = null;
+
+        /**
+         * Canned return of query(); tests set these per case.
+         *
+         * @var int|false
+         */
+        public $query_result = 0;
+
+        /**
          * Insert stand-in: records the call and fakes a successful write.
          *
          * @param string              $table  Table name.
@@ -79,6 +93,7 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         /**
          * Prepare stand-in: mirrors core's quoting for %s and int casting
          * for %d, then sprintf-substitutes; the built SQL is recorded.
+         * Accepts variadic args or one array of args, like core.
          *
          * @param string $query Query template with %s/%d placeholders.
          * @param mixed  ...$args Replacement values.
@@ -87,6 +102,10 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         public function prepare( $query, ...$args ) {
             if ( array() === $args ) {
                 return $query;
+            }
+
+            if ( 1 === count( $args ) && is_array( $args[0] ) ) {
+                $args = $args[0];
             }
 
             $values = array();
@@ -105,6 +124,18 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         }
 
         /**
+         * Write stand-in: records the SQL and returns the canned result.
+         *
+         * @param string $query SQL to run.
+         * @return int|false
+         */
+        public function query( $query ) {
+            $this->queries[] = (string) $query;
+
+            return $this->query_result;
+        }
+
+        /**
          * Read stand-in: records the SQL and returns the canned rows.
          *
          * @param string $query SQL to run.
@@ -115,6 +146,20 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
             $this->queries[] = (string) $query;
 
             return $this->results;
+        }
+
+        /**
+         * Scalar read stand-in: records the SQL and returns the canned value.
+         *
+         * @param string $query   SQL to run.
+         * @param int    $column  Column offset; ignored.
+         * @param int    $row     Row offset; ignored.
+         * @return string|null
+         */
+        public function get_var( $query, $column = 0, $row = 0 ) {
+            $this->queries[] = (string) $query;
+
+            return $this->var_result;
         }
     }
 }

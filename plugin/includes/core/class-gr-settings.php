@@ -42,26 +42,29 @@ final class Gr_Settings {
     public static function defaults(): array {
         return array(
             // Security track (legitimate interest; full IP storage by default).
-            'security_enabled'          => 1,
-            'security_action_mode'      => 'log',
-            'security_log_anonymize'    => 0,
-            'trust_proxy_headers'       => 0,
-            'trusted_proxies'           => array(),
+            'security_enabled'           => 1,
+            'security_action_mode'       => 'log',
+            'security_log_anonymize'     => 0,
+            'trust_proxy_headers'        => 0,
+            'trusted_proxies'            => array(),
 
             // Client probe: default on (safety signals only, Recital 49
             // basis; toggle + readme disclosure per ADR-0007).
-            'probe_enabled'             => 1,
+            'probe_enabled'              => 1,
 
             // Attribution (consent-gated at runtime; 30-day signed cookie).
-            'attribution_enabled'       => 1,
-            'attribution_cookie_days'   => 30,
-            'attribution_default_model' => 'last',
+            'attribution_enabled'        => 1,
+            'attribution_cookie_days'    => 30,
+            'attribution_default_model'  => 'last',
 
-            // Privacy: marketing-track IP anonymization on by default.
-            'marketing_ip_anonymize'    => 1,
+            // Privacy: marketing-track IP anonymization on by default;
+            // when the host has no Consent API, this stand-in toggle
+            // decides marketing tracking, defaulting to off (ADR-0005 §1).
+            'marketing_ip_anonymize'     => 1,
+            'marketing_consent_fallback' => 0,
 
             // Retention ceilings per table (docs/05 §5 dual-rail policy).
-            'retention_days'            => array(
+            'retention_days'             => array(
                 'security_logs'     => 30,
                 'sessions'          => 90,
                 'events'            => 30,

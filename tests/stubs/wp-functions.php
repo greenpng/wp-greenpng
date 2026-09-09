@@ -105,6 +105,40 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_has_consent' ) ) {
+    /**
+     * Consent lookup stand-in backed by $GLOBALS['gr_stub_consent'].
+     *
+     * @param string $purpose Purpose key.
+     * @return bool
+     */
+    function wp_has_consent( $purpose ) {
+        return (bool) ( $GLOBALS['gr_stub_consent'][ $purpose ] ?? false );
+    }
+}
+
+if ( ! function_exists( 'wp_generate_uuid4' ) ) {
+    /**
+     * UUID stand-in, overridable via $GLOBALS['gr_stub_uuid'].
+     *
+     * @return string
+     */
+    function wp_generate_uuid4() {
+        return $GLOBALS['gr_stub_uuid'] ?? '11111111-2222-4333-8444-555555555555';
+    }
+}
+
+if ( ! function_exists( 'is_ssl' ) ) {
+    /**
+     * TLS detection stand-in, overridable via $GLOBALS['gr_stub_is_ssl'].
+     *
+     * @return bool
+     */
+    function is_ssl() {
+        return (bool) ( $GLOBALS['gr_stub_is_ssl'] ?? false );
+    }
+}
+
 if ( ! function_exists( 'gr_stub_reset_options' ) ) {
     /**
      * Resets the stub stores between tests.
@@ -122,7 +156,13 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_fired_actions']     = array();
         $GLOBALS['gr_stub_fired_action_args'] = array();
         $GLOBALS['gr_stub_filters']           = array();
+        $GLOBALS['gr_stub_consent']           = array();
+        $GLOBALS['gr_stub_cookies']           = array();
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
+
+        // Overridable knobs (clock, uuid, tls) reset to their defaults so
+        // one test's override never leaks into the next.
+        unset( $GLOBALS['gr_stub_now'], $GLOBALS['gr_stub_uuid'], $GLOBALS['gr_stub_is_ssl'] );
 
         // Services memoize their view of the stub stores, so the container
         // itself restarts with them; harmless when nothing was built yet.
@@ -134,6 +174,10 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
 
 if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
     define( 'HOUR_IN_SECONDS', 3600 );
+}
+
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+    define( 'DAY_IN_SECONDS', 86400 );
 }
 
 if ( ! defined( 'ARRAY_A' ) ) {
@@ -158,13 +202,14 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 
 if ( ! function_exists( 'current_time' ) ) {
     /**
-     * Clock stand-in, fixed so event stamps are deterministic in tests.
+     * Clock stand-in, overridable via $GLOBALS['gr_stub_now'] so tests can
+     * cross day boundaries deterministically.
      *
      * @param string $type Time format type ('mysql' expected).
      * @return string
      */
     function current_time( $type ) {
-        return '2026-09-10 00:00:00';
+        return $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00';
     }
 }
 

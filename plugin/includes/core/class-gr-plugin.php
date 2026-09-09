@@ -16,8 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Attribution\Gr_Identity;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
+use GreenPNG\Storage\Gr_Session_Repository;
 
 /**
  * Owns the plugin's hook registrations; contains no business logic. The
@@ -48,6 +50,20 @@ final class Gr_Plugin {
      * @var Gr_Settings
      */
     private Gr_Settings $settings;
+
+    /**
+     * Visitor/session identity service, wired at construction.
+     *
+     * @var Gr_Identity
+     */
+    private Gr_Identity $identity;
+
+    /**
+     * Sessions repository, wired at construction.
+     *
+     * @var Gr_Session_Repository
+     */
+    private Gr_Session_Repository $sessions;
 
     /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
@@ -96,6 +112,8 @@ final class Gr_Plugin {
     private function __construct() {
         $this->events   = new Gr_Event_Dispatcher( new Gr_Event_Repository() );
         $this->settings = new Gr_Settings();
+        $this->identity = new Gr_Identity( $this->settings );
+        $this->sessions = new Gr_Session_Repository();
     }
 
     /**
@@ -116,6 +134,25 @@ final class Gr_Plugin {
      */
     public function settings(): Gr_Settings {
         return $this->settings;
+    }
+
+    /**
+     * Visitor/session identity (docs/05 §3.2 dual-track), for the
+     * attribution listener and the collect endpoint.
+     *
+     * @return Gr_Identity
+     */
+    public function identity(): Gr_Identity {
+        return $this->identity;
+    }
+
+    /**
+     * Sessions repository, for session upserts and the online count.
+     *
+     * @return Gr_Session_Repository
+     */
+    public function sessions(): Gr_Session_Repository {
+        return $this->sessions;
     }
 
     /**
