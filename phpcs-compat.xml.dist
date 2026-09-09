@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="GreenPNGCompat">
+    <description>PHP 7.4 compatibility gate (AGENTS §3.3 check #3). Wraps PHPCompatibilityWP so the standard resolves without relying on the dealerdirect plugin successfully writing CodeSniffer.conf (observed to fail locally).</description>
+
+    <config name="installed_paths" value="../../wp-coding-standards/wpcs,../../phpcompatibility/php-compatibility,../../phpcompatibility/phpcompatibility-wp,../../phpcompatibility/phpcompatibility-paragonie,../../phpcsstandards/phpcsextra,../../phpcsstandards/phpcsutils"/>
+
+    <rule ref="PHPCompatibilityWP"/>
+</ruleset>

@@ -10,6 +10,8 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       greenpng
  * Domain Path:       /languages
+ *
+ * @package GreenPNG
  */
 
 declare( strict_types = 1 );
@@ -32,7 +34,7 @@ if ( ! defined( 'GR_VERSION' ) ) {
  * everything the plugin would otherwise register is skipped after the return.
  */
 $gr_php_version_ok = version_compare( PHP_VERSION, '7.4', '>=' );
-$gr_wp_version_ok   = isset( $GLOBALS['wp_version'] ) && version_compare( (string) $GLOBALS['wp_version'], '6.0', '>=' );
+$gr_wp_version_ok  = isset( $GLOBALS['wp_version'] ) && version_compare( (string) $GLOBALS['wp_version'], '6.0', '>=' );
 
 if ( ! $gr_php_version_ok || ! $gr_wp_version_ok ) {
     add_action(

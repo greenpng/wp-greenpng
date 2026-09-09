@@ -1,0 +1,19 @@
+{
+    "name": "greenpng/greenpng",
+    "description": "Dev tooling for the greenpng WordPress plugin. The plugin itself ships with zero Composer runtime dependencies (ADR-0003).",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpcompatibility/php-compatibility": "^9.3",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpunit/phpunit": "^9.6",
+        "squizlabs/php_codesniffer": "^3.13",
+        "wp-coding-standards/wpcs": "^3.1"
+    }
+}

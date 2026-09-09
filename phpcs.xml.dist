@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="GreenPNG">
+    <description>greenpng coding standard: WordPress baseline with the deviations recorded in docs/04 §3.1 (4-space indent, no Yoda conditions, strict text domain, strict_types required).</description>
+
+    <!-- Scan target: the shipped plugin only; dev tooling and tests live outside (AGENTS §3.3 runs this without a path argument). -->
+    <file>plugin</file>
+    <exclude-pattern>*/assets/vendor/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <!-- 4-space policy: tab-width only affects how tab-equivalents are measured by other sniffs. -->
+    <arg name="tab-width" value="4"/>
+
+    <!-- Register the composer-installed standards explicitly: the dealerdirect
+         installer plugin has been observed to fail writing CodeSniffer.conf,
+         so the committed ruleset must be self-sufficient. Paths are relative
+         to the PHPCS package root, exactly as in CodeSniffer.conf. -->
+    <config name="installed_paths" value="../../wp-coding-standards/wpcs,../../phpcompatibility/php-compatibility,../../phpcompatibility/phpcompatibility-wp,../../phpcompatibility/phpcompatibility-paragonie,../../phpcsstandards/phpcsextra,../../phpcsstandards/phpcsutils"/>
+
+    <!-- Baseline: full WordPress standard (Core + Docs + Extra).
+         Sniff-level deviations live INSIDE the rule block: top-level
+         <exclude> does not reach sniffs pulled in transitively through other
+         standards' rulesets (verified empirically 2026-09-10). -->
+    <rule ref="WordPress">
+        <!-- docs/04 §3.1: 4 spaces instead of tabs. -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        <!-- docs/04 §3.1: Yoda conditions not required under strict_types. -->
+        <exclude name="WordPress.PHP.YodaConditions"/>
+        <!-- Local runner reality: Generic.PHP.Syntax shells out to `php -l`,
+             which this machine's FrankenPHP php build does not support (-l is
+             treated as a filename and stdin is never read, so the sniff
+             deadlocks; isolated by sniff-level bisect 2026-09-10). Syntax is
+             already enforced by AGENTS §3.3 check #1, so nothing is lost. -->
+        <exclude name="Generic.PHP.Syntax"/>
+        <!-- docs/04 §1.1: the gr_/GR_ short prefix family is a documented
+             decision (uniqueness verified against 226 audited plugins), but
+             PrefixAllGlobals hard-rejects prefixes shorter than its
+             unconfigurable MIN_PREFIX_LENGTH = 4 and drops them from its
+             valid list, misreporting every GR_* constant and $gr_* global as
+             unprefixed. The sniff is excluded; prefix discipline is enforced
+             by tests/Unit/PrefixDisciplineTest.php instead, which also runs
+             on the PHP 7.4 CI matrix. -->
+        <exclude name="WordPress.NamingConventions.PrefixAllGlobals"/>
+    </rule>
+    <rule ref="Generic.WhiteSpace.DisallowTabIndent"/>
+
+    <!-- docs/04 §1: exactly one text domain, enforced by the standard's i18n sniffs. -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="greenpng"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- docs/04 §2.1: declare(strict_types=1) required in every file. -->
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
+</ruleset>

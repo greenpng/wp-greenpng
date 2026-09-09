@@ -87,8 +87,8 @@ find plugin -name '*.php' -print0 | xargs -0 -n1 php
 # 2. 编码规范检查
 vendor/bin/phpcs --standard=phpcs.xml.dist
 
-# 3. PHP 7.4 兼容性检查
-vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4- plugin/
+# 3. PHP 7.4 兼容性检查（经 phpcs-compat.xml.dist 包装 PHPCompatibilityWP，标准解析不依赖 CodeSniffer.conf——本机 dealerdirect 插件写入会失败，见 NOTES.md）
+vendor/bin/phpcs --standard=phpcs-compat.xml.dist --runtime-set testVersion 7.4- plugin/
 
 # 4. 单元测试
 vendor/bin/phpunit

@@ -1,7 +1,7 @@
 # 13. v1.0 实施清单 (v1.0 Implementation Plan)
 
 > 本文把 `12-roadmap-free-v1.md`（2026-09-09 四支柱修订版）的 v1.0 范围拆解为**可独立验收的任务序列**，是 v1.0 开发期的工作真源：任务只做清单内的事，验收只认清单内的标准。
-> **修订记录**：2026-09-09 依据 ADR-0007 重构——新增客户端探针（C13）、A/B 引擎（C14–C15）、出网支柱（I1–I5）、独立 Settings 页（U13）、UA 引擎升级（W2）等；任务 61 → 85 项；§8 开放问题全部收口。2026-09-10 §2–§7 任务表补齐状态列（落实 §9 状态列纪律）。
+> **修订记录**：2026-09-09 依据 ADR-0007 重构——新增客户端探针（C13）、A/B 引擎（C14–C15）、出网支柱（I1–I5）、独立 Settings 页（U13）、UA 引擎升级（W2）等；任务 61 → 85 项；§8 开放问题全部收口。2026-09-10 §2–§7 任务表补齐状态列（落实 §9 状态列纪律）。2026-09-10 开发顺序调整（站长授权代理排序）：S9 提前使 §3.3 #2–#4 即时生效；S3 顺延至 S4–S7 之后统一接线服务。
 > 状态图例：⬜ 未开始 · 🔧 进行中 · ✅ 已验收（AGENTS.md §3.3 四项检查通过 **且** 验收标准实测达标；S1–S8 期间工具链未建（S9 交付），以检查 #1 与任务自身验收标准为准，#2–#4 自 S9 起强制补跑）。
 > 更新纪律：每完成一个任务，本表状态列随该任务的代码提交一并更新；禁止提前打勾；验收数字必须实测可复现（`AGENTS.md` §3.4）。
 
@@ -39,7 +39,7 @@
 
 | ID | 任务 | 状态 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| S1 | 主入口 | ✅ | `plugin/greenpng.php`：插件头（`Requires at least: 6.0`、`Requires PHP: 7.4`、GPLv2+）、`GR_VERSION`、ABSPATH 守卫、PHP/WP 门槛不满足时仅 admin notice 不致命 | `php -l` 通过；主验证站激活成功。实测 2026-09-10：双路语法检查通过（本机 FrankenPHP php 不支持 `-l` 旗标，改用直接执行至 ABSPATH 守卫的全量编译检查 + `token_get_all(TOKEN_PARSE)`，方法记入 NOTES.md）；:8091 `wp plugin activate greenpng` 成功；`wp eval` 实测 `GR_VERSION=1.0.0`、`GR_PLUGIN_DIR`/`GR_PLUGIN_URL` 已定义；前台 HTTP 200；debug.log 无本插件条目（grep 唯一命中为 09-09 旧 WooCommerce JIT 提示中的站点目录名 greenpng-dev，与本插件无关）。phpcs/phpunit 依图例注记待 S9 补跑 | `04` |
+| S1 | 主入口 | ✅ | `plugin/greenpng.php`：插件头（`Requires at least: 6.0`、`Requires PHP: 7.4`、GPLv2+）、`GR_VERSION`、ABSPATH 守卫、PHP/WP 门槛不满足时仅 admin notice 不致命 | `php -l` 通过；主验证站激活成功。实测 2026-09-10：双路语法检查通过（本机 FrankenPHP php 不支持 `-l` 旗标，改用直接执行至 ABSPATH 守卫的全量编译检查 + `token_get_all(TOKEN_PARSE)`，方法记入 NOTES.md）；:8091 `wp plugin activate greenpng` 成功；`wp eval` 实测 `GR_VERSION=1.0.0`、`GR_PLUGIN_DIR`/`GR_PLUGIN_URL` 已定义；前台 HTTP 200；debug.log 无本插件条目（grep 唯一命中为 09-09 旧 WooCommerce JIT 提示中的站点目录名 greenpng-dev，与本插件无关）。phpcs/phpunit 已随 S9 补跑通过（phpcs exit 0；EntryHeaderTest 5 tests 17 assertions OK） | `04` |
 | S2 | Autoloader | ⬜ | `includes/core/class-gr-autoloader.php`：`GreenPNG\` → `includes/<模块>/class-gr-<slug>.php` 映射，无 Composer | 任意注册类可加载；触发 spl_autoload 无警告 | `04`、ADR-0003 |
 | S3 | 主控类 | ⬜ | `includes/core/class-gr-plugin.php`：`plugins_loaded@10` 显式构造 ≤14 个服务（含 `Gr_Queue`）注入构造函数，无 DI 容器 | 服务清单静态可查（PHPStan 覆盖） | `02` §2.1 |
 | S4 | 设置服务 | ⬜ | `includes/core/class-gr-settings.php`：唯一 autoload=yes 的 `gr_settings`（默认值集中定义，≤8KB），含安全/探针/归因/隐私默认 | 激活后 option 存在；无第二个 autoload=yes 项 | `05` §6 |
@@ -47,7 +47,7 @@
 | S6 | 生命周期 | ⬜ | `class-gr-activator.php` / `class-gr-deactivator.php` / `uninstall.php` | 停用清 cron 不删数据；卸载默认保留数据，`gr_delete_data_on_uninstall=1` 时清空全部表与 option | `05` §4–5 |
 | S7 | 自适应队列 | ⬜ | `Gr_Queue` 门面：运行时嗅探 Action Scheduler（`function_exists('as_schedule_single_action')`）则入 AS；否则 `wp_schedule_single_event` + transient 互斥锁（TTL 300s）；`wp greenpng maintenance` 命令 | 双后端各实测一次任务派发；互斥锁防重入实测；停用后事件清除 | `02` §2.4、ADR-0007 |
 | S8 | readme + pot | ⬜ | `plugin/readme.txt`（含 `== External services ==` 段）、`languages/greenpng.pot` | readme 结构自查通过；text domain 一律 `greenpng` | `08` |
-| S9 | 规范工具链 | ⬜ | `composer.json`（仅 dev 依赖）+ `phpcs.xml.dist` + vendor 安装 | AGENTS §3.3 四项命令全部可运行（phpunit 允许空套件通过）；PHPCompatibilityWP 对 `str_*` 核心函数不误报（polyfill 白名单确认，`14` §1） | `11` §2 |
+| S9 | 规范工具链 | ✅ | `composer.json`（仅 dev 依赖）+ `phpcs.xml.dist` + `phpcs-compat.xml.dist` + `phpunit.xml.dist` + `tests/` + vendor 安装 | 实测 2026-09-10：§3.3 四项全绿（#2 phpcs exit 0、#3 PHPCompatibilityWP exit 0、#4 phpunit 10 tests 29 assertions OK；#1 见 S1 行）；`str_*` 夹具零误报（tests/fixtures/str_polyfill_fixture.php 实测 exit 0）。本机适配三项均实测定位并记入 NOTES.md：dealerdirect 写 conf 失败→installed_paths 双写 ruleset `<config>`；Generic.PHP.Syntax 因本机 `php -l` 坏死锁→块内 exclude（语法由 #1 覆盖）；PrefixAllGlobals MIN_PREFIX_LENGTH=4 硬拒短前缀→exclude + PrefixDisciplineTest 承接 | `11` §2 |
 | S10 | 打包脚本 | ⬜ | `tools/build-zip.sh`、`tools/bump-version.sh` | 产包排除 vendor/测试/文档；版本三处同步；DB-IP 数据文件与 CrawlerDetect 数据文件入包且 NOTICE 就位 | `02` §5 |
 
 ## 3. Phase 2 — 核心运行时 + 采集 / 归因 / A-B

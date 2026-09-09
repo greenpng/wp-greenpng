@@ -1,0 +1,12 @@
+# Dev tooling: installed, never committed (AGENTS §7).
+/vendor/
+/.phpunit.cache/
+/.phpunit.result.cache
+composer.phar
+
+# Build outputs (tools/build-zip.sh, S10).
+/dist/
+*.zip
+
+# OS noise.
+.DS_Store
