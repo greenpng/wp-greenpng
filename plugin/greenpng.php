@@ -69,3 +69,11 @@ if ( ! $gr_php_version_ok || ! $gr_wp_version_ok ) {
 require_once GR_PLUGIN_DIR . 'includes/core/class-gr-autoloader.php';
 
 spl_autoload_register( array( GreenPNG\Core\Gr_Autoloader::class, 'load' ) );
+
+/*
+ * Lifecycle: activation is the only sanctioned moment for first-install
+ * options and DDL (iron rule 3); deactivation clears scheduled work but
+ * never data. Array callbacks keep both hooks removable by other code.
+ */
+register_activation_hook( GR_PLUGIN_FILE, array( GreenPNG\Core\Gr_Activator::class, 'activate' ) );
+register_deactivation_hook( GR_PLUGIN_FILE, array( GreenPNG\Core\Gr_Deactivator::class, 'deactivate' ) );
