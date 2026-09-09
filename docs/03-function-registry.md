@@ -4,6 +4,7 @@
 > **与参考项目的关系**：本表以 wp-plug 原型中**真实存在**的 83 个 `agy_*` 函数为起点，按 `01-wp-plug-analysis-and-assessment.md` 的处置决议（保留/重构/降级/合并）重映射为 `gr_*`，并补齐其覆盖缺口。agy 命名到 gr 命名的完整对照见附录 A。
 >
 > **分层纪律**：`gr_*` 全局函数只是门面（≤3 行转发到类方法），业务逻辑在类里。REST 控制器与管理页渲染回调不在本表（见 `06` 与各自模块）。
+> **修订记录**：2026-09-10 类名统一为 `Gr_` 前缀（`class-gr-<slug>.php` 文件名与 WordPress.Files FileName 规则及 `02`/`13` 口径对齐）；§1 `gr()` 与 §2 `gr_dispatch_event()` 返回类型同步修正。
 
 ---
 
@@ -11,7 +12,7 @@
 
 | 函数 | 签名 | 说明 | 来源 |
 | :--- | :--- | :--- | :--- |
-| `gr()` | `gr(): GreenPNG\Core\Plugin` | 主容器访问器 | 改名自 `agy_kernel()` |
+| `gr()` | `gr(): GreenPNG\Core\Gr_Plugin` | 主容器访问器 | 改名自 `agy_kernel()` |
 | `gr_get_client_ip()` | `gr_get_client_ip(): string` | **重写**：默认仅 `REMOTE_ADDR`；仅在站长配置可信代理后才读代理头（修复缺陷 S1） | 重写 `agy_get_client_real_ip()` |
 | `gr_get_user_agent()` | `gr_get_user_agent(): string` | 消毒并截断至 512 字符 | 改名 |
 | `gr_generate_event_id()` | `gr_generate_event_id(string $prefix='gr', string $entropy=''): string` | `prefix_` + 16 字节随机 hex；用于幂等键 | 改名 |
@@ -22,7 +23,7 @@
 
 | 函数 | 签名 | 说明 | 来源 |
 | :--- | :--- | :--- | :--- |
-| `gr_dispatch_event()` | `gr_dispatch_event(string $name, array $payload=[]): GreenPNG\Core\Event` | 构造 DTO → 持久化（若该事件类型启用了落库）→ `do_action('gr_event', $event)` | 重构 `agy_dispatch_event()` |
+| `gr_dispatch_event()` | `gr_dispatch_event(string $name, array $payload=[]): GreenPNG\Core\Gr_Event` | 构造 DTO → 持久化（若该事件类型启用了落库）→ `do_action('gr_event', $event)` | 重构 `agy_dispatch_event()` |
 | `gr_get_recent_events()` | `gr_get_recent_events(string $name='', int $limit=50): array` | 读事件流水 | 改名 |
 
 > 废弃：`agy_listen_event()`（直接用 `add_action('gr_event', ...)`）、`agy_clear_event_history()`（清空语义由瘦身模块接管）。

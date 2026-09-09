@@ -59,3 +59,13 @@ if ( ! $gr_php_version_ok || ! $gr_wp_version_ok ) {
 
     return;
 }
+
+/*
+ * Zero Composer at runtime (ADR-0003): the hand-written autoloader maps
+ * GreenPNG\<Module>\<Class> to includes/<module>/class-gr-<slug>.php. This
+ * one file is required directly because nothing exists yet that could
+ * autoload it.
+ */
+require_once GR_PLUGIN_DIR . 'includes/core/class-gr-autoloader.php';
+
+spl_autoload_register( array( GreenPNG\Core\Gr_Autoloader::class, 'load' ) );

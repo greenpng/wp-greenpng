@@ -2,11 +2,20 @@
 /**
  * PHPUnit bootstrap.
  *
- * Why this stays nearly empty: unit tests must not need WordPress. Integration
- * tests boot the main verification site separately (docs/11 §3), so nothing
- * global is set up here.
+ * Unit tests must not need WordPress: the plugin files guard on ABSPATH, so
+ * a stand-in is defined here together with the plugin-dir constant the
+ * autoloader falls back to. Integration tests boot the main verification
+ * site separately (docs/11 §3).
  *
  * @package GreenPNG\Tests
  */
 
 declare( strict_types = 1 );
+
+if ( ! defined( 'ABSPATH' ) ) {
+    define( 'ABSPATH', dirname( __DIR__ ) . '/plugin/' );
+}
+
+if ( ! defined( 'GR_PLUGIN_DIR' ) ) {
+    define( 'GR_PLUGIN_DIR', dirname( __DIR__ ) . '/plugin/' );
+}
