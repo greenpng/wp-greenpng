@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
+use GreenPNG\Core\Gr_Request;
+use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Security\Gr_Ip_Resolver;
 
 if ( ! function_exists( 'gr' ) ) {
@@ -37,6 +39,56 @@ if ( ! function_exists( 'gr_get_client_ip' ) ) {
      */
     function gr_get_client_ip(): string {
         return Gr_Ip_Resolver::resolve();
+    }
+}
+
+if ( ! function_exists( 'gr_get_user_agent' ) ) {
+    /**
+     * Sanitized user agent, 512-char cap (docs/03 §1).
+     *
+     * @return string
+     */
+    function gr_get_user_agent(): string {
+        return Gr_Request::user_agent();
+    }
+}
+
+if ( ! function_exists( 'gr_generate_event_id' ) ) {
+    /**
+     * Idempotency-safe event id (docs/03 §1).
+     *
+     * @param string $prefix  Id prefix.
+     * @param string $entropy Determinism seed for replay convergence.
+     * @return string
+     */
+    function gr_generate_event_id( string $prefix = 'gr', string $entropy = '' ): string {
+        return Gr_Secrets::generate_event_id( $prefix, $entropy );
+    }
+}
+
+if ( ! function_exists( 'gr_hash_pii' ) ) {
+    /**
+     * Normalized SHA-256 for PII joins (docs/03 §1).
+     *
+     * @param string $value Raw value.
+     * @param string $type  PII kind.
+     * @return string
+     */
+    function gr_hash_pii( string $value, string $type ): string {
+        return Gr_Secrets::hash_pii( $value, $type );
+    }
+}
+
+if ( ! function_exists( 'gr_sign_hmac' ) ) {
+    /**
+     * HMAC-SHA256 signature (docs/03 §1).
+     *
+     * @param string $data   Payload being signed.
+     * @param string $secret Shared secret.
+     * @return string
+     */
+    function gr_sign_hmac( string $data, string $secret ): string {
+        return Gr_Secrets::sign_hmac( $data, $secret );
     }
 }
 

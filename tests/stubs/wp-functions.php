@@ -64,6 +64,47 @@ if ( ! function_exists( 'update_option' ) ) {
     }
 }
 
+if ( ! function_exists( 'delete_option' ) ) {
+    /**
+     * Option delete.
+     *
+     * @param string $name Option name.
+     * @return bool
+     */
+    function delete_option( $name ) {
+        $existed = array_key_exists( $name, $GLOBALS['gr_stub_options']['data'] );
+        unset( $GLOBALS['gr_stub_options']['data'][ $name ], $GLOBALS['gr_stub_options']['autoload'][ $name ] );
+
+        return $existed;
+    }
+}
+
+if ( ! function_exists( 'wp_salt' ) ) {
+    /**
+     * Salt stand-in, deterministic per scheme.
+     *
+     * @param string $scheme Salt scheme.
+     * @return string
+     */
+    function wp_salt( $scheme = 'auth' ) {
+        return 'stub-salt-' . $scheme;
+    }
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+    /**
+     * Text sanitization stand-in: strips tags and collapses whitespace.
+     *
+     * @param string $value Raw text.
+     * @return string
+     */
+    function sanitize_text_field( $value ) {
+        $clean = trim( strip_tags( (string) $value ) );
+
+        return (string) preg_replace( '/[\r\n\t ]+/', ' ', $clean );
+    }
+}
+
 if ( ! function_exists( 'gr_stub_reset_options' ) ) {
     /**
      * Resets the stub stores between tests.

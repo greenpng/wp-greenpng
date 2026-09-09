@@ -39,6 +39,8 @@ final class Ip_Resolver {
 - **禁止** `mock_*` 默认值；未配置 = 明确返回"未配置"错误并在设置页显示状态。
 - 诊断导出、日志、错误消息中一律脱敏（保留前后各 2 字符）。
 
+> 落地形态（2026-09-10，C4 实装）：类名 `GreenPNG\Core\Gr_Secrets`（本节 `Gr_Core_Secrets` 为示意写法）。信封格式 base64(iv 12B + GCM tag 16B + 密文)；密钥 `hash('sha256', wp_salt('auth') . '|greenpng-secrets', true)` 每次调用派生、任何路径不落盘；openssl 不可用时 `store()` 拒绝写入（不降级明文）、`reveal()` 回 ''（未配置态）。
+
 ## 3. 调试与测试端点（修正缺陷 S2）
 
 - **禁止**任何经 `$_GET` 触发的公开执行路径。测试代码不得随发布包分发（`build-zip.sh` 排除 `tests/`）。
