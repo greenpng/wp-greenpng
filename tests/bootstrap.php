@@ -21,7 +21,12 @@ if ( ! defined( 'GR_PLUGIN_DIR' ) ) {
 }
 
 require_once __DIR__ . '/stubs/wp-functions.php';
+require_once __DIR__ . '/stubs/wpdb-stub.php';
 gr_stub_reset_options();
 
 require_once dirname( __DIR__ ) . '/plugin/includes/core/class-gr-autoloader.php';
 spl_autoload_register( array( 'GreenPNG\Core\Gr_Autoloader', 'load' ) );
+
+// The global facades are plain functions, so the autoloader cannot reach
+// them; tests exercise them exactly like the entry file does.
+require_once dirname( __DIR__ ) . '/plugin/includes/gr-functions.php';

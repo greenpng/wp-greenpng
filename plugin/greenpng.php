@@ -71,6 +71,13 @@ require_once GR_PLUGIN_DIR . 'includes/core/class-gr-autoloader.php';
 spl_autoload_register( array( GreenPNG\Core\Gr_Autoloader::class, 'load' ) );
 
 /*
+ * Global gr_* facades are plain functions, so they cannot be autoloaded;
+ * the one facade file loads right after the autoloader and contains
+ * nothing but thin forwards (docs/03 layering discipline).
+ */
+require_once GR_PLUGIN_DIR . 'includes/gr-functions.php';
+
+/*
  * Lifecycle: activation is the only sanctioned moment for first-install
  * options and DDL (iron rule 3); deactivation clears scheduled work but
  * never data. Array callbacks keep both hooks removable by other code.

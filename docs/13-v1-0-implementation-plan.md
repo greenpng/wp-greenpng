@@ -55,7 +55,7 @@
 | ID | 任务 | 状态 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | C1 | 事件 DTO 与门面 | ⬜ | `class-gr-event.php`（私有属性+getter）+ `gr_dispatch_event()` / `gr_get_recent_events()` | 派发即 `do_action('gr_event', …)`；门面 ≤3 行转发 | `03` §2 |
-| C2 | 表名解析 + 容器门面 | ⬜ | `Database::table()` + `gr()` | 全仓库检索不到硬编码表名拼法 | `02` §2.3 |
+| C2 | 表名解析 + 容器门面 | ✅ | `Gr_Database::table()`（Core，不触 `$wpdb`，DDL 派生名单校验 + 请求内缓存）+ `Gr_Schema::resolve_table()`（Storage，注入式 prefix，未知名抛 `InvalidArgumentException`，可容忍 `gr_` 前缀两种写法）+ `gr()`（`Gr_Plugin::instance()` 惰性单例、私有构造；钩子注册仍只在 `plugins_loaded@10`）+ `includes/gr-functions.php` 门面文件（入口 require_once 加载，函数无法 autoload） | 实测 2026-09-10：:8091 `wp eval-file`——`table('events')`=`wp_gr_events`、`table('security_logs')`=`wp_gr_security_logs`、`table('gr_events')` 与短键等价、未知名 `evnts` 实抛异常、`gr()` 三重一致返回同一 `Gr_Plugin` 实例、解析名经 `SHOW TABLES LIKE` 实证存在；验收 grep：schema DDL 之外表名字面量与 `prefix . 'gr_` 拼接均 0 处；phpunit 57 tests 717 assertions（DatabaseTest 7 例）；PrefixDisciplineTest 同步升级（正则补 `function_exists` 守卫内的缩进定义 + `gr` 为 docs/03 §1 注册特例）；debug.log 探针残留清理（备份 .bak-c2）。执行序注：C2 先于 C1 提交——C1 仓储依赖本解析器 | `02` §2.3 |
 | C3 | IP 解析 | ⬜ | `Ip_Resolver` + `gr_get_client_ip()` | 默认仅 `REMOTE_ADDR`；伪造 XFF 无效；可信代理开启后右扫；4 场景单测 | `10`、`03` §1 |
 | C4 | 密钥与签名 | ⬜ | `Secrets`（wp_salt 派生）+ `gr_hash_pii` / `gr_sign_hmac` / `gr_generate_event_id` / `gr_get_user_agent` | 密钥明文不落库；HMAC 输出确定性可测 | `10` |
 | C5 | 身份与会话 | ⬜ | **身份双轨**：`gr_attr` cookie（签名 visitor_id，30 天，同意门控，HttpOnly + SameSite=Lax）为主身份；无 cookie 回退 = 每日旋转盐哈希（无跨天关联，`05` §3.2）。`gr_sessions` 仓储；在线数走 `last_active` 索引 COUNT | 有/无 cookie 两链路单测；在线数查询 EXPLAIN 走索引 | ADR-0007、`05` §3.2 |

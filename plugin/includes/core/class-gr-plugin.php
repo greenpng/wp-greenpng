@@ -19,9 +19,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Storage\Gr_Schema;
 
 /**
- * Owns the plugin's hook registrations; contains no business logic.
+ * Owns the plugin's hook registrations; contains no business logic. The
+ * shared instance behind gr() (docs/02 §2.3) is created lazily so the
+ * accessor is valid for any caller after the entry file has loaded, while
+ * hook registration still happens exactly once per request at
+ * plugins_loaded@10.
  */
 final class Gr_Plugin {
+
+    /**
+     * Shared controller instance returned by gr().
+     *
+     * @var Gr_Plugin|null
+     */
+    private static ?Gr_Plugin $instance = null;
 
     /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
@@ -31,9 +42,31 @@ final class Gr_Plugin {
      * @return void
      */
     public static function run(): void {
-        $plugin = new self();
+        $plugin = self::instance();
 
         $plugin->register_hooks();
+    }
+
+    /**
+     * The controller instance behind the gr() accessor. Lazily constructed:
+     * building services has no side effects, and hooks register only from
+     * run(), so an early caller receives services without double wiring.
+     *
+     * @return Gr_Plugin
+     */
+    public static function instance(): Gr_Plugin {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+    /**
+     * Private on purpose: the only sanctioned construction path is
+     * instance(), which keeps gr() a true container accessor.
+     */
+    private function __construct() {
     }
 
     /**

@@ -62,6 +62,8 @@ add_action('gr_event', [Scoring_Service::class, 'on_event']);
 - 领域层只面对 Repository 的方法签名（返回数组或 DTO），可脱离 WordPress 单测。
 - 表名统一由 `GreenPNG\Core\Database::table('security_logs')` 解析。
 
+> 落地形态（2026-09-10，C2 实装）：解析器为 `GreenPNG\Core\Gr_Database::table()`（Core 门面，不触 `$wpdb`，请求内缓存），实现在 `Gr_Schema::resolve_table()`（DDL 派生名单校验，未知名抛 `InvalidArgumentException`；可选 `gr_` 前缀等价）。`gr()` 返回 `Gr_Plugin::instance()`（惰性构造、私有构造函数；钩子注册仍仅经 `run()` 于 `plugins_loaded@10`）。
+
 ### 2.4 异步：自适应队列（ADR-0007），不自建也不教条排斥 Action Scheduler
 统一入口 `Gr_Queue::enqueue(string $hook, array $args = []): void`：
 1. 运行时嗅探：宿主已加载 Action Scheduler（`function_exists('as_schedule_single_action')`，如所有 WooCommerce 站）→ 入 AS 队列，享受其重试与并发锁；

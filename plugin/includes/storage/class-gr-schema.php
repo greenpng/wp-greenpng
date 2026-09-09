@@ -89,6 +89,35 @@ final class Gr_Schema {
     }
 
     /**
+     * Resolves a short table key ('events', 'security_logs') to its
+     * fully-prefixed name, validating it against the DDL-derived list so a
+     * typo fails loudly at the call site instead of producing a silent
+     * query against a table that does not exist. A leading "gr_" on the
+     * key is tolerated, so both spellings resolve identically.
+     *
+     * @param string $key    Short key, with or without a leading gr_.
+     * @param string $prefix Table prefix; empty reads $wpdb->prefix.
+     * @return string Fully-prefixed table name.
+     * @throws \InvalidArgumentException When the key matches no DDL object.
+     */
+    public static function resolve_table( string $key, string $prefix = '' ): string {
+        if ( '' === $prefix ) {
+            global $wpdb;
+            $prefix = (string) $wpdb->prefix;
+        }
+
+        $bare = str_starts_with( $key, 'gr_' ) ? substr( $key, 3 ) : $key;
+        $name = $prefix . 'gr_' . $bare;
+
+        if ( ! in_array( $name, self::table_names( $prefix ), true ) ) {
+            // phpcs:ignore WordPress.Security.EscapeOutput -- developer-facing exception text, not browser output; logs need the raw key.
+            throw new \InvalidArgumentException( 'Unknown greenpng table key: ' . $bare );
+        }
+
+        return $name;
+    }
+
+    /**
      * All 15 DDL statements in docs/05 §2 order. Prefix and charset are
      * injectable so unit tests can inspect the statements without WordPress.
      *

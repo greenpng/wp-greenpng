@@ -49,8 +49,15 @@ final class PrefixDisciplineTest extends TestCase {
     public function testGlobalFunctionsUseGrPrefix(): void {
         foreach ( $this->php_files as $file ) {
             $source = (string) file_get_contents( $file );
-            preg_match_all( '/^function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/m', $source, $matches );
+            // \s* so definitions inside function_exists() guards are also
+            // caught; guards otherwise hide facades from this discipline.
+            preg_match_all( '/^\s*function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/m', $source, $matches );
             foreach ( $matches[1] as $function ) {
+                if ( 'gr' === $function ) {
+                    // The bare container accessor is the one registered
+                    // short-name exception (docs/03 §1).
+                    continue;
+                }
                 self::assertStringStartsWith( 'gr_', $function, "global function {$function}() in {$file}" );
             }
         }

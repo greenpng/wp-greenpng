@@ -79,6 +79,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_cron']          = array();
         $GLOBALS['gr_stub_actions']       = array();
         $GLOBALS['gr_stub_fired_actions'] = array();
+        $GLOBALS['wpdb']                  = new Gr_Stub_Wpdb();
     }
 }
 
