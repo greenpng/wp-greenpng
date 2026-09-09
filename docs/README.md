@@ -31,6 +31,7 @@
 | 10 | [安全工程](10-security-engineering.md) | IP 解析、WAF 规则原则、密钥存储、nonce/能力模型 | ✅ |
 | 11 | [测试策略](11-testing-strategy.md) | 测试金字塔、工具链、通过标准 | ✅ |
 | 12 | [免费版路线图](12-roadmap-free-v1.md) | v1.0 → v1.3 分期交付计划 | ✅ |
+| 13 | [v1.0 实施清单](13-v1-0-implementation-plan.md) | v1.0 任务分解、验收标准、进度真源 | 🔧 |
 | ADR | [adr/](adr/) | 架构决策记录（编号递增，只增不改） | 持续 |
 
 ## ADR 索引
@@ -42,6 +43,7 @@
 | 0003 | [PHP 7.4+ / 零 Composer 运行时依赖](adr/0003-php74-no-composer-runtime.md) | 已接受 |
 | 0004 | [WP 原生后台 UI：不用 Tailwind/React/CDN](adr/0004-wp-native-admin-ui.md) | 已接受 |
 | 0005 | [追踪须同意门控，默认匿名化](adr/0005-consent-gated-tracking.md) | 已接受 |
+| 0006 | [本地开发与验证环境：MariaDB 主验证站 + SQLite 兼容站](adr/0006-local-test-environment.md) | 已接受 |
 
 ## 规范速查（违反即评审驳回）
 
