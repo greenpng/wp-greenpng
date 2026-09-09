@@ -66,7 +66,7 @@ if ( ! function_exists( 'update_option' ) ) {
 
 if ( ! function_exists( 'gr_stub_reset_options' ) ) {
     /**
-     * Resets the stub store between tests.
+     * Resets the stub stores between tests.
      *
      * @return void
      */
@@ -75,5 +75,172 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
             'data'     => array(),
             'autoload' => array(),
         );
+        $GLOBALS['gr_stub_transients']    = array();
+        $GLOBALS['gr_stub_cron']          = array();
+        $GLOBALS['gr_stub_actions']       = array();
+        $GLOBALS['gr_stub_fired_actions'] = array();
+    }
+}
+
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+    define( 'HOUR_IN_SECONDS', 3600 );
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+    /**
+     * Transient lookup.
+     *
+     * @param string $transient Transient name.
+     * @return mixed Stored value or false when missing.
+     */
+    function get_transient( $transient ) {
+        return $GLOBALS['gr_stub_transients'][ $transient ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+    /**
+     * Transient write. Expiration is not tracked in memory.
+     *
+     * @param string $transient  Transient name.
+     * @param mixed  $value      Value to store.
+     * @param int    $expiration Lifetime in seconds (ignored).
+     * @return bool
+     */
+    function set_transient( $transient, $value, $expiration = 0 ) {
+        $GLOBALS['gr_stub_transients'][ $transient ] = $value;
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+    /**
+     * Transient delete.
+     *
+     * @param string $transient Transient name.
+     * @return bool
+     */
+    function delete_transient( $transient ) {
+        unset( $GLOBALS['gr_stub_transients'][ $transient ] );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_schedule_single_event' ) ) {
+    /**
+     * One-shot cron scheduling.
+     *
+     * @param int              $timestamp Unix timestamp to run at.
+     * @param string           $hook      Hook to fire.
+     * @param array<int|string, mixed> $args Hook arguments.
+     * @return bool
+     */
+    function wp_schedule_single_event( $timestamp, $hook, $args = array() ) {
+        $GLOBALS['gr_stub_cron'][] = array(
+            'timestamp'  => (int) $timestamp,
+            'hook'       => $hook,
+            'args'       => $args,
+            'recurrence' => '',
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_schedule_event' ) ) {
+    /**
+     * Recurring cron scheduling.
+     *
+     * @param int              $timestamp First-run Unix timestamp.
+     * @param string           $recurrence Recurrence identifier.
+     * @param string           $hook       Hook to fire.
+     * @param array<int|string, mixed> $args Hook arguments.
+     * @return bool
+     */
+    function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
+        $GLOBALS['gr_stub_cron'][] = array(
+            'timestamp'  => (int) $timestamp,
+            'hook'       => $hook,
+            'args'       => $args,
+            'recurrence' => $recurrence,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+    /**
+     * Next scheduled run for a hook.
+     *
+     * @param string           $hook Hook to look up.
+     * @param array<int|string, mixed> $args Hook arguments.
+     * @return int|false Timestamp or false when not scheduled.
+     */
+    function wp_next_scheduled( $hook, $args = array() ) {
+        foreach ( $GLOBALS['gr_stub_cron'] as $event ) {
+            if ( $event['hook'] === $hook && $event['args'] === $args ) {
+                return $event['timestamp'];
+            }
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+    /**
+     * Removes every scheduled instance of a hook.
+     *
+     * @param string $hook Hook to clear.
+     * @return bool
+     */
+    function wp_clear_scheduled_hook( $hook ) {
+        $GLOBALS['gr_stub_cron'] = array_values(
+            array_filter(
+                $GLOBALS['gr_stub_cron'],
+                static function ( $event ) use ( $hook ): bool {
+                    return $event['hook'] !== $hook;
+                }
+            )
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'add_action' ) ) {
+    /**
+     * Hook registration (recorded, never executed).
+     *
+     * @param string                $hook_name     Hook to observe.
+     * @param callable|string|array $callback      Callback.
+     * @param int                   $priority      Priority.
+     * @param int                   $accepted_args Accepted argument count.
+     * @return bool
+     */
+    function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+        $GLOBALS['gr_stub_actions'][] = array(
+            'hook'     => $hook_name,
+            'callback' => $callback,
+            'priority' => $priority,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+    /**
+     * Hook execution (recorded only; callbacks are not invoked).
+     *
+     * @param string $hook_name Hook to fire.
+     * @param mixed  ...$extra_args Optional hook arguments.
+     * @return void
+     */
+    function do_action( $hook_name, ...$extra_args ) {
+        $GLOBALS['gr_stub_fired_actions'][] = $hook_name;
     }
 }

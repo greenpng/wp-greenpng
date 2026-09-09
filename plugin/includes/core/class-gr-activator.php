@@ -25,12 +25,14 @@ use GreenPNG\Storage\Gr_Schema;
 final class Gr_Activator {
 
     /**
-     * Installs the settings option and the physical schema.
+     * Installs the settings option, the physical schema, and the daily
+     * maintenance schedule.
      *
      * @return void
      */
     public static function activate(): void {
         Gr_Settings::install();
         Gr_Schema::install();
+        Gr_Queue::ensure_daily();
     }
 }

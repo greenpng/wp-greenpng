@@ -77,3 +77,15 @@ spl_autoload_register( array( GreenPNG\Core\Gr_Autoloader::class, 'load' ) );
  */
 register_activation_hook( GR_PLUGIN_FILE, array( GreenPNG\Core\Gr_Activator::class, 'activate' ) );
 register_deactivation_hook( GR_PLUGIN_FILE, array( GreenPNG\Core\Gr_Deactivator::class, 'deactivate' ) );
+
+/*
+ * Queue boot runs before any domain code so async dispatch and the daily
+ * routine exist no matter which service loads first; it is front-end safe
+ * because the schedule check reads an already-autoloaded option. The CLI
+ * registration is guarded and a no-op on web requests.
+ */
+GreenPNG\Core\Gr_Queue::boot();
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    GreenPNG\Core\Gr_Cli::register();
+}

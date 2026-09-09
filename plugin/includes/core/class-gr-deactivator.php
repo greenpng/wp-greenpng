@@ -20,18 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Gr_Deactivator {
 
     /**
-     * Daily maintenance event name (docs/05 §5). Declared here so the
-     * cleanup contract exists before the queue that schedules it.
-     */
-    public const DAILY_HOOK = 'gr_cron_daily_maintenance';
-
-    /**
-     * Clears the scheduled daily event: a deactivated plugin must leave no
-     * work behind, while its tables and options survive for re-activation.
+     * Clears the queue's schedules, mutex, and pending actions: a
+     * deactivated plugin must leave no work behind, while its tables and
+     * options survive for re-activation.
      *
      * @return void
      */
     public static function deactivate(): void {
-        wp_clear_scheduled_hook( self::DAILY_HOOK );
+        Gr_Queue::teardown();
     }
 }

@@ -13,6 +13,7 @@ namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Core\Gr_Activator;
 use GreenPNG\Core\Gr_Deactivator;
+use GreenPNG\Core\Gr_Queue;
 use GreenPNG\Storage\Gr_Uninstall;
 use PHPUnit\Framework\TestCase;
 
@@ -34,7 +35,10 @@ final class LifecycleTest extends TestCase {
     }
 
     public function testDailyMaintenanceHookNameMatchesDocs05(): void {
-        self::assertSame( 'gr_cron_daily_maintenance', Gr_Deactivator::DAILY_HOOK );
+        self::assertSame( 'gr_cron_daily_maintenance', Gr_Queue::DAILY_HOOK );
+        // The internal trigger hook must stay distinct from the public one
+        // so firing the public hook from inside the runner can never recurse.
+        self::assertNotSame( Gr_Queue::DAILY_HOOK, Gr_Queue::EVENT_HOOK );
     }
 
     public function testEntryFileRegistersLifecycleHooks(): void {
