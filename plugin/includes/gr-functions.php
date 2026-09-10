@@ -25,6 +25,7 @@ use GreenPNG\Funnel\Gr_Ab_Recorder;
 use GreenPNG\Funnel\Gr_Ab_Significance;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
+use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Scanner_Ua;
@@ -296,5 +297,46 @@ if ( ! function_exists( 'gr_match_cidr' ) ) {
      */
     function gr_match_cidr( string $ip, string $cidr ): bool {
         return Gr_Ip_Matcher::match_cidr( $ip, $cidr );
+    }
+}
+
+if ( ! function_exists( 'gr_is_trusted_ip' ) ) {
+    /**
+     * Allow-list facade (docs/03 §3): active allow rules whose IP
+     * value (CIDR or bare) covers the address.
+     *
+     * @param string $ip Candidate address.
+     * @return bool
+     */
+    function gr_is_trusted_ip( string $ip ): bool {
+        return Gr_Access_Rules::is_trusted_ip( $ip );
+    }
+}
+
+if ( ! function_exists( 'gr_is_ip_blocked' ) ) {
+    /**
+     * Ban facade (docs/03 §3): active ban rules covering the address.
+     * The allow list is evaluated first and always wins, so a trusted
+     * address never reads as blocked.
+     *
+     * @param string $ip Candidate address.
+     * @return bool
+     */
+    function gr_is_ip_blocked( string $ip ): bool {
+        return Gr_Access_Rules::is_ip_blocked( $ip );
+    }
+}
+
+if ( ! function_exists( 'gr_is_url_allowed' ) ) {
+    /**
+     * URL allow-list facade (docs/03 §3): plain values match one whole
+     * path segment onward, wildcard values match the whole URI with
+     * '*' as any run of characters.
+     *
+     * @param string $uri Request path, optionally with query.
+     * @return bool
+     */
+    function gr_is_url_allowed( string $uri ): bool {
+        return Gr_Access_Rules::is_url_allowed( $uri );
     }
 }
