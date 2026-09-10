@@ -146,7 +146,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
      * @return void
      */
     function gr_stub_reset_options(): void {
-        $GLOBALS['gr_stub_options'] = array(
+        $GLOBALS['gr_stub_options']           = array(
             'data'     => array(),
             'autoload' => array(),
         );
@@ -184,6 +184,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         }
         if ( class_exists( 'GreenPNG\Funnel\Gr_Ab_Experiments' ) ) {
             GreenPNG\Funnel\Gr_Ab_Experiments::reset_memo_for_tests();
+        }
+        if ( class_exists( 'GreenPNG\Security\Gr_Scanner_Ua' ) ) {
+            GreenPNG\Security\Gr_Scanner_Ua::reset_for_tests();
         }
     }
 }
@@ -332,9 +335,9 @@ if ( ! function_exists( 'shortcode_atts' ) ) {
      * attribute shortcodes must parse $atts directly, not through
      * this helper).
      *
-     * @param array<string, mixed>  $defaults Default attributes.
-     * @param array<string, mixed>  $atts     Given attributes.
-     * @param string                $tag      Shortcode tag, unused.
+     * @param array<string, mixed> $defaults Default attributes.
+     * @param array<string, mixed> $atts     Given attributes.
+     * @param string               $tag      Shortcode tag, unused.
      * @return array<string, mixed>
      */
     function shortcode_atts( $defaults, $atts, $tag = '' ) {
@@ -432,8 +435,8 @@ if ( ! function_exists( 'wp_schedule_single_event' ) ) {
     /**
      * One-shot cron scheduling.
      *
-     * @param int              $timestamp Unix timestamp to run at.
-     * @param string           $hook      Hook to fire.
+     * @param int                      $timestamp Unix timestamp to run at.
+     * @param string                   $hook      Hook to fire.
      * @param array<int|string, mixed> $args Hook arguments.
      * @return bool
      */
@@ -453,9 +456,9 @@ if ( ! function_exists( 'wp_schedule_event' ) ) {
     /**
      * Recurring cron scheduling.
      *
-     * @param int              $timestamp First-run Unix timestamp.
-     * @param string           $recurrence Recurrence identifier.
-     * @param string           $hook       Hook to fire.
+     * @param int                      $timestamp First-run Unix timestamp.
+     * @param string                   $recurrence Recurrence identifier.
+     * @param string                   $hook       Hook to fire.
      * @param array<int|string, mixed> $args Hook arguments.
      * @return bool
      */
@@ -475,7 +478,7 @@ if ( ! function_exists( 'wp_next_scheduled' ) ) {
     /**
      * Next scheduled run for a hook.
      *
-     * @param string           $hook Hook to look up.
+     * @param string                   $hook Hook to look up.
      * @param array<int|string, mixed> $args Hook arguments.
      * @return int|false Timestamp or false when not scheduled.
      */

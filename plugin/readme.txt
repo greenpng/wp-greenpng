@@ -76,6 +76,8 @@ This plugin performs no outbound requests by default. Each item below is opt-in 
 
 This plugin bundles a country-level IP geolocation database from DB-IP (https://db-ip.com/), used under CC BY 4.0. The exact data date is stated in the NOTICE file inside the plugin package.
 
+The scanner user-agent detection rules bundled in assets/data/ are seeded from JayBizzle/Crawler-Detect (https://github.com/JayBizzle/Crawler-Detect), used under the MIT license, and maintained locally from that seed. The NOTICE file inside the plugin package states the license, source, and data date.
+
 == Changelog ==
 
 = 1.0.0 =

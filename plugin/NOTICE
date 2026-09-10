@@ -1,0 +1,58 @@
+greenpng — bundled third-party data notices
+==================================================
+
+This file states the origin, license, and data date of every
+third-party data file shipped inside the plugin package, as required
+by the WordPress.org submission guidelines and docs/08.
+
+------------------------------------------------------------------
+1. Scanner user-agent rules — plugin/assets/data/
+------------------------------------------------------------------
+
+Files:
+  assets/data/gr-ua-crawlers.txt    (crawler patterns, matched
+                                     case-insensitively)
+  assets/data/gr-ua-exclusions.txt  (browser-token patterns stripped
+                                     from the agent before matching)
+
+Source:   JayBizzle/Crawler-Detect
+          https://github.com/JayBizzle/Crawler-Detect
+
+License:  MIT — Copyright (c) 2015-2020 Mark Beech (m@rkbee.ch)
+
+The pattern lists were extracted from the source's fixture arrays
+and re-hosted here as plain data under greenpng's own maintenance;
+each data file carries the copyright header inline. Behavior parity
+against the reference library was verified at extraction time
+(18/18 sample user agents identical verdicts).
+
+Data date: 2026-09-10 (1468 crawler patterns, 52 exclusion
+patterns). Later edits to these files are greenpng maintenance and
+are recorded in the repository changelog, not here.
+
+Permission notice (MIT, as required for substantial portions):
+
+  Permission is hereby granted, free of charge, to any person
+  obtaining a copy of this software and associated documentation
+  files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use,
+  copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software
+  is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+  OTHER DEALINGS IN THE SOFTWARE.
+
+------------------------------------------------------------------
+2. Country-level IP geolocation database (lands with the GeoIP
+   phase; the data date will be recorded here at that time)
+------------------------------------------------------------------

@@ -26,6 +26,7 @@ use GreenPNG\Funnel\Gr_Ab_Significance;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Ip_Resolver;
+use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 if ( ! function_exists( 'gr' ) ) {
@@ -265,5 +266,19 @@ if ( ! function_exists( 'gr_ab_significance' ) ) {
      */
     function gr_ab_significance( string $experiment ): array {
         return Gr_Ab_Significance::calculate( $experiment );
+    }
+}
+
+if ( ! function_exists( 'gr_is_scanner_ua' ) ) {
+    /**
+     * Scanner-UA facade (docs/07 §3): the self-maintained CrawlerDetect
+     * seed decides crawler verdicts locally; unreadable data or a PCRE
+     * failure reads as an ordinary visitor.
+     *
+     * @param string $ua Raw user agent.
+     * @return bool True when the agent matches a crawler pattern.
+     */
+    function gr_is_scanner_ua( string $ua ): bool {
+        return Gr_Scanner_Ua::is_scanner( $ua );
     }
 }

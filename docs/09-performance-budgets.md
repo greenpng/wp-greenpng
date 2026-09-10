@@ -29,6 +29,8 @@
 
 > 落地记录（2026-09-10，C13 实测）：`gr-probe.js` 安全模块（v1.0 部分，行为模块 v1.1 未计入）体积 = **raw 4247 B / gzip 1875 B**，≤ 8KB（gzip）预算余量 77%；`defer` 经 `script_loader_tag` filter 达成（WP 6.0 无 enqueue strategy，filter 路线全版本一致）；传输仅 `sendBeacon`，score=0 不发送（普通访客零 beacon 零事件行）。
 
+> 落地记录（2026-09-10，W2 实测，:8091 / WP 7.1）：UA 引擎每请求成本 = 数据装载 0.3–0.5ms（`file_get_contents`+`explode` 读 1468+52 行模式，请求内静态备忘一次编译）+ PCRE 首编译 ~3.3ms（**每进程一次**——PCRE 在进程内缓存编译产物，其后每判定 0.0023ms；真站 `init@10` 走查完成首编译后稳态实测 0.011ms/判定）。FPM 进程复用下 P95 ≈ 装载 0.5ms，≤5ms 预算内；冷进程首请求 3.6–3.9ms（装载+implode+首编译），随进程复用摊销。测量方法可复现：独立 PHP 进程 microtime 三段分解（load/compile/match）+ wp-cli 真进程稳态复测。
+
 ### 1.2 管理后台（本插件页面）
 
 | 指标 | 预算 |

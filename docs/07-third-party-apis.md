@@ -56,6 +56,8 @@ GreenPNG\Core\Http_Client::post('meta_capi', $endpoint, $payload);
 | BotD / FingerprintJS | **禁止复制源码**（BSL 1.1）。探针独立实现，仅借鉴信号思路（iss/PEER-01 评审确认） |
 | 前端第三方库 | 仅 MIT/BSD；本地打包 + 附未压缩源码 |
 
+> 落地形态（2026-09-10，W2 实装）：CrawlerDetect 种子提取 = `plugin/assets/data/gr-ua-crawlers.txt`（1468 条）+ `gr-ua-exclusions.txt`（52 条），各带 5 行 MIT 版权头（来源/许可/数据日期 2026-09-10）；包根 `plugin/NOTICE` 含完整 MIT 许可文本与提取说明，readme `== Attribution ==` 双处归属。提取脚本做 PHP 单引号反转义（`\\`→`\`，修正 `Zend\Http\Client` 一行的字节语义）并与参考库做行为对齐校验：18/18 样本判定全同（12 爬虫 + 6 真浏览器）。后续维护 = 直接编辑数据文件（greenpng 自维护，升级种子须重跑对齐校验）。
+
 ## 4. 隐私与同意门控（双轨，ADR-0007）
 
 1. **营销轨门控**：所有营销类追踪（UTM cookie、点击 ID、行为探针模块、CAPI/GA4 回传）必须先过 `GreenPNG\Privacy\Consent::allows('marketing')`（内部对接 WP Consent API，无 CMP 时回落到插件自带开关）。

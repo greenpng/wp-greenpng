@@ -109,6 +109,8 @@ interface Adapter_Interface {
 > 落地形态（2026-09-10，C11 实装）：表单三桥 = `Gr_Fluentforms_Adapter` / `Gr_Cf7_Adapter` / `Gr_Wpforms_Adapter`，共享 `Gr_Form_Adapter_Base`（`integrations/ecosystem/`）。回退-主配对机制统一为"停车哨兵"：回退钩命中只停入 pending + 挂一次 shutdown 检查；主钩命中立即处理并清 pending——**与两钩相对次序无关**（FF/WPForms 回退先发、CF7 回退后发，三序全兼容）；shutdown 时仍 pending 即主钩漂移 → 照常绑定 + `do_action('gr_bridge_drift', bridge_id, source_id)` 上报（绝不静默失效，状态页消费在 U 阶段）。绑定管线：cookie 轨身份 + `Gr_Consent` 门 + `Gr_Semantic_Extractor` 语义提取 amount/currency + `gr_conversions` UNIQUE 幂等（主+回退双发恒一行）。在位探针全部公开面零版本锁：`defined('FLUENTFORM')` / `function_exists('wpcf7')` / `function_exists('wpforms')`，三闸门在 `Gr_Plugin::register_hooks()` 先于类引用。CF7 无持久提交 id、WPForms 关闭条目存储时同——`synthetic_source_id()` 每请求铸一次，主/回退两钩同 id 保证双发幂等。CF7/WPForms 真站实测顺延 E9/T2（开发站无外网装不了本体）。
 >
 > 落地形态（2026-09-10，W1 实装）：请求检查器 = `GreenPNG\Security\Gr_Request_Inspector`（security 层，`init@10`，Gr_Plugin 容器服务 + `inspector()` getter）。双层 Throwable 隔离（帧级兜底 + 每检查独立 try，错误上 `gr_inspector_error`）；检测器注册面 = 公开 filter `gr_inspection_checks` 返回检查清单（真 WP 语义），发现规范化 rule_id/reason 两字段后经 `gr_security_findings` 出帧，W6 日志器订阅。门控：`is_admin` 跳过、`security_enabled` 关=零工作。默认仅记录（§4 档 1）。
+>
+> 落地形态（2026-09-10，W2 实装）：首个检测器 = `Gr_Scanner_Ua::register_detector()`（挂 `gr_inspection_checks`，`Gr_Plugin::register_hooks()` 接线）——rule_id `scanner_ua`、reason `ua:<命中片段>`；引擎为纯静态类，数据种子在 `assets/data/` 两文件（1468 爬虫 + 52 排除，带 MIT 版权头 + 包根 NOTICE），Exclusions 剥空短路（纯浏览器 token 永不进爬虫正则）；数据不可读或 PCRE 失败一律失败开放为无发现（见 §2.7）。
 
 ### 2.7 失败开放（Fail-Open），且明确边界
 - 分析/归因/行为链路：任何异常 → 记录日志、静默跳过，绝不影响前台渲染。
