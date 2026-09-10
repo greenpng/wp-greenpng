@@ -164,13 +164,14 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
         unset( $GLOBALS['gr_stub_nocache'] );
 
-        // Overridable knobs (clock, uuid, tls, ext-cache) reset to their
-        // defaults so one test's override never leaks into the next.
+        // Overridable knobs (clock, uuid, tls, ext-cache, rand) reset to
+        // their defaults so one test's override never leaks into the next.
         unset(
             $GLOBALS['gr_stub_now'],
             $GLOBALS['gr_stub_uuid'],
             $GLOBALS['gr_stub_is_ssl'],
-            $GLOBALS['gr_stub_ext_cache']
+            $GLOBALS['gr_stub_ext_cache'],
+            $GLOBALS['gr_stub_rand']
         );
 
         // Services memoize their view of the stub stores, so the container
@@ -219,6 +220,24 @@ if ( ! function_exists( 'current_time' ) ) {
      */
     function current_time( $type ) {
         return $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00';
+    }
+}
+
+if ( ! function_exists( 'wp_rand' ) ) {
+    /**
+     * Random int stand-in, overridable via $GLOBALS['gr_stub_rand'] so
+     * minted ids stay deterministic in tests.
+     *
+     * @param int $min Lower bound.
+     * @param int $max Upper bound.
+     * @return int
+     */
+    function wp_rand( $min = 0, $max = 0 ) {
+        if ( isset( $GLOBALS['gr_stub_rand'] ) ) {
+            return (int) $GLOBALS['gr_stub_rand'];
+        }
+
+        return mt_rand( (int) $min, (int) $max );
     }
 }
 

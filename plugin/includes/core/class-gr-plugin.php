@@ -19,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
+use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
+use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Storage\Gr_Conversion_Repository;
@@ -219,11 +222,20 @@ final class Gr_Plugin {
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
 
         // Ecosystem adapters register only when their target plugin
-        // actually boots on this site; the class_exists() gate runs
+        // actually boots on this site; each public-surface gate runs
         // BEFORE our adapter class is referenced, so sites without the
         // target never even load the adapter file (docs/02 §2.6).
         if ( class_exists( 'WooCommerce', false ) ) {
             ( new Gr_Woocommerce_Adapter( $this->identity, $this->attribution ) )->register_hooks();
+        }
+        if ( defined( 'FLUENTFORM' ) ) {
+            ( new Gr_Fluentforms_Adapter( $this->identity, $this->attribution ) )->register_hooks();
+        }
+        if ( function_exists( 'wpcf7' ) ) {
+            ( new Gr_Cf7_Adapter( $this->identity, $this->attribution ) )->register_hooks();
+        }
+        if ( function_exists( 'wpforms' ) ) {
+            ( new Gr_Wpforms_Adapter( $this->identity, $this->attribution ) )->register_hooks();
         }
 
         Gr_Cli::register();

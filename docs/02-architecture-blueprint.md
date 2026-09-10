@@ -105,6 +105,8 @@ interface Adapter_Interface {
 （三原则继承自 wp-plug 文档 27 的适配器原则并按站长 2026-09-09 指示强化。）
 
 > 落地形态（2026-09-10，C10 实装）：契约 = `GreenPNG\Integrations\Adapter_Interface`（`includes/integrations/class-gr-adapter-interface.php`，autoloader 的 Gr_ 前缀剥离对无前缀名同样产出 `class-gr-adapter-interface.php`）。首个适配器 = `Gr_Woocommerce_Adapter`（`integrations/ecosystem/`）：三挂载（经典 checkout meta + Store API + payment_complete），HPOS 两栖 CRUD 写法，回写仅 cookie 轨 visitor_id（write-once），绑定走 meta 锁 + UNIQUE 双防线 + `Gr_Consent` 门控，回调 `\Throwable` 隔离上报 `gr_adapter_error`。加载纪律：`Gr_Plugin::register_hooks()` 中 `class_exists('WooCommerce', false)` **先于**适配器类引用，无目标站点不加载适配器文件。实测注：Woo 自带的 Store API 监听器对 null request 会 fatal（真 Store API 恒传 request 对象）；探针/集成测试必须传真对象。
+>
+> 落地形态（2026-09-10，C11 实装）：表单三桥 = `Gr_Fluentforms_Adapter` / `Gr_Cf7_Adapter` / `Gr_Wpforms_Adapter`，共享 `Gr_Form_Adapter_Base`（`integrations/ecosystem/`）。回退-主配对机制统一为"停车哨兵"：回退钩命中只停入 pending + 挂一次 shutdown 检查；主钩命中立即处理并清 pending——**与两钩相对次序无关**（FF/WPForms 回退先发、CF7 回退后发，三序全兼容）；shutdown 时仍 pending 即主钩漂移 → 照常绑定 + `do_action('gr_bridge_drift', bridge_id, source_id)` 上报（绝不静默失效，状态页消费在 U 阶段）。绑定管线：cookie 轨身份 + `Gr_Consent` 门 + `Gr_Semantic_Extractor` 语义提取 amount/currency + `gr_conversions` UNIQUE 幂等（主+回退双发恒一行）。在位探针全部公开面零版本锁：`defined('FLUENTFORM')` / `function_exists('wpcf7')` / `function_exists('wpforms')`，三闸门在 `Gr_Plugin::register_hooks()` 先于类引用。CF7 无持久提交 id、WPForms 关闭条目存储时同——`synthetic_source_id()` 每请求铸一次，主/回退两钩同 id 保证双发幂等。CF7/WPForms 真站实测顺延 E9/T2（开发站无外网装不了本体）。
 
 ### 2.7 失败开放（Fail-Open），且明确边界
 - 分析/归因/行为链路：任何异常 → 记录日志、静默跳过，绝不影响前台渲染。
