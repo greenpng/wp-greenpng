@@ -16,13 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Attribution\Gr_Attribution_Models;
 use GreenPNG\Attribution\Gr_Attribution_Params;
-use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Security\Gr_Ip_Resolver;
-use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 if ( ! function_exists( 'gr' ) ) {
@@ -190,7 +188,6 @@ if ( ! function_exists( 'gr_bind_conversion' ) ) {
      * @return int
      */
     function gr_bind_conversion( int $order_id, string $visitor_id, float $amount, string $currency, string $source_type = 'woocommerce' ): int {
-        return ( new Gr_Attribution_Service( new Gr_Touchpoint_Repository(), new Gr_Conversion_Repository() ) )
-            ->bind( $order_id, $visitor_id, $amount, $currency, $source_type );
+        return gr()->attribution()->bind( $order_id, $visitor_id, $amount, $currency, $source_type );
     }
 }

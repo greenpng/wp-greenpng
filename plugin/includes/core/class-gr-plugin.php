@@ -16,9 +16,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Rest\Gr_Collect_Controller;
+use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
 use GreenPNG\Storage\Gr_Session_Repository;
@@ -76,6 +79,13 @@ final class Gr_Plugin {
     private Gr_Attribution_Listener $listener;
 
     /**
+     * Conversion binding service, wired at construction.
+     *
+     * @var Gr_Attribution_Service
+     */
+    private Gr_Attribution_Service $attribution;
+
+    /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
      * every plugin file has loaded, so service wiring sees the full
      * runtime, including any Action Scheduler the host provides.
@@ -124,6 +134,7 @@ final class Gr_Plugin {
         $this->settings = new Gr_Settings();
         $this->identity = new Gr_Identity( $this->settings );
         $this->sessions = new Gr_Session_Repository();
+        $this->attribution = new Gr_Attribution_Service( new Gr_Touchpoint_Repository(), new Gr_Conversion_Repository() );
         $this->listener = new Gr_Attribution_Listener(
             $this->identity,
             $this->sessions,
@@ -182,6 +193,16 @@ final class Gr_Plugin {
     }
 
     /**
+     * Conversion binding service (docs/02 §4), for adapters and the
+     * gr_bind_conversion facade.
+     *
+     * @return Gr_Attribution_Service
+     */
+    public function attribution(): Gr_Attribution_Service {
+        return $this->attribution;
+    }
+
+    /**
      * Registers every plugin-level hook. The schema upgrade gate mounts on
      * admin_init so steady-state front-end requests do zero DDL
      * (docs/05 §4); translations load at init@10 for WP 6.5+ JIT
@@ -196,6 +217,14 @@ final class Gr_Plugin {
         add_action( 'init', array( $this, 'load_translations' ) );
         add_action( 'rest_api_init', array( Gr_Collect_Controller::class, 'register_routes' ) );
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
+
+        // Ecosystem adapters register only when their target plugin
+        // actually boots on this site; the class_exists() gate runs
+        // BEFORE our adapter class is referenced, so sites without the
+        // target never even load the adapter file (docs/02 §2.6).
+        if ( class_exists( 'WooCommerce', false ) ) {
+            ( new Gr_Woocommerce_Adapter( $this->identity, $this->attribution ) )->register_hooks();
+        }
 
         Gr_Cli::register();
     }

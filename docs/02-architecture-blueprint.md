@@ -104,6 +104,8 @@ interface Adapter_Interface {
   3. 每个**主 Hook 配回退 Hook**，Hook 漂移时状态页可见告警，绝不静默失效。
 （三原则继承自 wp-plug 文档 27 的适配器原则并按站长 2026-09-09 指示强化。）
 
+> 落地形态（2026-09-10，C10 实装）：契约 = `GreenPNG\Integrations\Adapter_Interface`（`includes/integrations/class-gr-adapter-interface.php`，autoloader 的 Gr_ 前缀剥离对无前缀名同样产出 `class-gr-adapter-interface.php`）。首个适配器 = `Gr_Woocommerce_Adapter`（`integrations/ecosystem/`）：三挂载（经典 checkout meta + Store API + payment_complete），HPOS 两栖 CRUD 写法，回写仅 cookie 轨 visitor_id（write-once），绑定走 meta 锁 + UNIQUE 双防线 + `Gr_Consent` 门控，回调 `\Throwable` 隔离上报 `gr_adapter_error`。加载纪律：`Gr_Plugin::register_hooks()` 中 `class_exists('WooCommerce', false)` **先于**适配器类引用，无目标站点不加载适配器文件。实测注：Woo 自带的 Store API 监听器对 null request 会 fatal（真 Store API 恒传 request 对象）；探针/集成测试必须传真对象。
+
 ### 2.7 失败开放（Fail-Open），且明确边界
 - 分析/归因/行为链路：任何异常 → 记录日志、静默跳过，绝不影响前台渲染。
 - 安全拦截链路：同样失败开放，但**默认仅记录不拦截**（见 `10-security-engineering.md` §4 的拦截成熟度模型）。

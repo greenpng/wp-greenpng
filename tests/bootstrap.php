@@ -23,6 +23,7 @@ if ( ! defined( 'GR_PLUGIN_DIR' ) ) {
 require_once __DIR__ . '/stubs/wp-functions.php';
 require_once __DIR__ . '/stubs/wpdb-stub.php';
 require_once __DIR__ . '/stubs/rest-stubs.php';
+require_once __DIR__ . '/stubs/woo-stubs.php';
 require_once __DIR__ . '/stubs/attribution-overrides.php';
 gr_stub_reset_options();
 

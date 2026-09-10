@@ -160,6 +160,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_cookies']           = array();
         $GLOBALS['gr_stub_rest_routes']       = array();
         $GLOBALS['gr_stub_cache']             = array();
+        $GLOBALS['gr_stub_wc_orders']         = array();
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
         unset( $GLOBALS['gr_stub_nocache'] );
 
