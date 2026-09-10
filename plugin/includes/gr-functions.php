@@ -14,11 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Attribution\Gr_Attribution_Params;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Security\Gr_Ip_Resolver;
+use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 if ( ! function_exists( 'gr' ) ) {
     /**
@@ -115,5 +117,45 @@ if ( ! function_exists( 'gr_get_recent_events' ) ) {
      */
     function gr_get_recent_events( string $name = '', int $limit = 50 ): array {
         return gr()->events()->recent( $name, $limit );
+    }
+}
+
+if ( ! function_exists( 'gr_parse_attribution_params' ) ) {
+    /**
+     * Attribution parameter extraction (docs/03 §4).
+     *
+     * @param array<string, mixed> $params Raw query params.
+     * @return array<string, string>
+     */
+    function gr_parse_attribution_params( array $params ): array {
+        return Gr_Attribution_Params::parse( $params );
+    }
+}
+
+if ( ! function_exists( 'gr_record_touchpoint' ) ) {
+    /**
+     * Touchpoint write facade (docs/03 §4).
+     *
+     * @param string               $visitor_id Visitor identity.
+     * @param array<string, mixed> $params     Parsed attribution columns.
+     * @param string               $session_id Visit identity.
+     * @param string               $url        Landing URL.
+     * @return int
+     */
+    function gr_record_touchpoint( string $visitor_id, array $params, string $session_id = '', string $url = '' ): int {
+        return ( new Gr_Touchpoint_Repository() )->record( $visitor_id, $params, $session_id, $url );
+    }
+}
+
+if ( ! function_exists( 'gr_get_touchpoints' ) ) {
+    /**
+     * Touchpoint sequence facade (docs/03 §4).
+     *
+     * @param string $visitor_id Visitor identity.
+     * @param int    $days       Window in days.
+     * @return array<int, array<string, mixed>>
+     */
+    function gr_get_touchpoints( string $visitor_id, int $days = 30 ): array {
+        return ( new Gr_Touchpoint_Repository() )->get_for_visitor( $visitor_id, $days );
     }
 }

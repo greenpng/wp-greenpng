@@ -153,6 +153,8 @@ interface Adapter_Interface {
                 发出，失败按 30s/2m/15m 退避重试 3 次后放弃并记录
 ```
 
+> 落地形态（2026-09-10，C7 实装）：监听器 = `Gr_Attribution_Listener`（`template_redirect@10`）。门控两级——`attribution_enabled` 管所有营销写（cookie、触点、会话落地属性），`Gr_Consent::allows('marketing')`（DNT/Sec-GPC 一票否决 → Consent API → 回落开关）为同意检查点；**技术性会话滑动（last_active/pageviews）不经门控**（在线数为聚合计数）。参数解析 = `Gr_Attribution_Params` 纯函数（utm 五键 + 六种点击 ID 择一，渠道闭合词表：点击 ID 定 cpc/social → utm_medium 词表 → 外部引荐把 direct 升 referral（自家域排除在监听器）→ 兜底 direct/other）；`gr_parse_attribution_params()` 门面已就位（C8 仅剩 5 模型计算）。触点 = `Gr_Touchpoint_Repository`（列宽截断 + `get_for_visitor` 显式 UTC 窗口 + visitor_time 序读）。`Gr_Identity` 增请求内备忘：`issue()` 后同请求读 `visitor_id()/session_id()` 即见 cookie 轨身份（`$_COOKIE` 下一请求才回显，否则入口触点会落到每日回退轨、跨天断裂——实测修复项）。无同意路径实测：零 cookie、零触点、会话行仅技术字段。
+
 ## 5. 部署与打包
 
 - 仓库内 `plugin/` 目录即发布内容；`tools/build-zip.sh` 产出上传包（排除 `vendor/`（dev）、测试、文档）。

@@ -33,4 +33,18 @@ final class Gr_Request {
 
         return substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ), 0, 512 );
     }
+
+    /**
+     * Sanitized Referer header value, truncated to 512 characters; the
+     * host extraction and external-link decision belong to the caller.
+     *
+     * @return string
+     */
+    public static function referrer(): string {
+        if ( ! isset( $_SERVER['HTTP_REFERER'] ) ) {
+            return '';
+        }
+
+        return substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) ), 0, 512 );
+    }
 }

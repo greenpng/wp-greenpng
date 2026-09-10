@@ -221,6 +221,31 @@ if ( ! function_exists( 'current_time' ) ) {
     }
 }
 
+if ( ! function_exists( 'home_url' ) ) {
+    /**
+     * Site home URL stand-in for a fixed host root.
+     *
+     * @param string $path Optional path.
+     * @return string
+     */
+    function home_url( $path = '' ) {
+        return 'https://stub.example/' . ltrim( (string) $path, '/' );
+    }
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+    /**
+     * URL parsing stand-in delegating to PHP's parse_url.
+     *
+     * @param string $url  The URL to parse.
+     * @param int    $component Component to return.
+     * @return mixed
+     */
+    function wp_parse_url( $url, $component = -1 ) {
+        return parse_url( (string) $url, $component );
+    }
+}
+
 if ( ! function_exists( 'wp_json_encode' ) ) {
     /**
      * JSON encoding stand-in mirroring the core signature.

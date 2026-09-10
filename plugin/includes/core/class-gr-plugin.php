@@ -16,11 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
 use GreenPNG\Storage\Gr_Session_Repository;
+use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 /**
  * Owns the plugin's hook registrations; contains no business logic. The
@@ -65,6 +67,13 @@ final class Gr_Plugin {
      * @var Gr_Session_Repository
      */
     private Gr_Session_Repository $sessions;
+
+    /**
+     * Attribution listener, wired at construction.
+     *
+     * @var Gr_Attribution_Listener
+     */
+    private Gr_Attribution_Listener $listener;
 
     /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
@@ -115,6 +124,12 @@ final class Gr_Plugin {
         $this->settings = new Gr_Settings();
         $this->identity = new Gr_Identity( $this->settings );
         $this->sessions = new Gr_Session_Repository();
+        $this->listener = new Gr_Attribution_Listener(
+            $this->identity,
+            $this->sessions,
+            new Gr_Touchpoint_Repository(),
+            $this->settings
+        );
     }
 
     /**
@@ -157,6 +172,16 @@ final class Gr_Plugin {
     }
 
     /**
+     * Attribution listener (docs/02 §4), for the template_redirect hook
+     * and tests.
+     *
+     * @return Gr_Attribution_Listener
+     */
+    public function listener(): Gr_Attribution_Listener {
+        return $this->listener;
+    }
+
+    /**
      * Registers every plugin-level hook. The schema upgrade gate mounts on
      * admin_init so steady-state front-end requests do zero DDL
      * (docs/05 §4); translations load at init@10 for WP 6.5+ JIT
@@ -170,6 +195,7 @@ final class Gr_Plugin {
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
         add_action( 'rest_api_init', array( Gr_Collect_Controller::class, 'register_routes' ) );
+        add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
 
         Gr_Cli::register();
     }

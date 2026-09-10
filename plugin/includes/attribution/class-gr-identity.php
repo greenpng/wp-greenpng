@@ -51,6 +51,23 @@ final class Gr_Identity {
     private Gr_Settings $settings;
 
     /**
+     * Visitor id issued during this request, memoized so same-request
+     * readers see the cookie-track identity even though $_COOKIE only
+     * echoes it on the next request.
+     *
+     * @var string|null
+     */
+    private ?string $issued_visitor_id = null;
+
+    /**
+     * Session id issued during this request, memoized for the same
+     * reason as the visitor id.
+     *
+     * @var string|null
+     */
+    private ?string $issued_session_id = null;
+
+    /**
      * Wires the settings service.
      *
      * @param Gr_Settings $settings Injected for testability.
@@ -66,6 +83,10 @@ final class Gr_Identity {
      * @return string
      */
     public function visitor_id(): string {
+        if ( null !== $this->issued_visitor_id ) {
+            return $this->issued_visitor_id;
+        }
+
         $cookie = $this->verified_visitor_cookie();
         if ( '' !== $cookie ) {
             return $cookie;
@@ -81,6 +102,10 @@ final class Gr_Identity {
      * @return string
      */
     public function session_id(): string {
+        if ( null !== $this->issued_session_id ) {
+            return $this->issued_session_id;
+        }
+
         if ( isset( $_COOKIE[ self::SESSION_COOKIE ] ) ) {
             $sid = sanitize_text_field( wp_unslash( $_COOKIE[ self::SESSION_COOKIE ] ) );
             if ( preg_match( self::SESSION_ID_PATTERN, $sid ) === 1 ) {
@@ -118,6 +143,11 @@ final class Gr_Identity {
             $visitor_id = bin2hex( random_bytes( 16 ) );
         }
 
+        // Same-request visibility: the campaign entry that triggered
+        // this issue must land on the cookie track, not the daily
+        // fallback (docs/05 §3.2 primary track).
+        $this->issued_visitor_id = $visitor_id;
+
         $days = (int) $this->settings->get( 'attribution_cookie_days' );
         $days = max( 1, min( $days, 365 ) );
 
@@ -127,6 +157,8 @@ final class Gr_Identity {
         if ( preg_match( self::SESSION_ID_PATTERN, $session_id ) !== 1 ) {
             $session_id = wp_generate_uuid4();
         }
+
+        $this->issued_session_id = $session_id;
 
         $this->send_cookie( self::SESSION_COOKIE, $session_id, time() + self::SESSION_WINDOW );
     }
