@@ -612,7 +612,11 @@ if ( ! function_exists( 'apply_filters' ) ) {
 
 if ( ! function_exists( 'do_action' ) ) {
     /**
-     * Hook execution (recorded only; callbacks are not invoked).
+     * Hook execution: the firing is recorded AND the registered
+     * callbacks run, in priority order (stable for equal priorities,
+     * like core). Callbacks receive every argument; PHP ignores the
+     * extras, matching core's accepted_args behavior for tests that
+     * do not declare variadics.
      *
      * @param string $hook_name Hook to fire.
      * @param mixed  ...$extra_args Optional hook arguments.
@@ -624,5 +628,28 @@ if ( ! function_exists( 'do_action' ) ) {
             'hook' => $hook_name,
             'args' => $extra_args,
         );
+
+        $matched = array();
+        $seq     = 0;
+        foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
+            if ( $hook_name === (string) $registration['hook'] ) {
+                $matched[] = array( (int) $registration['priority'], $seq++, $registration['callback'] );
+            }
+        }
+
+        // Decorated sort keeps equal priorities in registration order
+        // (usort alone is not stable before PHP 8.0).
+        usort(
+            $matched,
+            static function ( $a, $b ) {
+                return array( $a[0], $a[1] ) <=> array( $b[0], $b[1] );
+            }
+        );
+
+        foreach ( $matched as $registration ) {
+            if ( is_callable( $registration[2] ) ) {
+                $registration[2]( ...$extra_args );
+            }
+        }
     }
 }

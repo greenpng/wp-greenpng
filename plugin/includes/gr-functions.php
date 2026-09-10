@@ -30,6 +30,7 @@ use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Security\Gr_Temp_Bans;
+use GreenPNG\Storage\Gr_Security_Log_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 if ( ! function_exists( 'gr' ) ) {
@@ -367,5 +368,23 @@ if ( ! function_exists( 'gr_unblock_ip' ) ) {
      */
     function gr_unblock_ip( string $ip ): void {
         Gr_Temp_Bans::unblock( $ip );
+    }
+}
+
+if ( ! function_exists( 'gr_log_security_event' ) ) {
+    /**
+     * Surge-fold log facade (docs/03 §3): one atomic upsert per hit —
+     * the fold collapses row count under md5(ip|rule|hour), never the
+     * number of writes.
+     *
+     * @param string $ip      Client address as text.
+     * @param string $rule_id Rule identifier.
+     * @param string $url     Request path.
+     * @param string $ua      User agent.
+     * @param string $reason  Free-text cause.
+     * @return void
+     */
+    function gr_log_security_event( string $ip, string $rule_id, string $url = '', string $ua = '', string $reason = '' ): void {
+        ( new Gr_Security_Log_Repository() )->log( $ip, $rule_id, $url, $ua, $reason );
     }
 }

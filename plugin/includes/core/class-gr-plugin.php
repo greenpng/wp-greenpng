@@ -28,9 +28,11 @@ use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Rest\Gr_Probe_Script;
 use GreenPNG\Security\Gr_Request_Inspector;
 use GreenPNG\Security\Gr_Scanner_Ua;
+use GreenPNG\Security\Gr_Security_Logger;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
+use GreenPNG\Storage\Gr_Security_Log_Repository;
 use GreenPNG\Storage\Gr_Session_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
@@ -245,6 +247,7 @@ final class Gr_Plugin {
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
         $this->inspector->register_hooks();
         Gr_Scanner_Ua::register_detector();
+        ( new Gr_Security_Logger( new Gr_Security_Log_Repository() ) )->register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs
