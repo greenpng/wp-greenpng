@@ -25,6 +25,7 @@ use GreenPNG\Funnel\Gr_Ab_Recorder;
 use GreenPNG\Funnel\Gr_Ab_Significance;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
+use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
@@ -280,5 +281,20 @@ if ( ! function_exists( 'gr_is_scanner_ua' ) ) {
      */
     function gr_is_scanner_ua( string $ua ): bool {
         return Gr_Scanner_Ua::is_scanner( $ua );
+    }
+}
+
+if ( ! function_exists( 'gr_match_cidr' ) ) {
+    /**
+     * CIDR facade (docs/03 §3): one address against one CIDR (or bare
+     * IP); IPv4 and IPv6 share the byte-prefix comparison, and the two
+     * families never intermatch.
+     *
+     * @param string $ip   Candidate address.
+     * @param string $cidr CIDR ('a.b.c.d/nn', 'x::/nn') or bare IP.
+     * @return bool
+     */
+    function gr_match_cidr( string $ip, string $cidr ): bool {
+        return Gr_Ip_Matcher::match_cidr( $ip, $cidr );
     }
 }
