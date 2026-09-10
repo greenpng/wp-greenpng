@@ -133,6 +133,8 @@ CREATE TABLE {$wpdb->prefix}gr_conversions (
 ```
 
 - `UNIQUE KEY source_unique (source_type, source_id)` 保证同一订单/表单提交重放不产生重复归因（HPOS 安全的 meta 幂等锁之外的第二道防线）。
+
+> 落地形态（2026-09-10，C9 实装）：写入 = `Gr_Conversion_Repository::bind()` 的 `INSERT IGNORE` + insert_id>0 直返、否则按 (source_type, source_id) 回查既存 id（重放恒返同 id；被吞的插入仍消耗自增值，非缺陷）。组合 = `Gr_Attribution_Service`（30 天回看触点 → 五模型 `model_weights` JSON + first/last_touch_id 随行；直连访客 0/0 + 空模型）。实测：同一 order 双绑定 conversion_rows=1 且两次同 id。meta 锁（`_gr_attributed`）由 C10 适配器持有，与本表防线互补。
 - `model_weights` 存 5 模型分配结果 JSON，由 `gr_calculate_attribution()` 产出。
 - `visitor_id` 与触点表一致（cookie 主链路身份），保证跨天归因 join 成立。
 
