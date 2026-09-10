@@ -56,6 +56,8 @@
 | `gr_calculate_attribution()` | `gr_calculate_attribution(array $touchpoints, float $amount): array` | 5 模型：first/last/linear/position-based(40/20/40)/time-decay(7 日半衰) | 改名 |
 | `gr_bind_conversion()` | `gr_bind_conversion(int $order_id, string $visitor_id, float $amount, string $currency): int` | 订单↔归因永久绑定，UNIQUE 幂等 | 改名自 `agy_attr_bind_order()` |
 
+> 落地形态（2026-09-10，C7/C8 实装）：§4 前四个门面全部就位——`gr_parse_attribution_params` → `Gr_Attribution_Params::parse()`（渠道闭合词表：点击 ID 定 cpc/social → utm_medium 词表 → 外部引荐 direct 升 referral → 兜底 direct/other；`apply_referrer()` 纯函数）；`gr_record_touchpoint`/`gr_get_touchpoints` → `Gr_Touchpoint_Repository`；`gr_calculate_attribution` → `Gr_Attribution_Models::calculate()`（5 模型一次算齐，返回 `model => [touchpoint_id => {weight, amount}]`；**分币对账**使每模型合计恒等转化金额——逐点 floor 到分、缺分按权重降序平手给更晚触点；时间衰减 = `0.5^(age_days/7)` 相对最新触点；输入内排序 created_at+id）。position-based 退化口径：n=1 全取、n=2 五五、n≥3 40/20/40。`gr_bind_conversion` 于 C9 落地。
+
 ## 5. 转化漏斗（Funnel）——含原型完全缺失的部分
 
 | 函数 | 签名 | 说明 | 来源 |

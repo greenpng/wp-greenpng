@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Attribution\Gr_Attribution_Models;
 use GreenPNG\Attribution\Gr_Attribution_Params;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
@@ -157,5 +158,18 @@ if ( ! function_exists( 'gr_get_touchpoints' ) ) {
      */
     function gr_get_touchpoints( string $visitor_id, int $days = 30 ): array {
         return ( new Gr_Touchpoint_Repository() )->get_for_visitor( $visitor_id, $days );
+    }
+}
+
+if ( ! function_exists( 'gr_calculate_attribution' ) ) {
+    /**
+     * Five-model attribution split facade (docs/03 §4).
+     *
+     * @param array<int, array<string, mixed>> $touchpoints Touchpoint rows.
+     * @param float                            $amount      Conversion amount.
+     * @return array<string, array<int, array{weight: float, amount: float}>>
+     */
+    function gr_calculate_attribution( array $touchpoints, float $amount ): array {
+        return Gr_Attribution_Models::calculate( $touchpoints, $amount );
     }
 }
