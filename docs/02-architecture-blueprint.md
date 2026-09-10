@@ -85,6 +85,8 @@ POST /wp-json/greenpng/v1/collect
 - 探针用 `navigator.sendBeacon(url, new Blob([json], {type:'application/json'}))`，保证 WP REST 能解析 JSON body。
 **理由**：wp-plug 的独立 `collect.php`（绕过 WP 引导）在审核与主机兼容性上都是雷区；无防护的公开写端点是数据库灌水通道。
 
+> 落地形态（2026-09-10，C6 实装）：`Gr_Collect_Controller`（Rest 层）。permission 阶段即三重防护（令牌 → 限流 → 8KB，顺序保证被拒请求零落库 SQL），未采用 `__return_true`——实测发现核心 REST 的必填 args 检查先于 permission 回调执行，故 token 不标 `required`、由 gate 归口 401（无/错令牌均 401 实证）。事件词表 = `pageview`(web)/`signal`(probe) 经 `gr_collect_events` 过滤器可扩展；字段白名单 9 键硬编码，**身份键（visitor_id/session_id）刻意不在白名单**——身份由服务端 `gr()->identity()` 双轨解析注入，客户端提交身份键按未知字段 400 拒绝（实测 `field=visitor_id` 拒绝样例）。`signal` 额外要求 `bot_score` 整数 0..100（args min/max 核心校验 + 控制器 is_int 双保险）与四布尔标志，`probe_enabled=0` 时 400。限流 `Gr_Rate_Limiter`：`wp_using_ext_object_cache()` 为真走 `wp_cache_add/incr`（group `greenpng`，0 SQL），否则 per-key transient（键 `gr_rl_collect_{md5(ip)}`，60/60s，`gr_collect_rate` 过滤器可调；**被拒请求只读不写**，实测 429 后计数停在 60）。令牌 = `Gr_Secrets::sign_hmac('collect|' . 日期, wp_salt 派生键)`，非秘密、跨日必变（实测）。每请求 SQL 实测见 `09` §1.1 落地记录。
+
 ### 2.6 模块加载：零闲置成本 + 通用化集成（ADR-0007）
 每个集成适配器实现 `GreenPNG\Integrations\Adapter_Interface`：
 ```php

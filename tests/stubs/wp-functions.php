@@ -158,11 +158,19 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_filters']           = array();
         $GLOBALS['gr_stub_consent']           = array();
         $GLOBALS['gr_stub_cookies']           = array();
+        $GLOBALS['gr_stub_rest_routes']       = array();
+        $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
+        unset( $GLOBALS['gr_stub_nocache'] );
 
-        // Overridable knobs (clock, uuid, tls) reset to their defaults so
-        // one test's override never leaks into the next.
-        unset( $GLOBALS['gr_stub_now'], $GLOBALS['gr_stub_uuid'], $GLOBALS['gr_stub_is_ssl'] );
+        // Overridable knobs (clock, uuid, tls, ext-cache) reset to their
+        // defaults so one test's override never leaks into the next.
+        unset(
+            $GLOBALS['gr_stub_now'],
+            $GLOBALS['gr_stub_uuid'],
+            $GLOBALS['gr_stub_is_ssl'],
+            $GLOBALS['gr_stub_ext_cache']
+        );
 
         // Services memoize their view of the stub stores, so the container
         // itself restarts with them; harmless when nothing was built yet.

@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
 use GreenPNG\Storage\Gr_Session_Repository;
@@ -168,6 +169,7 @@ final class Gr_Plugin {
 
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
+        add_action( 'rest_api_init', array( Gr_Collect_Controller::class, 'register_routes' ) );
 
         Gr_Cli::register();
     }
