@@ -130,12 +130,12 @@ final class Gr_Plugin {
      * join here as their phases land (docs/02 §2.1 explicit wiring).
      */
     private function __construct() {
-        $this->events   = new Gr_Event_Dispatcher( new Gr_Event_Repository() );
-        $this->settings = new Gr_Settings();
-        $this->identity = new Gr_Identity( $this->settings );
-        $this->sessions = new Gr_Session_Repository();
+        $this->events      = new Gr_Event_Dispatcher( new Gr_Event_Repository() );
+        $this->settings    = new Gr_Settings();
+        $this->identity    = new Gr_Identity( $this->settings );
+        $this->sessions    = new Gr_Session_Repository();
         $this->attribution = new Gr_Attribution_Service( new Gr_Touchpoint_Repository(), new Gr_Conversion_Repository() );
-        $this->listener = new Gr_Attribution_Listener(
+        $this->listener    = new Gr_Attribution_Listener(
             $this->identity,
             $this->sessions,
             new Gr_Touchpoint_Repository(),

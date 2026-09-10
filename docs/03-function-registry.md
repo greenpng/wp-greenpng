@@ -95,6 +95,8 @@
 | :--- | :--- | :--- | :--- |
 | `gr_uif_extract_fields()` | `gr_uif_extract_fields($payload): array` | 语义自适应提取（`auto:email`/`auto:name`/`auto:amount`） | 改名（参数省略类型声明，PHP 7.4 无 `mixed`） |
 | `gr_uif_detect_ecosystem()` | `gr_uif_detect_ecosystem(): array` | 扫描 `active_plugins`，报告可用桥接 | 改名 |
+
+> **C12 落地（2026-09-10）**：两函数已交付。`gr_uif_extract_fields` → `GreenPNG\Integrations\Gr_Semantic_Extractor::extract()`（纯函数零写入；深度 8 层封顶、对象经 `get_data()` 或公有属性并入、email 键提示 + RFC 值采纳双通道且 url/id 类键拒绝采纳、phone 仅键命中且 7 位数字起、first/last/full name 词表含 CF7 `your-name`、amount 键词表 + 货币符号千分位剥离、currency 3 字母大写归一、名字单侧检测自动推导另一侧表示、custom_fields 经 `sanitize_text_field` 且 64 键封顶、`detected_keys` 记语义 → 点路径供诊断）。`gr_uif_detect_ecosystem` → `Gr_Ecosystem_Detector::detect()`（单次 `get_option('active_plugins')` 读，零目标插件代码加载；目录固定四桥 woocommerce/fluentform/cf7/wpforms，wpforms-lite 归并 wpforms；非数组 option 值降级为空目录）。语义提取是 C11 表单桥的金额/币种提取引擎，实施次序刻意先于 C11（原语先行，同 C2→C1 先例）。
 | `gr_capi_dispatch()` | `gr_capi_dispatch(string $channel, string $event, array $data): array` | **统一入口**（channel ∈ ga4/meta/tiktok），内部调度异步队列。**合并原型的 Capi_Dispatcher 与 Universal_Capi_Gateway 双栈**（payload 只构建一遍） | 合并重构 |
 | `gr_capi_build_payload()` | `gr_capi_build_payload(string $channel, array $event): array` | 纯本地 payload 构建 | 改名 |
 | `gr_webhook_dispatch()` | `gr_webhook_dispatch(string $hook_id, array $payload): bool` | HMAC-SHA256 签名出网；`timestamp.body` 签名串；`hash_equals` 验签文档化 | 新增 |

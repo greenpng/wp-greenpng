@@ -20,6 +20,8 @@ use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Secrets;
+use GreenPNG\Integrations\Gr_Ecosystem_Detector;
+use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
@@ -189,5 +191,34 @@ if ( ! function_exists( 'gr_bind_conversion' ) ) {
      */
     function gr_bind_conversion( int $order_id, string $visitor_id, float $amount, string $currency, string $source_type = 'woocommerce' ): int {
         return gr()->attribution()->bind( $order_id, $visitor_id, $amount, $currency, $source_type );
+    }
+}
+
+if ( ! function_exists( 'gr_uif_extract_fields' ) ) {
+    /**
+     * Semantic field extraction facade (docs/03 §7): walks any payload
+     * shape and returns the normalized identity/commerce fields. This
+     * is what the auto:email / auto:name / auto:amount expression
+     * family resolves to.
+     *
+     * @param mixed $payload Submission data in source-plugin shape.
+     * @return array<string, mixed> Recognized fields, detected_keys,
+     *                              custom_fields.
+     */
+    function gr_uif_extract_fields( $payload ): array {
+        return Gr_Semantic_Extractor::extract( $payload );
+    }
+}
+
+if ( ! function_exists( 'gr_uif_detect_ecosystem' ) ) {
+    /**
+     * Ecosystem detection facade (docs/03 §7): reports which bridges
+     * can activate from one active_plugins read.
+     *
+     * @return array<string, array<string, mixed>> bridge_id => plugin,
+     *        active.
+     */
+    function gr_uif_detect_ecosystem(): array {
+        return Gr_Ecosystem_Detector::detect();
     }
 }
