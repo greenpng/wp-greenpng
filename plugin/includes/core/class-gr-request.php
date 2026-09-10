@@ -47,4 +47,19 @@ final class Gr_Request {
 
         return substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) ), 0, 512 );
     }
+
+    /**
+     * Sanitized request URI (path plus query, as sent), truncated to
+     * the request_path column width so security writes never fail on
+     * oversized URLs.
+     *
+     * @return string
+     */
+    public static function path(): string {
+        if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+            return '';
+        }
+
+        return substr( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), 0, 191 );
+    }
 }

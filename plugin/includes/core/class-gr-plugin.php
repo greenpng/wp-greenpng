@@ -26,6 +26,7 @@ use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Rest\Gr_Probe_Script;
+use GreenPNG\Security\Gr_Request_Inspector;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
@@ -91,6 +92,13 @@ final class Gr_Plugin {
     private Gr_Attribution_Service $attribution;
 
     /**
+     * Request inspection frame (docs/13 W1), wired at construction.
+     *
+     * @var Gr_Request_Inspector
+     */
+    private Gr_Request_Inspector $inspector;
+
+    /**
      * Entry point wired from the plugin file at plugins_loaded@10: by then
      * every plugin file has loaded, so service wiring sees the full
      * runtime, including any Action Scheduler the host provides.
@@ -146,6 +154,7 @@ final class Gr_Plugin {
             new Gr_Touchpoint_Repository(),
             $this->settings
         );
+        $this->inspector   = new Gr_Request_Inspector( $this->settings );
     }
 
     /**
@@ -208,6 +217,15 @@ final class Gr_Plugin {
     }
 
     /**
+     * Request inspection frame (docs/13 W1), for tests.
+     *
+     * @return Gr_Request_Inspector
+     */
+    public function inspector(): Gr_Request_Inspector {
+        return $this->inspector;
+    }
+
+    /**
      * Registers every plugin-level hook. The schema upgrade gate mounts on
      * admin_init so steady-state front-end requests do zero DDL
      * (docs/05 §4); translations load at init@10 for WP 6.5+ JIT
@@ -224,6 +242,7 @@ final class Gr_Plugin {
         Gr_Probe_Script::register_hooks();
         Gr_Ab_Shortcode::register();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
+        $this->inspector->register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs
