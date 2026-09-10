@@ -29,6 +29,7 @@ use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Scanner_Ua;
+use GreenPNG\Security\Gr_Temp_Bans;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 if ( ! function_exists( 'gr' ) ) {
@@ -338,5 +339,33 @@ if ( ! function_exists( 'gr_is_url_allowed' ) ) {
      */
     function gr_is_url_allowed( string $uri ): bool {
         return Gr_Access_Rules::is_url_allowed( $uri );
+    }
+}
+
+if ( ! function_exists( 'gr_block_ip' ) ) {
+    /**
+     * Temporary-ban facade (docs/03 §3): transient lock with a TTL,
+     * bounded to 30 days — permanent bans belong in the rules table.
+     *
+     * @param string $ip     Address to lock.
+     * @param string $reason Free-text cause, kept for audit display.
+     * @param int    $ttl    Seconds.
+     * @return void
+     */
+    function gr_block_ip( string $ip, string $reason = '', int $ttl = DAY_IN_SECONDS ): void {
+        Gr_Temp_Bans::block( $ip, $reason, $ttl );
+    }
+}
+
+if ( ! function_exists( 'gr_unblock_ip' ) ) {
+    /**
+     * Temporary-ban release facade (docs/03 §3); the allow list stays
+     * the recovery valve that works without CLI access.
+     *
+     * @param string $ip Address to free.
+     * @return void
+     */
+    function gr_unblock_ip( string $ip ): void {
+        Gr_Temp_Bans::unblock( $ip );
     }
 }

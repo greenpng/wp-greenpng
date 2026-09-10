@@ -59,8 +59,9 @@ final class Gr_Access_Rules {
     }
 
     /**
-     * Whether an address falls under a ban rule. The allow list wins
-     * first, so a trusted address is never blocked.
+     * Whether an address falls under a ban: a W5 temporary lock or a
+     * static ban rule. The allow list wins first, so a trusted
+     * address is never blocked by either.
      *
      * @param string $ip Candidate address.
      * @return bool
@@ -68,6 +69,10 @@ final class Gr_Access_Rules {
     public static function is_ip_blocked( string $ip ): bool {
         if ( self::matches_ip_rule( self::TYPE_ALLOW, $ip ) ) {
             return false;
+        }
+
+        if ( Gr_Temp_Bans::is_locked( $ip ) ) {
+            return true;
         }
 
         return self::matches_ip_rule( self::TYPE_BAN, $ip );

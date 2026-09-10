@@ -164,6 +164,12 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_enqueued_scripts']  = array();
         $GLOBALS['gr_stub_inline_scripts']    = array();
         $GLOBALS['gr_stub_shortcodes']        = array();
+        $GLOBALS['gr_stub_cli_commands']      = array();
+        $GLOBALS['gr_stub_cli_messages']      = array(
+            'success' => array(),
+            'warning' => array(),
+            'error'   => array(),
+        );
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
         unset( $GLOBALS['gr_stub_nocache'], $GLOBALS['gr_stub_is_admin'] );
 
@@ -174,7 +180,8 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
             $GLOBALS['gr_stub_uuid'],
             $GLOBALS['gr_stub_is_ssl'],
             $GLOBALS['gr_stub_ext_cache'],
-            $GLOBALS['gr_stub_rand']
+            $GLOBALS['gr_stub_rand'],
+            $GLOBALS['gr_stub_epoch']
         );
 
         // Services memoize their view of the stub stores, so the container
@@ -392,29 +399,58 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
     }
 }
 
+if ( ! function_exists( 'gr_stub_clock' ) ) {
+    /**
+     * Numeric epoch stand-in, overridable via $GLOBALS['gr_stub_epoch']
+     * so TTL expiry tests advance time deterministically.
+     *
+     * @return int
+     */
+    function gr_stub_clock(): int {
+        return $GLOBALS['gr_stub_epoch'] ?? 1757462400; // 2026-09-10 00:00:00Z.
+    }
+}
+
 if ( ! function_exists( 'get_transient' ) ) {
     /**
-     * Transient lookup.
+     * Transient lookup with real TTL semantics: an expired entry is
+     * removed and reads as false, exactly like core.
      *
      * @param string $transient Transient name.
-     * @return mixed Stored value or false when missing.
+     * @return mixed Stored value or false when missing or expired.
      */
     function get_transient( $transient ) {
-        return $GLOBALS['gr_stub_transients'][ $transient ] ?? false;
+        $entry = $GLOBALS['gr_stub_transients'][ $transient ] ?? null;
+
+        if ( ! is_array( $entry ) || ! array_key_exists( 'value', $entry ) ) {
+            return false;
+        }
+
+        $expires_at = isset( $entry['expires_at'] ) && is_int( $entry['expires_at'] ) ? $entry['expires_at'] : 0;
+        if ( $expires_at > 0 && gr_stub_clock() >= $expires_at ) {
+            unset( $GLOBALS['gr_stub_transients'][ $transient ] );
+            return false;
+        }
+
+        return $entry['value'];
     }
 }
 
 if ( ! function_exists( 'set_transient' ) ) {
     /**
-     * Transient write. Expiration is not tracked in memory.
+     * Transient write recording the expiry deadline against the stub
+     * clock; 0 means no expiry.
      *
      * @param string $transient  Transient name.
      * @param mixed  $value      Value to store.
-     * @param int    $expiration Lifetime in seconds (ignored).
+     * @param int    $expiration Lifetime in seconds.
      * @return bool
      */
     function set_transient( $transient, $value, $expiration = 0 ) {
-        $GLOBALS['gr_stub_transients'][ $transient ] = $value;
+        $GLOBALS['gr_stub_transients'][ $transient ] = array(
+            'value'      => $value,
+            'expires_at' => $expiration > 0 ? gr_stub_clock() + $expiration : 0,
+        );
 
         return true;
     }

@@ -24,15 +24,15 @@ final class RateLimiterTest extends TestCase {
         $name = 'gr_rl_collect_' . md5( '10.0.0.7' );
 
         self::assertTrue( Gr_Rate_Limiter::allowed( 'collect', '10.0.0.7', 2, 60 ) );
-        self::assertSame( 1, $GLOBALS['gr_stub_transients'][ $name ] );
+        self::assertSame( 1, $GLOBALS['gr_stub_transients'][ $name ]['value'] );
 
         self::assertTrue( Gr_Rate_Limiter::allowed( 'collect', '10.0.0.7', 2, 60 ) );
-        self::assertSame( 2, $GLOBALS['gr_stub_transients'][ $name ] );
+        self::assertSame( 2, $GLOBALS['gr_stub_transients'][ $name ]['value'] );
 
         self::assertFalse( Gr_Rate_Limiter::allowed( 'collect', '10.0.0.7', 2, 60 ) );
         // Blocked hits stop after the read: the counter never climbs past
         // the limit, so floods do not multiply option writes.
-        self::assertSame( 2, $GLOBALS['gr_stub_transients'][ $name ] );
+        self::assertSame( 2, $GLOBALS['gr_stub_transients'][ $name ]['value'] );
     }
 
     public function testTransientKeysAreScatteredPerCallerKey(): void {

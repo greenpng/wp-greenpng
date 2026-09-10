@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 
 namespace GreenPNG\Core;
 
+use GreenPNG\Security\Gr_Temp_Bans;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -59,5 +60,53 @@ final class Gr_Cli {
         }
 
         WP_CLI::success( __( 'Daily maintenance finished.', 'greenpng' ) );
+    }
+
+    /**
+     * Releases a temporary IP lock placed by gr_block_ip().
+     *
+     * The no-lock outcome is a warning, not an error: the recovery
+     * goal is "the site owner is never stuck", so an idempotent
+     * repeat must not look like a failure. Static ban rules are out
+     * of scope here — they are managed from the Access Rules page.
+     *
+     * ## OPTIONS
+     *
+     * <ip>
+     * : The address whose temporary lock should be released.
+     *
+     * ## EXAMPLES
+     *
+     *     # Free an address locked by the login-failure counter.
+     *     wp greenpng unblock 203.0.113.7
+     *
+     * @param array<int, string> $args Positional args; $args[0] is the IP.
+     * @return void
+     */
+    public function unblock( array $args ): void {
+        $ip = isset( $args[0] ) ? trim( (string) $args[0] ) : '';
+
+        if ( '' === $ip ) {
+            WP_CLI::error( __( 'No address given: wp greenpng unblock <ip>', 'greenpng' ) );
+        }
+
+        if ( ! Gr_Temp_Bans::unblock( $ip ) ) {
+            WP_CLI::warning(
+                sprintf(
+                    /* translators: %s: IP address. */
+                    __( 'No temporary lock found for %s. Static ban rules are managed on the Access Rules page; the allow list also overrides every ban.', 'greenpng' ),
+                    $ip
+                )
+            );
+            return;
+        }
+
+        WP_CLI::success(
+            sprintf(
+                /* translators: %s: IP address. */
+                __( 'Temporary lock released for %s.', 'greenpng' ),
+                $ip
+            )
+        );
     }
 }

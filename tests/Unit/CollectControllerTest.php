@@ -85,7 +85,10 @@ final class CollectControllerTest extends TestCase {
     }
 
     public function testGateRejectsAnExhaustedRateWindowWith429(): void {
-        $GLOBALS['gr_stub_transients'][ 'gr_rl_collect_' . md5( '10.0.0.7' ) ] = Gr_Collect_Controller::RATE_LIMIT;
+        $GLOBALS['gr_stub_transients'][ 'gr_rl_collect_' . md5( '10.0.0.7' ) ] = array(
+            'value'      => Gr_Collect_Controller::RATE_LIMIT,
+            'expires_at' => gr_stub_clock() + 60,
+        );
 
         $controller = new Gr_Collect_Controller();
 
@@ -122,7 +125,7 @@ final class CollectControllerTest extends TestCase {
         self::assertTrue( $result );
         self::assertSame(
             1,
-            $GLOBALS['gr_stub_transients'][ 'gr_rl_collect_' . md5( '10.0.0.7' ) ]
+            $GLOBALS['gr_stub_transients'][ 'gr_rl_collect_' . md5( '10.0.0.7' ) ]['value']
         );
     }
 
