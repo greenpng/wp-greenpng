@@ -24,6 +24,7 @@ use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Rest\Gr_Collect_Controller;
+use GreenPNG\Rest\Gr_Probe_Script;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
@@ -219,6 +220,7 @@ final class Gr_Plugin {
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
         add_action( 'rest_api_init', array( Gr_Collect_Controller::class, 'register_routes' ) );
+        Gr_Probe_Script::register_hooks();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
 
         // Ecosystem adapters register only when their target plugin

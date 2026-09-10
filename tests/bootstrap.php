@@ -20,6 +20,19 @@ if ( ! defined( 'GR_PLUGIN_DIR' ) ) {
     define( 'GR_PLUGIN_DIR', dirname( __DIR__ ) . '/plugin/' );
 }
 
+// The entry file (greenpng.php) owns these in production; the suite
+// boots classes directly, so the same constants get stand-in values
+// here — the URL is synthetic and the version mirrors the entry file.
+if ( ! defined( 'GR_VERSION' ) ) {
+    define( 'GR_VERSION', '1.0.0' );
+}
+if ( ! defined( 'GR_PLUGIN_URL' ) ) {
+    define( 'GR_PLUGIN_URL', 'https://stub.example/wp-content/plugins/greenpng/' );
+}
+if ( ! defined( 'GR_PLUGIN_FILE' ) ) {
+    define( 'GR_PLUGIN_FILE', dirname( __DIR__ ) . '/plugin/greenpng.php' );
+}
+
 require_once __DIR__ . '/stubs/wp-functions.php';
 require_once __DIR__ . '/stubs/wpdb-stub.php';
 require_once __DIR__ . '/stubs/rest-stubs.php';

@@ -27,6 +27,8 @@
 
 > 落地记录（2026-09-10，C6 实测，:8091 / WP 7.1 / MariaDB 12.3 / 无持久对象缓存，SAVEQUERIES 全量计数）：REST collect 单请求 SQL = **6 条**——限流 transient 读 1 + timeout/value 两写 2 + `wpdb->insert` 首插列内省（`SHOW FULL COLUMNS`，wp-db 实例内缓存、跨请求不存）1 + 事件 INSERT 1 + 会话 upsert（prepare 直写，无内省）1。机理与 §3 一致（无对象缓存时限流走 per-key transient 兜底）；**换算有持久对象缓存主机 = 3 条**（限流 0 SQL，恰好达本行 ≤3 口径）。两个超出因素均不在控制器逻辑：① 核心 `set_transient` 在无对象缓存主机天然 3 条 SQL，是 §3 指定兜底机制的固有成本；② 事件仓储 `wpdb->insert` 的列内省 +1，改为 prepare 直写可全主机省 1（候选优化，待 T 阶段统一测量定夺）。**本行 ≤3 口径与 §3"约八成用户无对象缓存 + transient 兜底"存在内部张力**（无缓存主机下限 = 5 条），已列 `13` §8 待议。
 
+> 落地记录（2026-09-10，C13 实测）：`gr-probe.js` 安全模块（v1.0 部分，行为模块 v1.1 未计入）体积 = **raw 4247 B / gzip 1875 B**，≤ 8KB（gzip）预算余量 77%；`defer` 经 `script_loader_tag` filter 达成（WP 6.0 无 enqueue strategy，filter 路线全版本一致）；传输仅 `sendBeacon`，score=0 不发送（普通访客零 beacon 零事件行）。
+
 ### 1.2 管理后台（本插件页面）
 
 | 指标 | 预算 |

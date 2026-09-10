@@ -161,8 +161,10 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_rest_routes']       = array();
         $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['gr_stub_wc_orders']         = array();
+        $GLOBALS['gr_stub_enqueued_scripts']  = array();
+        $GLOBALS['gr_stub_inline_scripts']    = array();
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
-        unset( $GLOBALS['gr_stub_nocache'] );
+        unset( $GLOBALS['gr_stub_nocache'], $GLOBALS['gr_stub_is_admin'] );
 
         // Overridable knobs (clock, uuid, tls, ext-cache, rand) reset to
         // their defaults so one test's override never leaks into the next.
@@ -238,6 +240,59 @@ if ( ! function_exists( 'wp_rand' ) ) {
         }
 
         return mt_rand( (int) $min, (int) $max );
+    }
+}
+
+if ( ! function_exists( 'is_admin' ) ) {
+    /**
+     * Admin-context stand-in, toggleable via $GLOBALS['gr_stub_is_admin'].
+     *
+     * @return bool
+     */
+    function is_admin() {
+        return ! empty( $GLOBALS['gr_stub_is_admin'] );
+    }
+}
+
+if ( ! function_exists( 'wp_enqueue_script' ) ) {
+    /**
+     * Script enqueue recorder.
+     *
+     * @param string           $handle Script handle.
+     * @param string           $src    Script URL.
+     * @param array<int,mixed> $deps   Dependencies.
+     * @param string|bool      $ver    Version.
+     * @param bool             $footer Footer placement.
+     * @return bool
+     */
+    function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $footer = false ) {
+        $GLOBALS['gr_stub_enqueued_scripts'][ $handle ] = array(
+            'src'    => (string) $src,
+            'ver'    => $ver,
+            'footer' => $footer ? true : false,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_add_inline_script' ) ) {
+    /**
+     * Inline script recorder.
+     *
+     * @param string $handle Script handle.
+     * @param string $text   Inline code.
+     * @param string $position Before/after.
+     * @return bool
+     */
+    function wp_add_inline_script( $handle, $text, $position = 'after' ) {
+        $GLOBALS['gr_stub_inline_scripts'][] = array(
+            'handle'   => (string) $handle,
+            'text'     => (string) $text,
+            'position' => (string) $position,
+        );
+
+        return true;
     }
 }
 
