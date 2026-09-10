@@ -71,6 +71,8 @@
 > **C14 落地（2026-09-10）**：`gr_ab_assign_variant` 已交付 → `GreenPNG\Funnel\Gr_Ab_Engine::assign()`（一致性哈希 `sprintf('%u', crc32(...)) % n` 跨位宽稳定；`?gr_variant=` 强制仅限实验声明变体；未定义/停用返 ''）。实验定义仓储 = `Gr_Ab_Experiments`（非 autoload `gr_ab_experiments`，首写定 autoload=no、空批整行删除；有界校验 ≤20×≤8）。短码 `[gr_ab experiment=... <变体名>=<内容>]` = `Gr_Ab_Shortcode`（动态属性直解析 $atts——真核 `shortcode_atts` 剥非 defaults 键；fail-open 回落 control）。`gr_ab_record`/`gr_ab_significance` 属 C15。
 | `gr_ab_record()` | `gr_ab_record(string $experiment, string $variant, string $type): bool` | type ∈ impression/conversion | 合并原型两个函数 |
 | `gr_ab_significance()` | `gr_ab_significance(string $experiment): array` | 双比例 Z 检验，n<30 返回"样本不足" | 改名 |
+
+> **C15 落地（2026-09-10）**：两函数已交付。`gr_ab_record` → `Gr_Ab_Recorder::record()`（事件名 `ab`/组 `funnel`，ab_* 专列入库；停用实验照记——in-flight 访客不作废）。`gr_ab_significance` → `Gr_Ab_Significance::calculate()`（pooled 双比例 Z 检验，control vs 每个变体；每臂 <30 → insufficient；|z|≥1.96 → significant+winner；SE=0 诚实 tie；聚合读 = `Gr_Event_Repository::ab_counts()` 走 `ab_events` 索引）。真站 z 值与单测手工期望逐位一致。
 | `gr_cart_capture_email()` | `gr_cart_capture_email(string $session_id, string $email, array $cart=[]): int` | 失焦邮箱捕获 + 64 位挽回令牌。**调用前置条件：站长已开启且页面有同意勾选** | 改名 + 合规前置 |
 | `gr_cart_mark_abandoned()` | `gr_cart_mark_abandoned(int $minutes=15): int` | 批量状态流转（cron 调用） | 改名 |
 | `gr_cart_mark_recovered()` | `gr_cart_mark_recovered(string $token, int $order_id): bool` | 令牌核销 | 改名 |

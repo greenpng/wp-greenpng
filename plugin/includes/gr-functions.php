@@ -21,6 +21,8 @@ use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Funnel\Gr_Ab_Engine;
+use GreenPNG\Funnel\Gr_Ab_Recorder;
+use GreenPNG\Funnel\Gr_Ab_Significance;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Ip_Resolver;
@@ -235,5 +237,33 @@ if ( ! function_exists( 'gr_ab_assign_variant' ) ) {
      */
     function gr_ab_assign_variant( string $experiment, string $visitor_id ): string {
         return Gr_Ab_Engine::assign( $experiment, $visitor_id );
+    }
+}
+
+if ( ! function_exists( 'gr_ab_record' ) ) {
+    /**
+     * A/B exposure/conversion record facade (docs/03 §5): the event
+     * lands in gr_events with the dedicated ab_* columns.
+     *
+     * @param string $experiment Experiment key.
+     * @param string $variant    Variant slug.
+     * @param string $type       'impression' or 'conversion'.
+     * @return bool
+     */
+    function gr_ab_record( string $experiment, string $variant, string $type ): bool {
+        return Gr_Ab_Recorder::record( $experiment, $variant, $type );
+    }
+}
+
+if ( ! function_exists( 'gr_ab_significance' ) ) {
+    /**
+     * A/B significance facade (docs/03 §5): two-proportion Z-test,
+     * control versus every other variant; n<30 arms read insufficient.
+     *
+     * @param string $experiment Experiment key.
+     * @return array<string, mixed> status/variants/pairs.
+     */
+    function gr_ab_significance( string $experiment ): array {
+        return Gr_Ab_Significance::calculate( $experiment );
     }
 }

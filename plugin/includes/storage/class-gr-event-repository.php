@@ -104,6 +104,47 @@ final class Gr_Event_Repository {
     }
 
     /**
+     * A/B arm counts for one experiment, grouped from the stream:
+     * variant => type => count. Conversions without a matching
+     * impression are still honest data — they count on their own.
+     *
+     * @param string $experiment Experiment key.
+     * @return array<string, array<string, int>>
+     */
+    public function ab_counts( string $experiment ): array {
+        global $wpdb;
+
+        $table = Gr_Database::table( 'events' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- report-time aggregation on the ab_events index (ab_experiment, ab_type, created_at); admin reads only, never on a front-end request path.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on the first string line so this ignore reaches it.
+                "SELECT ab_variant, ab_type, COUNT(*) AS n FROM {$table}
+                    WHERE ab_experiment = %s AND ab_variant != '' AND ab_type != ''
+                    GROUP BY ab_variant, ab_type",
+                $experiment
+            ),
+            ARRAY_A
+        );
+
+        $counts = array();
+        if ( is_array( $rows ) ) {
+            foreach ( $rows as $row ) {
+                if ( is_array( $row ) ) {
+                    $variant = (string) ( $row['ab_variant'] ?? '' );
+                    $type    = (string) ( $row['ab_type'] ?? '' );
+                    if ( '' !== $variant && '' !== $type ) {
+                        $counts[ $variant ][ $type ] = (int) ( $row['n'] ?? 0 );
+                    }
+                }
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
      * JSON-encodes the payload; a failed encode degrades to '' rather
      * than failing the whole insert.
      *
