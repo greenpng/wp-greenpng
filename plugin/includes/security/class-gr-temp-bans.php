@@ -49,6 +49,7 @@ final class Gr_Temp_Bans {
             array(
                 'reason'     => substr( sanitize_text_field( $reason ), 0, 191 ),
                 'blocked_at' => current_time( 'mysql' ),
+                'expires_at' => time() + $ttl,
                 'ttl'        => $ttl,
             ),
             $ttl
@@ -113,6 +114,24 @@ final class Gr_Temp_Bans {
         }
 
         return (string) $lock['reason'];
+    }
+
+    /**
+     * Seconds left on a lock, derived from the deadline recorded in the
+     * lock value at placement time (the transient API never exposes
+     * remaining TTL). 0 when no lock is held.
+     *
+     * @param string $ip Address to look up.
+     * @return int
+     */
+    public static function lock_remaining( string $ip ): int {
+        $lock = get_transient( self::key( $ip ) );
+
+        if ( ! is_array( $lock ) || ! isset( $lock['expires_at'] ) || ! is_int( $lock['expires_at'] ) ) {
+            return 0;
+        }
+
+        return max( 0, $lock['expires_at'] - time() );
     }
 
     /**

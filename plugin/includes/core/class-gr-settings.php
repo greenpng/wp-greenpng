@@ -48,6 +48,12 @@ final class Gr_Settings {
             'trust_proxy_headers'        => 0,
             'trusted_proxies'            => array(),
 
+            // Login brute-force protection (docs/13 W7): failures counted
+            // per address+username pair over a 15-minute window; reaching
+            // the threshold locks the address with a gradient duration.
+            'login_fail_threshold'       => 5,
+            'login_lockout_base'         => 300,
+
             // Client probe: default on (safety signals only, Recital 49
             // basis; toggle + readme disclosure per ADR-0007).
             'probe_enabled'              => 1,

@@ -28,6 +28,7 @@ use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
+use GreenPNG\Security\Gr_Login_Protection;
 use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Security\Gr_Temp_Bans;
 use GreenPNG\Storage\Gr_Security_Log_Repository;
@@ -386,5 +387,35 @@ if ( ! function_exists( 'gr_log_security_event' ) ) {
      */
     function gr_log_security_event( string $ip, string $rule_id, string $url = '', string $ua = '', string $reason = '' ): void {
         ( new Gr_Security_Log_Repository() )->log( $ip, $rule_id, $url, $ua, $reason );
+    }
+}
+
+if ( ! function_exists( 'gr_check_login_lockout' ) ) {
+    /**
+     * Login lockout judgment facade (docs/03 §3): failure count,
+     * threshold, gradient round, and remaining seconds for one
+     * address+username pair; the allow list reads as never locked.
+     *
+     * @param string $username Attempted username.
+     * @param string $ip       Client address as text.
+     * @return array<string, int|bool> locked/remaining/failures/threshold/round.
+     */
+    function gr_check_login_lockout( string $username, string $ip ): array {
+        return Gr_Login_Protection::check_lockout( $username, $ip );
+    }
+}
+
+if ( ! function_exists( 'gr_record_login_failure' ) ) {
+    /**
+     * Login failure record facade (docs/03 §3): climbs the per-pair
+     * counter and locks the address at the threshold with a gradient
+     * duration.
+     *
+     * @param string $username Attempted username.
+     * @param string $ip       Client address as text.
+     * @return void
+     */
+    function gr_record_login_failure( string $username, string $ip ): void {
+        Gr_Login_Protection::record_failure( $username, $ip );
     }
 }
