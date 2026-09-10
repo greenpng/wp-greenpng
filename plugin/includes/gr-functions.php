@@ -20,6 +20,7 @@ use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Secrets;
+use GreenPNG\Funnel\Gr_Ab_Engine;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Ip_Resolver;
@@ -220,5 +221,19 @@ if ( ! function_exists( 'gr_uif_detect_ecosystem' ) ) {
      */
     function gr_uif_detect_ecosystem(): array {
         return Gr_Ecosystem_Detector::detect();
+    }
+}
+
+if ( ! function_exists( 'gr_ab_assign_variant' ) ) {
+    /**
+     * A/B assignment facade (docs/03 §5): consistent-hash bucketing,
+     * stable per visitor, with the ?gr_variant= force parameter.
+     *
+     * @param string $experiment Experiment key.
+     * @param string $visitor_id Visitor identity (either track).
+     * @return string Variant slug, '' when the experiment cannot run.
+     */
+    function gr_ab_assign_variant( string $experiment, string $visitor_id ): string {
+        return Gr_Ab_Engine::assign( $experiment, $visitor_id );
     }
 }

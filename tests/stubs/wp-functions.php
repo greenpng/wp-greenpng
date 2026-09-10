@@ -163,6 +163,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_wc_orders']         = array();
         $GLOBALS['gr_stub_enqueued_scripts']  = array();
         $GLOBALS['gr_stub_inline_scripts']    = array();
+        $GLOBALS['gr_stub_shortcodes']        = array();
         $GLOBALS['wpdb']                      = new Gr_Stub_Wpdb();
         unset( $GLOBALS['gr_stub_nocache'], $GLOBALS['gr_stub_is_admin'] );
 
@@ -180,6 +181,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         // itself restarts with them; harmless when nothing was built yet.
         if ( class_exists( 'GreenPNG\Core\Gr_Plugin' ) ) {
             GreenPNG\Core\Gr_Plugin::reset_instance();
+        }
+        if ( class_exists( 'GreenPNG\Funnel\Gr_Ab_Experiments' ) ) {
+            GreenPNG\Funnel\Gr_Ab_Experiments::reset_memo_for_tests();
         }
     }
 }
@@ -293,6 +297,53 @@ if ( ! function_exists( 'wp_add_inline_script' ) ) {
         );
 
         return true;
+    }
+}
+
+if ( ! function_exists( 'sanitize_key' ) ) {
+    /**
+     * Key slugifier mirroring core: lowercase, keep alnum dash underscore.
+     *
+     * @param string $key Raw key.
+     * @return string
+     */
+    function sanitize_key( $key ) {
+        return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
+    }
+}
+
+if ( ! function_exists( 'add_shortcode' ) ) {
+    /**
+     * Shortcode registration recorder.
+     *
+     * @param string                $tag      Shortcode tag.
+     * @param callable|string|array $callback Handler.
+     * @return void
+     */
+    function add_shortcode( $tag, $callback ) {
+        $GLOBALS['gr_stub_shortcodes'][ (string) $tag ] = $callback;
+    }
+}
+
+if ( ! function_exists( 'shortcode_atts' ) ) {
+    /**
+     * Attribute merge mirroring core: only keys present in the
+     * defaults survive, extras are dropped (core behavior — dynamic
+     * attribute shortcodes must parse $atts directly, not through
+     * this helper).
+     *
+     * @param array<string, mixed>  $defaults Default attributes.
+     * @param array<string, mixed>  $atts     Given attributes.
+     * @param string                $tag      Shortcode tag, unused.
+     * @return array<string, mixed>
+     */
+    function shortcode_atts( $defaults, $atts, $tag = '' ) {
+        $merged = array();
+        foreach ( $defaults as $key => $value ) {
+            $merged[ $key ] = array_key_exists( $key, $atts ) ? $atts[ $key ] : $value;
+        }
+
+        return $merged;
     }
 }
 

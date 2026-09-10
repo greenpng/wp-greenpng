@@ -67,6 +67,8 @@
 | `gr_goal_record()` | `gr_goal_record(string $goal_key, string $visitor_id, array $context=[]): int` | 宏/微观目标达成 | 改名 |
 | `gr_goal_get_stats()` | `gr_goal_get_stats(string $goal_key='', int $days=30): array` | 目标聚合 | 改名 |
 | `gr_ab_assign_variant()` | `gr_ab_assign_variant(string $experiment, string $visitor_id): string` | 一致性哈希分流（稳定分桶） | 改名 |
+
+> **C14 落地（2026-09-10）**：`gr_ab_assign_variant` 已交付 → `GreenPNG\Funnel\Gr_Ab_Engine::assign()`（一致性哈希 `sprintf('%u', crc32(...)) % n` 跨位宽稳定；`?gr_variant=` 强制仅限实验声明变体；未定义/停用返 ''）。实验定义仓储 = `Gr_Ab_Experiments`（非 autoload `gr_ab_experiments`，首写定 autoload=no、空批整行删除；有界校验 ≤20×≤8）。短码 `[gr_ab experiment=... <变体名>=<内容>]` = `Gr_Ab_Shortcode`（动态属性直解析 $atts——真核 `shortcode_atts` 剥非 defaults 键；fail-open 回落 control）。`gr_ab_record`/`gr_ab_significance` 属 C15。
 | `gr_ab_record()` | `gr_ab_record(string $experiment, string $variant, string $type): bool` | type ∈ impression/conversion | 合并原型两个函数 |
 | `gr_ab_significance()` | `gr_ab_significance(string $experiment): array` | 双比例 Z 检验，n<30 返回"样本不足" | 改名 |
 | `gr_cart_capture_email()` | `gr_cart_capture_email(string $session_id, string $email, array $cart=[]): int` | 失焦邮箱捕获 + 64 位挽回令牌。**调用前置条件：站长已开启且页面有同意勾选** | 改名 + 合规前置 |

@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
@@ -221,6 +222,7 @@ final class Gr_Plugin {
         add_action( 'init', array( $this, 'load_translations' ) );
         add_action( 'rest_api_init', array( Gr_Collect_Controller::class, 'register_routes' ) );
         Gr_Probe_Script::register_hooks();
+        Gr_Ab_Shortcode::register();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
 
         // Ecosystem adapters register only when their target plugin
