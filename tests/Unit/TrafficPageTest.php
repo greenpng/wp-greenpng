@@ -99,7 +99,9 @@ final class TrafficPageTest extends TestCase {
     public function testTrafficSubmenuRegistersUnderTheTopLevelMenu(): void {
         Gr_Admin_Menu::register();
 
-        $sub = $GLOBALS['gr_stub_submenu_pages'][1];
+        // Settings (U13) and the dashboard mirror come first; Traffic
+        // & Security is the third submenu entry.
+        $sub = $GLOBALS['gr_stub_submenu_pages'][2];
         $this->assertSame( Gr_Traffic_Page::SLUG, $sub['menu_slug'] );
         $this->assertSame( 'manage_options', $sub['capability'] );
         $this->assertSame( array( Gr_Traffic_Page::class, 'render' ), $sub['callback'] );

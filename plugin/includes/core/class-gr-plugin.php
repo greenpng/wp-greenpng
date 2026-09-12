@@ -24,6 +24,7 @@ use GreenPNG\Admin\Gr_Admin_Menu;
 use GreenPNG\Admin\Gr_Chart_Assets;
 use GreenPNG\Admin\Gr_Login_Protection_Page;
 use GreenPNG\Admin\Gr_Data_Retention_Page;
+use GreenPNG\Admin\Gr_Settings_Page;
 use GreenPNG\Admin\Gr_Status_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
@@ -280,6 +281,7 @@ final class Gr_Plugin {
         Gr_Retention::register_hooks();
         Gr_Data_Retention_Page::register_hooks();
         Gr_Status_Page::register_hooks();
+        Gr_Settings_Page::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

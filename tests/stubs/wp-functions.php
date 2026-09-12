@@ -207,6 +207,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         if ( class_exists( 'GreenPNG\Core\Gr_Plugin' ) ) {
             GreenPNG\Core\Gr_Plugin::reset_instance();
         }
+        if ( class_exists( 'GreenPNG\Core\Gr_Settings' ) ) {
+            GreenPNG\Core\Gr_Settings::reset_for_tests();
+        }
         if ( class_exists( 'GreenPNG\Funnel\Gr_Ab_Experiments' ) ) {
             GreenPNG\Funnel\Gr_Ab_Experiments::reset_memo_for_tests();
         }
@@ -1189,6 +1192,37 @@ if ( ! function_exists( 'do_action' ) ) {
                 $registration[2]( ...$extra_args );
             }
         }
+    }
+}
+
+if ( ! function_exists( 'checked' ) ) {
+    /**
+     * Checked attribute stand-in, mirroring core's strict first-arg
+     * comparison then the echoed markup.
+     *
+     * @param mixed $checked One of the compared values.
+     * @param mixed $current The other compared value.
+     * @return string
+     */
+    function checked( $checked, $current = true ) {
+        $out = ( (string) $checked === (string) $current ) ? ' checked="checked"' : '';
+        echo $out; // phpcs:ignore WordPress.Security.EscapeOutput -- stand-in echoes its own prebuilt attribute markup, core shape.
+        return $out;
+    }
+}
+
+if ( ! function_exists( 'selected' ) ) {
+    /**
+     * Selected attribute stand-in, mirroring core's comparison shape.
+     *
+     * @param mixed $selected One of the compared values.
+     * @param mixed $current  The other compared value.
+     * @return string
+     */
+    function selected( $selected, $current = true ) {
+        $out = ( (string) $selected === (string) $current ) ? ' selected="selected"' : '';
+        echo $out; // phpcs:ignore WordPress.Security.EscapeOutput -- stand-in echoes its own prebuilt attribute markup, core shape.
+        return $out;
     }
 }
 

@@ -70,6 +70,17 @@ final class Gr_Admin_Menu {
             30
         );
 
+        // First submenu entry (docs/06 tree, OQ-1 decision): the
+        // global switches, ahead of the dashboard.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Settings', 'greenpng' ),
+            __( 'Settings', 'greenpng' ),
+            'manage_options',
+            Gr_Settings_Page::SLUG,
+            array( Gr_Settings_Page::class, 'render' )
+        );
+
         add_submenu_page(
             self::SLUG,
             __( 'Dashboard', 'greenpng' ),

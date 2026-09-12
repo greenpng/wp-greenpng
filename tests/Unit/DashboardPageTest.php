@@ -64,7 +64,9 @@ final class DashboardPageTest extends TestCase {
         $this->assertSame( 'dashicons-chart-area', $top['icon_url'] );
         $this->assertSame( 30, $top['position'] );
 
-        $sub = $GLOBALS['gr_stub_submenu_pages'][0];
+        // Settings is the first submenu entry (docs/13 U13); the
+        // dashboard mirror follows right behind it.
+        $sub = $GLOBALS['gr_stub_submenu_pages'][1];
         $this->assertSame( 'manage_options', $sub['capability'] );
         $this->assertSame( Gr_Admin_Menu::SLUG, $sub['menu_slug'] );
         $this->assertSame( array( Gr_Dashboard_Page::class, 'render' ), $sub['callback'] );

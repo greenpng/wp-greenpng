@@ -27,11 +27,15 @@ final class Gr_Settings {
     public const OPTION_KEY = 'gr_settings';
 
     /**
-     * Memoized merged view of defaults + stored values, invalidated on set().
+     * Memoized merged view of defaults + stored values. Static on
+     * purpose: the option row is process-wide truth, so every
+     * instance — including ones built before a write — must see the
+     * same invalidation, or a same-request reader serves the value
+     * from before the write.
      *
      * @var array<string, mixed>|null
      */
-    private ?array $values = null;
+    private static ?array $values = null;
 
     /**
      * Plugin-wide defaults. Groups: security / probe / attribution / privacy,
@@ -126,15 +130,15 @@ final class Gr_Settings {
      * @return array<string, mixed>
      */
     public function all(): array {
-        if ( null === $this->values ) {
+        if ( null === self::$values ) {
             $stored = get_option( self::OPTION_KEY, array() );
             if ( ! is_array( $stored ) ) {
                 $stored = array();
             }
-            $this->values = array_merge( self::defaults(), $stored );
+            self::$values = array_merge( self::defaults(), $stored );
         }
 
-        return $this->values;
+        return self::$values;
     }
 
     /**
@@ -156,7 +160,9 @@ final class Gr_Settings {
 
     /**
      * Persists one setting. Callers own capability + nonce checks; this
-     * service is storage, not authorization.
+     * service is storage, not authorization. The static memo drops for
+     * every instance at once — a value written now is the value any
+     * same-process reader sees next.
      *
      * @param string $key   Setting key.
      * @param mixed  $value New value.
@@ -170,8 +176,18 @@ final class Gr_Settings {
 
         $stored[ $key ] = $value;
         $result         = update_option( self::OPTION_KEY, $stored );
-        $this->values   = null;
+        self::$values   = null;
 
         return (bool) $result;
+    }
+
+    /**
+     * Test seam: forget the process-wide memo so the next read serves
+     * whatever the (freshly reset) option store holds.
+     *
+     * @return void
+     */
+    public static function reset_for_tests(): void {
+        self::$values = null;
     }
 }
