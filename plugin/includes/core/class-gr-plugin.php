@@ -33,6 +33,7 @@ use GreenPNG\Security\Gr_Login_Protection;
 use GreenPNG\Security\Gr_Payload_Inspector;
 use GreenPNG\Security\Gr_Request_Inspector;
 use GreenPNG\Security\Gr_Scanner_Ua;
+use GreenPNG\Security\Gr_Security_Conclusions;
 use GreenPNG\Security\Gr_Security_Logger;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Event_Repository;
@@ -258,6 +259,7 @@ final class Gr_Plugin {
         Gr_Honeypot::register_hooks();
         Gr_Crawler_Verify::register_hooks();
         Gr_Blackhole::register_hooks();
+        Gr_Security_Conclusions::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

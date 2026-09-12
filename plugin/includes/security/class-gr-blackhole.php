@@ -124,6 +124,10 @@ final class Gr_Blackhole {
             'disallowed trap path crawled'
         );
 
+        // A robots.txt-ignoring crawl is a visitor-level conclusion
+        // (W13): the CRM side may know the verdict, never the path.
+        Gr_Security_Conclusions::record( self::RULE_ID );
+
         if ( 'block' === (string) gr()->settings()->get( 'security_action_mode' ) ) {
             Gr_Temp_Bans::block( $ip, 'blackhole: disallowed path', self::BAN_TTL );
         }

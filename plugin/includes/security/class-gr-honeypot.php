@@ -297,6 +297,11 @@ final class Gr_Honeypot {
             Gr_Request::user_agent(),
             $reason
         );
+
+        // The verdict also feeds the conclusions channel (W13): a
+        // filled trap or an inhuman submit is a visitor-level
+        // conclusion, exactly what the CRM side is allowed to know.
+        Gr_Security_Conclusions::record( self::RULE_ID );
     }
 
     /**
