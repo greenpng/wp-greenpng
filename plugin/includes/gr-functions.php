@@ -26,6 +26,7 @@ use GreenPNG\Funnel\Gr_Ab_Significance;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Access_Rules;
+use GreenPNG\Security\Gr_Crawler_Verify;
 use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
@@ -302,6 +303,22 @@ if ( ! function_exists( 'gr_inspect_request_payload' ) ) {
      */
     function gr_inspect_request_payload( array $data ): array {
         return Gr_Payload_Inspector::inspect( $data );
+    }
+}
+
+if ( ! function_exists( 'gr_verify_crawler' ) ) {
+    /**
+     * FCrDNS facade (docs/03 §3): forward-confirmed reverse DNS over
+     * both A and AAAA, 24h transient-cached; every failure reads as
+     * "unverified", never as "forged". Does real DNS work — the
+     * front-end path enqueues instead of calling here (iron rule 3).
+     *
+     * @param string $ip Client address as text.
+     * @param string $ua Claimed user agent.
+     * @return array{status: string, host: string, ip: string, ua: string, checked_at: int}
+     */
+    function gr_verify_crawler( string $ip, string $ua ): array {
+        return Gr_Crawler_Verify::verify( $ip, $ua );
     }
 }
 

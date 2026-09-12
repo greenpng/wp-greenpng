@@ -152,6 +152,11 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         );
         $GLOBALS['gr_stub_transients']        = array();
         $GLOBALS['gr_stub_cron']              = array();
+        $GLOBALS['gr_stub_dns']               = array(
+            'ptr'     => array(),
+            'forward' => array(),
+            'calls'   => array(),
+        );
         $GLOBALS['gr_stub_actions']           = array();
         $GLOBALS['gr_stub_fired_actions']     = array();
         $GLOBALS['gr_stub_fired_action_args'] = array();
@@ -564,6 +569,20 @@ if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
 
         return true;
     }
+}
+
+if ( ! defined( 'DNS_A' ) ) {
+    // Real PHP constant value; the resolver engine references these
+    // global-scope names, so the stub environment must provide them.
+    define( 'DNS_A', 1 );
+}
+
+if ( ! defined( 'DNS_AAAA' ) ) {
+    define( 'DNS_AAAA', 28 );
+}
+
+if ( ! defined( 'DNS_ANY' ) ) {
+    define( 'DNS_ANY', 268435456 );
 }
 
 if ( ! function_exists( 'add_action' ) ) {

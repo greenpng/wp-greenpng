@@ -104,6 +104,61 @@ final class Gr_Security_Log_Repository {
     }
 
     /**
+     * Distinct crawler-address claims from the recent fold rows, newest
+     * first: the FCrDNS daily sweep enqueues verifications for exactly
+     * these pairs (docs/13 W10). The address comes back in the column's
+     * binary form; the caller turns it into text and skips anything it
+     * cannot read.
+     *
+     * @param int $hours Look-back window in hours.
+     * @param int $limit Row cap, newest first.
+     * @return array<int, array{ip: string, user_agent: string}> Binary ip plus the agent string.
+     */
+    public function recent_scanner_ips( int $hours, int $limit ): array {
+        global $wpdb;
+
+        $hours = max( 1, $hours );
+        $limit = max( 1, $limit );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $hours * HOUR_IN_SECONDS );
+        $table = Gr_Database::table( 'security_logs' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
+            "SELECT ip, user_agent FROM {$table}
+                WHERE rule_id = %s AND last_seen >= %s
+                GROUP BY ip, user_agent
+                ORDER BY MAX(last_seen) DESC
+                LIMIT %d",
+            array(
+                'scanner_ua',
+                $since,
+                $limit,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; a maintenance-path read, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        $pairs = array();
+        foreach ( $rows as $row ) {
+            if ( ! is_array( $row ) ) {
+                continue;
+            }
+
+            $pairs[] = array(
+                'ip'         => (string) ( $row['ip'] ?? '' ),
+                'user_agent' => (string) ( $row['user_agent'] ?? '' ),
+            );
+        }
+
+        return $pairs;
+    }
+
+    /**
      * Address hygiene: invalid input falls back to the unspecified
      * address so one malformed call can never skip the log row, and
      * the anonymize switch truncates before storage.

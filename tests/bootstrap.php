@@ -38,6 +38,7 @@ require_once __DIR__ . '/stubs/wpdb-stub.php';
 require_once __DIR__ . '/stubs/rest-stubs.php';
 require_once __DIR__ . '/stubs/woo-stubs.php';
 require_once __DIR__ . '/stubs/attribution-overrides.php';
+require_once __DIR__ . '/stubs/dns-overrides.php';
 require_once __DIR__ . '/stubs/wpcli-stub.php';
 gr_stub_reset_options();
 
