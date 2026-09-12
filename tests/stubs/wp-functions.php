@@ -249,6 +249,60 @@ if ( ! function_exists( 'esc_attr' ) ) {
     }
 }
 
+if ( ! function_exists( 'esc_url' ) ) {
+    /**
+     * URL display escaping: http/https or rooted-relative only, and
+     * ampersands entity-encoded like core composes for output.
+     *
+     * @param string $url Candidate URL.
+     * @return string
+     */
+    function esc_url( $url ) {
+        $clean = gr_stub_clean_url( (string) $url );
+
+        return str_replace( '&', '&amp;', $clean );
+    }
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+    /**
+     * URL storage escaping: the same scheme gate without entity
+     * encoding, for URLs headed to storage or redirects.
+     *
+     * @param string $url Candidate URL.
+     * @return string
+     */
+    function esc_url_raw( $url ) {
+        return gr_stub_clean_url( (string) $url );
+    }
+}
+
+if ( ! function_exists( 'gr_stub_clean_url' ) ) {
+    /**
+     * Shared scheme gate for the URL escapers: http/https or a
+     * site-rooted path survives; anything else reads as empty.
+     *
+     * @param string $url Candidate URL.
+     * @return string
+     */
+    function gr_stub_clean_url( $url ) {
+        if ( '' === $url ) {
+            return '';
+        }
+
+        if ( '/' === $url[0] ) {
+            return $url;
+        }
+
+        $parts = parse_url( $url );
+        if ( false === $parts || ! isset( $parts['scheme'], $parts['host'] ) ) {
+            return '';
+        }
+
+        return in_array( strtolower( (string) $parts['scheme'] ), array( 'http', 'https' ), true ) ? $url : '';
+    }
+}
+
 if ( ! function_exists( 'esc_html__' ) ) {
     /**
      * Translate-and-escape stand-in: identity translation plus HTML
@@ -790,7 +844,19 @@ if ( ! function_exists( 'add_query_arg' ) ) {
             $url   = isset( $args[2] ) ? (string) $args[2] : '';
         }
 
-        $query = http_build_query( $pairs );
+        // Core composes query strings without encoding values
+        // (build_query passes urlencode=false), so the stand-in does
+        // the same: pairs join verbatim, in the given order.
+        $query = implode(
+            '&',
+            array_map(
+                static function ( $key, $value ): string {
+                    return $key . '=' . $value;
+                },
+                array_keys( $pairs ),
+                $pairs
+            )
+        );
         if ( '' === $url ) {
             return '?' . $query;
         }

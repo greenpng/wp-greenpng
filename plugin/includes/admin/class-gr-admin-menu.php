@@ -120,6 +120,15 @@ final class Gr_Admin_Menu {
             Gr_Campaigns_Page::SLUG,
             array( Gr_Campaigns_Page::class, 'render' )
         );
+
+        add_submenu_page(
+            self::SLUG,
+            __( 'URL Builder', 'greenpng' ),
+            __( 'URL Builder', 'greenpng' ),
+            'manage_options',
+            Gr_Url_Builder_Page::SLUG,
+            array( Gr_Url_Builder_Page::class, 'render' )
+        );
     }
 
     /**
