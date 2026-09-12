@@ -28,6 +28,7 @@ use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Crawler_Verify;
 use GreenPNG\Security\Gr_Honeypot;
+use GreenPNG\Security\Gr_Ip_Mask;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Login_Protection;
@@ -334,6 +335,19 @@ if ( ! function_exists( 'gr_match_cidr' ) ) {
      */
     function gr_match_cidr( string $ip, string $cidr ): bool {
         return Gr_Ip_Matcher::match_cidr( $ip, $cidr );
+    }
+}
+
+if ( ! function_exists( 'gr_mask_ip' ) ) {
+    /**
+     * Display mask facade (docs/03 §3): last segment hidden, storage
+     * form untouched.
+     *
+     * @param string $ip Textual address.
+     * @return string
+     */
+    function gr_mask_ip( string $ip ): string {
+        return Gr_Ip_Mask::mask( $ip );
     }
 }
 

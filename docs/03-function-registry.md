@@ -33,6 +33,7 @@
 | 函数 | 签名 | 说明 | 来源/变更 |
 | :--- | :--- | :--- | :--- |
 | `gr_match_cidr()` | `gr_match_cidr(string $ip, string $cidr): bool` | IPv4 位运算 + IPv6 前缀匹配 | 改名并补 IPv6 |
+| `gr_mask_ip()` | `gr_mask_ip(string $ip): string` | 展示脱敏：`inet_ntop` 规范化后**末段遮蔽**（v4 末八位组、v6 末组；规范形 `::` 尾部追加遮蔽标记）；非法输入返回空串——展示层永不回显无法解析的地址；纯展示，遮蔽形**永不回存/参与匹配** | 新增（ADR-0007 IP 双轨展示侧） |
 | `gr_verify_crawler()` | `gr_verify_crawler(string $ip, string $ua): array` | FCrDNS 双向验证；**必须含 DNS_AAAA 正查**；结果 transient 缓存 24h；任何失败返回"无法验证"而非"伪造" | 重写（修复 IPv6 致命 bug 与同步 DNS 阻塞） |
 | `gr_is_trusted_ip()` | `gr_is_trusted_ip(string $ip): bool` | 命中允许列表规则 | 改名 |
 | `gr_is_url_allowed()` | `gr_is_url_allowed(string $uri): bool` | 路径前缀/通配符匹配 | 改名 |
