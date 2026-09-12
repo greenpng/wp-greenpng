@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Admin\Gr_Chart_Assets;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
@@ -262,6 +263,7 @@ final class Gr_Plugin {
         Gr_Crawler_Verify::register_hooks();
         Gr_Blackhole::register_hooks();
         Gr_Security_Conclusions::register_hooks();
+        Gr_Chart_Assets::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

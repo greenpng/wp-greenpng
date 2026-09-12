@@ -168,6 +168,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['gr_stub_wc_orders']         = array();
         $GLOBALS['gr_stub_enqueued_scripts']  = array();
+        $GLOBALS['gr_stub_registered_scripts'] = array();
+        $GLOBALS['gr_stub_registered_styles'] = array();
+        $GLOBALS['gr_stub_enqueued_styles']   = array();
         $GLOBALS['gr_stub_inline_scripts']    = array();
         $GLOBALS['gr_stub_shortcodes']        = array();
         $GLOBALS['gr_stub_cli_commands']      = array();
@@ -332,7 +335,9 @@ if ( ! function_exists( 'is_admin' ) ) {
 
 if ( ! function_exists( 'wp_enqueue_script' ) ) {
     /**
-     * Script enqueue recorder.
+     * Script enqueue recorder. With an empty $src (the handle-only
+     * form pages use after registration) it copies the registered
+     * entry, mirroring core's registry resolution.
      *
      * @param string           $handle Script handle.
      * @param string           $src    Script URL.
@@ -342,10 +347,96 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
      * @return bool
      */
     function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $footer = false ) {
+        if ( '' === $src && isset( $GLOBALS['gr_stub_registered_scripts'][ $handle ] ) ) {
+            $registered = $GLOBALS['gr_stub_registered_scripts'][ $handle ];
+
+            $GLOBALS['gr_stub_enqueued_scripts'][ $handle ] = array(
+                'src'    => (string) $registered['src'],
+                'ver'    => $registered['ver'],
+                'footer' => $footer ? true : false,
+            );
+
+            return true;
+        }
+
         $GLOBALS['gr_stub_enqueued_scripts'][ $handle ] = array(
             'src'    => (string) $src,
             'ver'    => $ver,
             'footer' => $footer ? true : false,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_register_script' ) ) {
+    /**
+     * Script registration recorder.
+     *
+     * @param string           $handle Script handle.
+     * @param string           $src    Script URL.
+     * @param array<int,mixed> $deps   Dependencies.
+     * @param string|bool      $ver    Version.
+     * @param bool             $footer Footer placement.
+     * @return bool
+     */
+    function wp_register_script( $handle, $src = '', $deps = array(), $ver = false, $footer = false ) {
+        $GLOBALS['gr_stub_registered_scripts'][ $handle ] = array(
+            'src'    => (string) $src,
+            'ver'    => $ver,
+            'footer' => $footer ? true : false,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_register_style' ) ) {
+    /**
+     * Style registration recorder.
+     *
+     * @param string           $handle Style handle.
+     * @param string           $src    Style URL.
+     * @param array<int,mixed> $deps   Dependencies.
+     * @param string|bool      $ver    Version.
+     * @return bool
+     */
+    function wp_register_style( $handle, $src = '', $deps = array(), $ver = false ) {
+        $GLOBALS['gr_stub_registered_styles'][ $handle ] = array(
+            'src'    => (string) $src,
+            'ver'    => $ver,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_enqueue_style' ) ) {
+    /**
+     * Style enqueue recorder; handle-only form resolves through the
+     * registration store like core does.
+     *
+     * @param string           $handle Style handle.
+     * @param string           $src    Style URL.
+     * @param array<int,mixed> $deps   Dependencies.
+     * @param string|bool      $ver    Version.
+     * @return bool
+     */
+    function wp_enqueue_style( $handle, $src = '', $deps = array(), $ver = false ) {
+        if ( '' === $src && isset( $GLOBALS['gr_stub_registered_styles'][ $handle ] ) ) {
+            $registered = $GLOBALS['gr_stub_registered_styles'][ $handle ];
+
+            $GLOBALS['gr_stub_enqueued_styles'][ $handle ] = array(
+                'src'    => (string) $registered['src'],
+                'ver'    => $registered['ver'],
+            );
+
+            return true;
+        }
+
+        $GLOBALS['gr_stub_enqueued_styles'][ $handle ] = array(
+            'src'    => (string) $src,
+            'ver'    => $ver,
         );
 
         return true;
