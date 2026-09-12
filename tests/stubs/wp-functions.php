@@ -172,6 +172,8 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_registered_styles'] = array();
         $GLOBALS['gr_stub_enqueued_styles']   = array();
         $GLOBALS['gr_stub_inline_scripts']    = array();
+        $GLOBALS['gr_stub_admin_pages']       = array();
+        $GLOBALS['gr_stub_submenu_pages']     = array();
         $GLOBALS['gr_stub_shortcodes']        = array();
         $GLOBALS['gr_stub_cli_commands']      = array();
         $GLOBALS['gr_stub_cli_messages']      = array(
@@ -193,6 +195,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
             $GLOBALS['gr_stub_rand'],
             $GLOBALS['gr_stub_epoch']
         );
+        unset( $GLOBALS['gr_stub_caps'] );
 
         // Services memoize their view of the stub stores, so the container
         // itself restarts with them; harmless when nothing was built yet.
@@ -210,6 +213,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         }
         if ( class_exists( 'GreenPNG\Security\Gr_Security_Gate' ) ) {
             GreenPNG\Security\Gr_Security_Gate::reset_for_tests();
+        }
+        if ( class_exists( 'GreenPNG\Admin\Gr_Admin_Menu' ) ) {
+            GreenPNG\Admin\Gr_Admin_Menu::reset_for_tests();
         }
     }
 }
@@ -249,6 +255,19 @@ if ( ! function_exists( 'esc_html__' ) ) {
      * @return string
      */
     function esc_html__( $text, $domain = 'default' ) {
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+    /**
+     * Output escaping stand-in; same contract core composes for
+     * esc_html__() minus the translation layer.
+     *
+     * @param string $text Text to escape.
+     * @return string
+     */
+    function esc_html( $text ) {
         return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
     }
 }
@@ -352,6 +371,7 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 
             $GLOBALS['gr_stub_enqueued_scripts'][ $handle ] = array(
                 'src'    => (string) $registered['src'],
+                'deps'   => $registered['deps'],
                 'ver'    => $registered['ver'],
                 'footer' => $footer ? true : false,
             );
@@ -361,6 +381,7 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 
         $GLOBALS['gr_stub_enqueued_scripts'][ $handle ] = array(
             'src'    => (string) $src,
+            'deps'   => $deps,
             'ver'    => $ver,
             'footer' => $footer ? true : false,
         );
@@ -383,6 +404,7 @@ if ( ! function_exists( 'wp_register_script' ) ) {
     function wp_register_script( $handle, $src = '', $deps = array(), $ver = false, $footer = false ) {
         $GLOBALS['gr_stub_registered_scripts'][ $handle ] = array(
             'src'    => (string) $src,
+            'deps'   => $deps,
             'ver'    => $ver,
             'footer' => $footer ? true : false,
         );
@@ -391,8 +413,7 @@ if ( ! function_exists( 'wp_register_script' ) ) {
     }
 }
 
-if ( ! function_exists( 'wp_register_style' ) ) {
-    /**
+if ( ! function_exists( 'wp_register_style' ) ) {    /**
      * Style registration recorder.
      *
      * @param string           $handle Style handle.
@@ -440,6 +461,95 @@ if ( ! function_exists( 'wp_enqueue_style' ) ) {
         );
 
         return true;
+    }
+}
+
+if ( ! function_exists( 'add_menu_page' ) ) {
+    /**
+     * Top-level admin menu recorder; returns a deterministic hook
+     * suffix like core does.
+     *
+     * @param string          $page_title Page title.
+     * @param string          $menu_title Menu title.
+     * @param string          $capability Capability gate.
+     * @param string          $menu_slug  Slug.
+     * @param callable|string $callback   Renderer.
+     * @param string          $icon_url   Icon.
+     * @param int|float       $position   Position.
+     * @return string Hook suffix.
+     */
+    function add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null ) {
+        $GLOBALS['gr_stub_admin_pages'][] = array(
+            'page_title' => (string) $page_title,
+            'menu_title' => (string) $menu_title,
+            'capability' => (string) $capability,
+            'menu_slug'  => (string) $menu_slug,
+            'callback'   => $callback,
+            'icon_url'   => (string) $icon_url,
+            'position'   => $position,
+        );
+
+        return 'toplevel_page_' . (string) $menu_slug;
+    }
+}
+
+if ( ! function_exists( 'add_submenu_page' ) ) {
+    /**
+     * Submenu recorder; returns a deterministic hook suffix.
+     *
+     * @param string          $parent_slug Parent slug.
+     * @param string          $page_title  Page title.
+     * @param string          $menu_title  Menu title.
+     * @param string          $capability  Capability gate.
+     * @param string          $menu_slug   Slug.
+     * @param callable|string $callback    Renderer.
+     * @return string Hook suffix.
+     */
+    function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '' ) {
+        $GLOBALS['gr_stub_submenu_pages'][] = array(
+            'parent_slug' => (string) $parent_slug,
+            'page_title'  => (string) $page_title,
+            'menu_title'  => (string) $menu_title,
+            'capability'  => (string) $capability,
+            'menu_slug'   => (string) $menu_slug,
+            'callback'    => $callback,
+        );
+
+        return (string) $parent_slug . '_page_' . (string) $menu_slug;
+    }
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+    /**
+     * Capability stand-in. Denies by default so permission tests opt
+     * IN to access; $GLOBALS['gr_stub_caps'] may be true (grant all)
+     * or an array of granted capability names.
+     *
+     * @param string $capability Capability name.
+     * @return bool
+     */
+    function current_user_can( $capability ) {
+        if ( isset( $GLOBALS['gr_stub_caps'] ) ) {
+            if ( is_bool( $GLOBALS['gr_stub_caps'] ) ) {
+                return $GLOBALS['gr_stub_caps'];
+            }
+
+            return in_array( $capability, (array) $GLOBALS['gr_stub_caps'], true );
+        }
+
+        return false;
+    }
+}
+
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+    /**
+     * Deterministic nonce stand-in.
+     *
+     * @param string $action Action name.
+     * @return string
+     */
+    function wp_create_nonce( $action = -1 ) {
+        return 'gr-stub-nonce-' . md5( (string) $action );
     }
 }
 

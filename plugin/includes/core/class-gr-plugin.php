@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Admin\Gr_Admin_Menu;
 use GreenPNG\Admin\Gr_Chart_Assets;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
@@ -26,6 +27,7 @@ use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Rest\Gr_Collect_Controller;
+use GreenPNG\Rest\Gr_Dashboard_Controller;
 use GreenPNG\Rest\Gr_Probe_Script;
 use GreenPNG\Security\Gr_Blackhole;
 use GreenPNG\Security\Gr_Crawler_Verify;
@@ -251,6 +253,7 @@ final class Gr_Plugin {
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
         add_action( 'rest_api_init', array( Gr_Collect_Controller::class, 'register_routes' ) );
+        add_action( 'rest_api_init', array( Gr_Dashboard_Controller::class, 'register_routes' ) );
         Gr_Probe_Script::register_hooks();
         Gr_Ab_Shortcode::register();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
@@ -264,6 +267,7 @@ final class Gr_Plugin {
         Gr_Blackhole::register_hooks();
         Gr_Security_Conclusions::register_hooks();
         Gr_Chart_Assets::register_hooks();
+        Gr_Admin_Menu::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs
