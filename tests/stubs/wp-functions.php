@@ -183,6 +183,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         // their defaults so one test's override never leaks into the next.
         unset(
             $GLOBALS['gr_stub_now'],
+            $GLOBALS['gr_stub_ts'],
             $GLOBALS['gr_stub_uuid'],
             $GLOBALS['gr_stub_is_ssl'],
             $GLOBALS['gr_stub_ext_cache'],
@@ -281,13 +282,21 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 
 if ( ! function_exists( 'current_time' ) ) {
     /**
-     * Clock stand-in, overridable via $GLOBALS['gr_stub_now'] so tests can
-     * cross day boundaries deterministically.
+     * Clock stand-in, overridable via $GLOBALS['gr_stub_now'] (string)
+     * and $GLOBALS['gr_stub_ts'] (epoch) so tests can cross day
+     * boundaries deterministically; the two defaults describe the
+     * same moment.
      *
-     * @param string $type Time format type ('mysql' expected).
-     * @return string
+     * @param string $type Time format type ('mysql' or 'timestamp').
+     * @return string|int
      */
     function current_time( $type ) {
+        if ( 'timestamp' === $type ) {
+            return isset( $GLOBALS['gr_stub_ts'] )
+                ? (int) $GLOBALS['gr_stub_ts']
+                : (int) strtotime( '2026-09-10 00:00:00 UTC' );
+        }
+
         return $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00';
     }
 }

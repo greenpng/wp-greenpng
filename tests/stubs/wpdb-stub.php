@@ -50,11 +50,13 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         public array $queries = array();
 
         /**
-         * Canned rows returned by get_results(); tests set these per case.
+         * Canned rows returned by get_results(); tests set these per
+         * case. A Closure is called with the query string instead, so
+         * per-query row sets are possible.
          *
-         * @var array<int, mixed>
+         * @var array<int, mixed>|\Closure
          */
-        public array $results = array();
+        public $results = array();
 
         /**
          * Canned scalar returned by get_var(); tests set these per case.
@@ -137,6 +139,9 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
 
         /**
          * Read stand-in: records the SQL and returns the canned rows.
+         * When $results holds a Closure, it is called with the query
+         * string so multi-query code paths (per-metric aggregation) can
+         * answer each statement with its own rows.
          *
          * @param string $query SQL to run.
          * @param string $output Output type constant; ignored.
@@ -145,7 +150,25 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         public function get_results( $query, $output = 'OBJECT' ) {
             $this->queries[] = (string) $query;
 
+            if ( $this->results instanceof \Closure ) {
+                return (array) call_user_func( $this->results, (string) $query );
+            }
+
             return $this->results;
+        }
+
+        /**
+         * Single-row read stand-in: resolves through the same results
+         * store (Closure included) and hands back the first row.
+         *
+         * @param string $query SQL to run.
+         * @param string $output Output type constant; ignored.
+         * @return array<string, mixed>|null
+         */
+        public function get_row( $query, $output = 'OBJECT', $y = 0 ) {
+            $rows = $this->get_results( $query, $output );
+
+            return isset( $rows[0] ) && is_array( $rows[0] ) ? $rows[0] : null;
         }
 
         /**

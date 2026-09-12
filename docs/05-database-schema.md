@@ -146,6 +146,17 @@ CREATE TABLE {$wpdb->prefix}gr_conversions (
 | `gr_daily_stats` | `UNIQUE (stat_date, metric_type, metric_key)` | 聚合幂等（重复执行不翻倍），iss-04 指出缺失，正确 |
 | `gr_sessions` | `KEY (last_active)` | 在线访客 COUNT 走索引范围扫描（见 §3.2） |
 
+**`gr_daily_stats` 指标词表（2026-09-12 U1 实装登记）**：聚合任务 `Gr_Daily_Aggregator` 每日经 `Gr_Queue::DAILY_HOOK` 优先级 5 先于瘦身骑手运行；重算窗口 = 今日回看 7 天（**必须小于最小默认保留期 30 天**，否则重算会读到已瘦身数据），窗口外日期永不重访（报表稳定性即由此保证）。upsert 为替换语义（`ON DUPLICATE KEY UPDATE metric_value = VALUES(metric_value)`），重跑不翻倍。词表（`metric_type` / `metric_key`）：
+
+| metric_type | metric_key | 来源 | 值 |
+| :--- | :--- | :--- | :--- |
+| `sessions` / `visitors` / `pageviews` / `conversions` / `revenue` | `''` | `gr_sessions`(started_at) / `gr_events`(name='pageview') / `gr_conversions` | COUNT / DISTINCT COUNT / SUM(amount)；**静默日也写 0 行**（趋势图稠密） |
+| `sessions_by_country` | 国家码（`''`=未知） | `gr_sessions` GROUP BY country_code | COUNT |
+| `sessions_by_channel` | 渠道名 | `gr_sessions` GROUP BY channel | COUNT |
+| `sessions_by_device` | 设备类型 | `gr_sessions` GROUP BY device_type | COUNT |
+| `sessions_by_bot` | `human`/`bot` | `gr_sessions` GROUP BY is_bot | COUNT |
+| `security_hits` | rule_id | `gr_security_logs` SUM(hit_count)（折叠行困于单小时窗，last_seen 即命中日） | SUM |
+
 ## 4. 版本升级机制
 
 ```php

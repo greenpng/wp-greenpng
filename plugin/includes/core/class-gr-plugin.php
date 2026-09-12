@@ -36,6 +36,7 @@ use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Security\Gr_Security_Conclusions;
 use GreenPNG\Security\Gr_Security_Logger;
 use GreenPNG\Storage\Gr_Conversion_Repository;
+use GreenPNG\Storage\Gr_Daily_Aggregator;
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Schema;
 use GreenPNG\Storage\Gr_Security_Log_Repository;
@@ -244,6 +245,7 @@ final class Gr_Plugin {
      */
     private function register_hooks(): void {
         Gr_Queue::boot();
+        Gr_Daily_Aggregator::register();
 
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
