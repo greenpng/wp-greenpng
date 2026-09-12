@@ -111,4 +111,48 @@ final class Gr_Conversion_Repository {
             )
         );
     }
+
+    /**
+     * Newest bound conversions with the split they were recorded
+     * with: the attribution comparison reads the snapshot that rode
+     * with the binding, never a recomputation over today's chain
+     * (touches landing after a conversion must not rewrite history).
+     *
+     * @param int $days  Window in days, clamped 1..365.
+     * @param int $limit Row cap, newest first.
+     * @return array<int, array<string, string>> Rows keyed by column.
+     */
+    public function recent( int $days, int $limit = 200 ): array {
+        global $wpdb;
+
+        $days  = max( 1, min( $days, 365 ) );
+        $limit = max( 1, min( $limit, 500 ) );
+        $table = Gr_Database::table( 'conversions' );
+
+        $cutoff = ( new \DateTime( 'now', new \DateTimeZone( 'UTC' ) ) )
+            ->modify( '-' . $days . ' days' )
+            ->format( 'Y-m-d H:i:s' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- admin report read over the created index; caching would duplicate a fresh aggregate.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT id, source_type, source_id, visitor_id, amount, currency, model_weights, created_at FROM {$table}
+                WHERE created_at >= %s
+                ORDER BY created_at DESC, id DESC
+                LIMIT %d",
+                array(
+                    $cutoff,
+                    $limit,
+                )
+            ),
+            ARRAY_A
+        );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        return array_values( array_filter( $rows, 'is_array' ) );
+    }
 }

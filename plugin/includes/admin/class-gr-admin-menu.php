@@ -109,6 +109,17 @@ final class Gr_Admin_Menu {
             Gr_Login_Protection_Page::SLUG,
             array( Gr_Login_Protection_Page::class, 'render' )
         );
+
+        // Marketing section opens under the top-level menu (docs/06
+        // tree); read-only page, no write handler of its own.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Campaigns', 'greenpng' ),
+            __( 'Campaigns', 'greenpng' ),
+            'manage_options',
+            Gr_Campaigns_Page::SLUG,
+            array( Gr_Campaigns_Page::class, 'render' )
+        );
     }
 
     /**
