@@ -91,6 +91,121 @@ if ( ! function_exists( 'wp_salt' ) ) {
     }
 }
 
+if ( ! function_exists( 'is_wp_error' ) ) {
+    /**
+     * WP_Error predicate; the class itself comes from rest-stubs.php.
+     *
+     * @param mixed $thing Any value.
+     * @return bool
+     */
+    function is_wp_error( $thing ) {
+        return $thing instanceof WP_Error;
+    }
+}
+
+if ( ! function_exists( 'wp_safe_remote_get' ) ) {
+    /**
+     * Outbound GET stand-in: answers from gr_stub_http keyed by URL,
+     * records every call in gr_stub_http_calls so tests can prove a
+     * gate refused to touch the network.
+     *
+     * @param string $url  Request URL.
+     * @param array<string, mixed> $args Request arguments.
+     * @return array<string, mixed>|WP_Error
+     */
+    function wp_safe_remote_get( $url, $args = array() ) {
+        return gr_stub_http_answer( 'GET', $url, $args );
+    }
+}
+
+if ( ! function_exists( 'wp_safe_remote_post' ) ) {
+    /**
+     * Outbound POST stand-in, same store as GET.
+     *
+     * @param string $url  Request URL.
+     * @param array<string, mixed> $args Request arguments.
+     * @return array<string, mixed>|WP_Error
+     */
+    function wp_safe_remote_post( $url, $args = array() ) {
+        return gr_stub_http_answer( 'POST', $url, $args );
+    }
+}
+
+if ( ! function_exists( 'gr_stub_http_answer' ) ) {
+    /**
+     * Shared responder for the remote stubs.
+     *
+     * @param string $method Request method.
+     * @param string $url    Request URL.
+     * @param array<string, mixed> $args Request arguments.
+     * @return array<string, mixed>|WP_Error
+     */
+    function gr_stub_http_answer( $method, $url, $args ) {
+        $GLOBALS['gr_stub_http_calls'][] = array(
+            'method' => $method,
+            'url'    => $url,
+            'args'   => $args,
+        );
+
+        if ( ! array_key_exists( $url, $GLOBALS['gr_stub_http'] ?? array() ) ) {
+            return new WP_Error( 'gr_stub_http_missing', "no stub answer for {$url}" );
+        }
+
+        $answer = $GLOBALS['gr_stub_http'][ $url ];
+
+        return is_object( $answer ) ? $answer : (array) $answer;
+    }
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+    /**
+     * Status code reader over the stub response shape.
+     *
+     * @param array<string, mixed>|WP_Error $response Response.
+     * @return int
+     */
+    function wp_remote_retrieve_response_code( $response ) {
+        if ( is_wp_error( $response ) || ! is_array( $response ) ) {
+            return 0;
+        }
+
+        return (int) ( $response['response']['code'] ?? 0 );
+    }
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_header' ) ) {
+    /**
+     * Header reader over the stub response shape.
+     *
+     * @param array<string, mixed>|WP_Error $response Response.
+     * @param string $name                   Header name.
+     * @return string
+     */
+    function wp_remote_retrieve_header( $response, $name ) {
+        if ( is_wp_error( $response ) || ! is_array( $response ) ) {
+            return '';
+        }
+
+        return (string) ( $response['headers'][ $name ] ?? '' );
+    }
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+    /**
+     * Body reader over the stub response shape.
+     *
+     * @param array<string, mixed>|WP_Error $response Response.
+     * @return string
+     */
+    function wp_remote_retrieve_body( $response ) {
+        if ( is_wp_error( $response ) || ! is_array( $response ) ) {
+            return '';
+        }
+
+        return (string) ( $response['body'] ?? '' );
+    }
+}
+
 if ( ! function_exists( 'wp_upload_dir' ) ) {
     /**
      * Uploads directory stand-in: GeoIP override resolution reads it.
@@ -184,6 +299,8 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_consent']           = array();
         $GLOBALS['gr_stub_cookies']           = array();
         $GLOBALS['gr_stub_uploads']           = array();
+        $GLOBALS['gr_stub_http']              = array();
+        $GLOBALS['gr_stub_http_calls']        = array();
         $GLOBALS['gr_stub_rest_routes']       = array();
         $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['gr_stub_wc_orders']         = array();

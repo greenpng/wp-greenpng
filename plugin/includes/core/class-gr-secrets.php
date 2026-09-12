@@ -25,6 +25,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Gr_Secrets {
 
+    /**
+     * Credential option names. The canonical vocabulary lives here with
+     * the service that owns the storage format; the settings page and
+     * the outbound channel reference these instead of re-declaring the
+     * literals, so the option keys cannot drift between writer and
+     * reader.
+     */
+    public const META_PIXEL_OPTION = 'gr_secret_meta_pixel_id';
+    public const META_TOKEN_OPTION = 'gr_secret_meta_access_token';
+    public const GA4_ID_OPTION     = 'gr_secret_ga4_measurement_id';
+    public const GA4_SECRET_OPTION = 'gr_secret_ga4_api_secret';
+
     /** Cipher per docs/10 §2. */
     private const CIPHER = 'aes-256-gcm';
 

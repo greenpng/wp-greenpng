@@ -53,17 +53,11 @@ final class Gr_Analytics_Page {
     /** POST action: local self-check of the GA4 block. */
     public const ACTION_CHECK_GA4 = 'check_ga4';
 
-    /** Secret option: Meta pixel id. */
-    public const META_PIXEL_OPTION = 'gr_secret_meta_pixel_id';
-
-    /** Secret option: Meta access token. */
-    public const META_TOKEN_OPTION = 'gr_secret_meta_access_token';
-
-    /** Secret option: GA4 measurement id. */
-    public const GA4_ID_OPTION = 'gr_secret_ga4_measurement_id';
-
-    /** Secret option: GA4 API secret. */
-    public const GA4_SECRET_OPTION = 'gr_secret_ga4_api_secret';
+    /** Secret option names, owned by Gr_Secrets; the page only mirrors them. */
+    public const META_PIXEL_OPTION = Gr_Secrets::META_PIXEL_OPTION;
+    public const META_TOKEN_OPTION = Gr_Secrets::META_TOKEN_OPTION;
+    public const GA4_ID_OPTION     = Gr_Secrets::GA4_ID_OPTION;
+    public const GA4_SECRET_OPTION = Gr_Secrets::GA4_SECRET_OPTION;
 
     /**
      * Hook registration; the write arms ride admin_init like every
