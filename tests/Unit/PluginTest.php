@@ -53,15 +53,16 @@ final class PluginTest extends TestCase {
     public function testSchemaGateMountsMaybeUpgradeOnAdminInit(): void {
         Gr_Plugin::run();
 
-        $gate = null;
+        $callbacks = array();
         foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
             if ( 'admin_init' === $registration['hook'] ) {
-                $gate = $registration['callback'];
+                $callbacks[] = $registration['callback'];
             }
         }
 
-        self::assertNotNull( $gate );
-        self::assertSame( array( Gr_Schema::class, 'maybe_upgrade' ), $gate );
+        // The schema gate and the access-rules write handler share
+        // admin_init; the gate must still be there.
+        self::assertContains( array( Gr_Schema::class, 'maybe_upgrade' ), $callbacks );
     }
 
     public function testEntryFileHooksControllerAtPluginsLoaded(): void {

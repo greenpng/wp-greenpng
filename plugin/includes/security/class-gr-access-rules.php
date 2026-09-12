@@ -112,6 +112,18 @@ final class Gr_Access_Rules {
     }
 
     /**
+     * Drops the memo after a write: an owner who just added a rule
+     * must not have the same request answer matches from the stale
+     * copy (the admin redirect ends the request, but correctness
+     * should not depend on that).
+     *
+     * @return void
+     */
+    public static function invalidate(): void {
+        self::$rules = null;
+    }
+
+    /**
      * The memoized rule list; one repository read per request.
      *
      * @return array<int, array<string, string>>

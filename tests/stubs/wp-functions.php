@@ -174,6 +174,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_inline_scripts']    = array();
         $GLOBALS['gr_stub_admin_pages']       = array();
         $GLOBALS['gr_stub_submenu_pages']     = array();
+        $GLOBALS['gr_stub_nonce_fields']      = array();
+        $GLOBALS['gr_stub_redirects']         = array();
+        $GLOBALS['gr_stub_submit_buttons']    = array();
         $GLOBALS['gr_stub_shortcodes']        = array();
         $GLOBALS['gr_stub_cli_commands']      = array();
         $GLOBALS['gr_stub_cli_messages']      = array(
@@ -196,6 +199,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
             $GLOBALS['gr_stub_epoch']
         );
         unset( $GLOBALS['gr_stub_caps'] );
+        unset( $GLOBALS['gr_stub_nonce_bad'], $GLOBALS['gr_stub_user_id'] );
 
         // Services memoize their view of the stub stores, so the container
         // itself restarts with them; harmless when nothing was built yet.
@@ -632,6 +636,46 @@ if ( ! function_exists( 'home_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'admin_url' ) ) {
+    /**
+     * Admin URL stand-in for a fixed host root.
+     *
+     * @param string $path Optional path.
+     * @return string
+     */
+    function admin_url( $path = '' ) {
+        return 'https://stub.example/wp-admin/' . ltrim( (string) $path, '/' );
+    }
+}
+
+if ( ! function_exists( 'submit_button' ) ) {
+    /**
+     * Submit button emitter: echoes like core does — the $wrap flag
+     * only controls the submit paragraph around the input — records
+     * for assertions, and returns the markup.
+     *
+     * @param string   $text  Button text.
+     * @param string   $type  Button type class.
+     * @param string   $name  Field name.
+     * @param bool     $wrap  Wrap in a submit paragraph.
+     * @param string[] $other Other attributes.
+     * @return string
+     */
+    function submit_button( $text = '', $type = 'primary', $name = 'submit', $wrap = true, $other = array() ) {
+        unset( $other );
+
+        $text  = ( '' === (string) $text ) ? 'Save Changes' : (string) $text;
+        $input = '<input type="submit" name="' . esc_attr( (string) $name ) . '" class="button button-' . esc_attr( (string) $type ) . '" value="' . esc_attr( $text ) . '" />';
+        $html  = $wrap ? '<p class="submit">' . $input . '</p>' : $input;
+
+        $GLOBALS['gr_stub_submit_buttons'][] = $text;
+
+        echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- stand-in echoes prebuilt escaped markup.
+
+        return $html;
+    }
+}
+
 if ( ! function_exists( 'wp_parse_url' ) ) {
     /**
      * URL parsing stand-in delegating to PHP's parse_url.
@@ -642,6 +686,139 @@ if ( ! function_exists( 'wp_parse_url' ) ) {
      */
     function wp_parse_url( $url, $component = -1 ) {
         return parse_url( (string) $url, $component );
+    }
+}
+
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+    /**
+     * Nonce check stand-in: a nonce minted by wp_create_nonce for the
+     * same action verifies; $GLOBALS['gr_stub_nonce_bad'] forces
+     * failure so tests can exercise the reject arm.
+     *
+     * @param string $nonce  Nonce value.
+     * @param string $action Action name.
+     * @return int|bool 1 valid, 2 valid late, false invalid.
+     */
+    function wp_verify_nonce( $nonce, $action = -1 ) {
+        if ( ! empty( $GLOBALS['gr_stub_nonce_bad'] ) ) {
+            return false;
+        }
+
+        return ( 'gr-stub-nonce-' . md5( (string) $action ) === (string) $nonce ) ? 1 : false;
+    }
+}
+
+if ( ! function_exists( 'check_admin_referer' ) ) {
+    /**
+     * Admin nonce gate stand-in: reads the field from $_POST (or the
+     * query string) and verifies; the stub never terminates, it just
+     * returns the verdict so tests can assert the reject arm.
+     *
+     * @param string      $action Action name.
+     * @param string|null $query_key Field name carrying the nonce.
+     * @return bool
+     */
+    function check_admin_referer( $action = -1, $query_key = '_wpnonce' ) {
+        $field = ( null === $query_key ) ? '_wpnonce' : (string) $query_key;
+        $nonce = isset( $_POST[ $field ] ) ? (string) wp_unslash( $_POST[ $field ] ) : '';
+
+        return false !== wp_verify_nonce( $nonce, $action );
+    }
+}
+
+if ( ! function_exists( 'wp_nonce_field' ) ) {
+    /**
+     * Nonce field emitter: records and returns the hidden input.
+     *
+     * @param string|int $action Action name.
+     * @param string     $name   Field name.
+     * @param bool       $refer  Whether to add the referer field.
+     * @param bool       $echo   Whether to print.
+     * @return string
+     */
+    function wp_nonce_field( $action = -1, $name = '_wpnonce', $refer = true, $echo = true ) {
+        $html = '<input type="hidden" id="' . esc_attr( $name ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( wp_create_nonce( $action ) ) . '" />';
+
+        $GLOBALS['gr_stub_nonce_fields'][] = array(
+            'action' => (string) $action,
+            'name'   => (string) $name,
+        );
+
+        if ( $echo ) {
+            echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- stand-in echoes prebuilt escaped markup.
+        }
+
+        return $html;
+    }
+}
+
+if ( ! function_exists( 'wp_safe_redirect' ) ) {
+    /**
+     * Redirect recorder; never terminates the test process.
+     *
+     * @param string $location Target URL.
+     * @param int    $status   HTTP status.
+     * @return bool
+     */
+    function wp_safe_redirect( $location, $status = 302 ) {
+        $GLOBALS['gr_stub_redirects'][] = array(
+            'location' => (string) $location,
+            'status'   => (int) $status,
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'add_query_arg' ) ) {
+    /**
+     * Query-string builder: accepts either (key, value, url) or an
+     * array of pairs plus url, like core.
+     *
+     * @param mixed ...$args Key/value/url triple or array+url.
+     * @return string
+     */
+    function add_query_arg( ...$args ) {
+        $url = '';
+        $pairs = array();
+
+        if ( is_array( $args[0] ) ) {
+            $pairs = $args[0];
+            $url   = isset( $args[1] ) ? (string) $args[1] : '';
+        } elseif ( count( $args ) >= 2 ) {
+            $pairs = array( (string) $args[0] => $args[1] );
+            $url   = isset( $args[2] ) ? (string) $args[2] : '';
+        }
+
+        $query = http_build_query( $pairs );
+        if ( '' === $url ) {
+            return '?' . $query;
+        }
+
+        return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query;
+    }
+}
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+    /**
+     * Current user id stand-in, overridable via gr_stub_user_id.
+     *
+     * @return int
+     */
+    function get_current_user_id() {
+        return (int) ( $GLOBALS['gr_stub_user_id'] ?? 0 );
+    }
+}
+
+if ( ! function_exists( 'absint' ) ) {
+    /**
+     * Core's absolute-integer cast.
+     *
+     * @param mixed $value Candidate number.
+     * @return int
+     */
+    function absint( $value ) {
+        return abs( (int) $value );
     }
 }
 

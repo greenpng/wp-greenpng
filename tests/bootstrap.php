@@ -40,6 +40,7 @@ require_once __DIR__ . '/stubs/woo-stubs.php';
 require_once __DIR__ . '/stubs/attribution-overrides.php';
 require_once __DIR__ . '/stubs/dns-overrides.php';
 require_once __DIR__ . '/stubs/wpcli-stub.php';
+require_once __DIR__ . '/stubs/wp-list-table-stub.php';
 gr_stub_reset_options();
 
 require_once dirname( __DIR__ ) . '/plugin/includes/core/class-gr-autoloader.php';

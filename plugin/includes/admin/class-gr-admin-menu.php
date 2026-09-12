@@ -87,6 +87,17 @@ final class Gr_Admin_Menu {
             Gr_Traffic_Page::SLUG,
             array( Gr_Traffic_Page::class, 'render' )
         );
+
+        // Nested under Traffic & Security per the docs/06 tree; the
+        // page registers its own admin_init write handler.
+        add_submenu_page(
+            Gr_Traffic_Page::SLUG,
+            __( 'Access Rules', 'greenpng' ),
+            __( 'Access Rules', 'greenpng' ),
+            'manage_options',
+            Gr_Access_Rules_Page::SLUG,
+            array( Gr_Access_Rules_Page::class, 'render' )
+        );
     }
 
     /**
