@@ -108,6 +108,70 @@ final class Gr_Session_Repository {
     }
 
     /**
+     * Distribution of bot_score across the window's sessions: fixed
+     * bands (0, 1-25, 26-50, 51-75, 76-99, 100) plus the human/bot
+     * split, in one aggregate query — the page renders exactly these
+     * numbers and invents nothing. Sessions the probe never scored
+     * sit in band 0 by the column default; the split reads is_bot,
+     * the boolean conclusion the scorer already reached.
+     *
+     * @param int $days Look-back window in days.
+     * @return array{total: int, bots: int, bands: array<string, int>}
+     */
+    public function bot_score_distribution( int $days ): array {
+        global $wpdb;
+
+        $days  = max( 1, min( $days, 365 ) );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+        $table = Gr_Database::table( 'sessions' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+            "SELECT COUNT(*) AS total, SUM(is_bot) AS bots, SUM(bot_score = 0) AS b0, SUM(bot_score BETWEEN 1 AND 25) AS b1_25, SUM(bot_score BETWEEN 26 AND 50) AS b26_50, SUM(bot_score BETWEEN 51 AND 75) AS b51_75, SUM(bot_score BETWEEN 76 AND 99) AS b76_99, SUM(bot_score = 100) AS b100 FROM {$table} WHERE started_at >= %s",
+            $since
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report aggregate over the started index, never a front-end request.
+        $row = $wpdb->get_row( $sql, ARRAY_A );
+        if ( ! is_array( $row ) ) {
+            return array(
+                'total' => 0,
+                'bots'  => 0,
+                'bands' => self::empty_bands(),
+            );
+        }
+
+        return array(
+            'total' => (int) ( $row['total'] ?? 0 ),
+            'bots'  => (int) ( $row['bots'] ?? 0 ),
+            'bands' => array(
+                '0'     => (int) ( $row['b0'] ?? 0 ),
+                '1-25'  => (int) ( $row['b1_25'] ?? 0 ),
+                '26-50' => (int) ( $row['b26_50'] ?? 0 ),
+                '51-75' => (int) ( $row['b51_75'] ?? 0 ),
+                '76-99' => (int) ( $row['b76_99'] ?? 0 ),
+                '100'   => (int) ( $row['b100'] ?? 0 ),
+            ),
+        );
+    }
+
+    /**
+     * The zero state of the band vocabulary.
+     *
+     * @return array<string, int>
+     */
+    private static function empty_bands(): array {
+        return array(
+            '0'     => 0,
+            '1-25'  => 0,
+            '26-50' => 0,
+            '51-75' => 0,
+            '76-99' => 0,
+            '100'   => 0,
+        );
+    }
+
+    /**
      * Activity cutoff string, window seconds before the site clock. Both
      * parse and format pin UTC explicitly so a runtime timezone change
      * can never skew the boundary (the stored stamps are naive site-time

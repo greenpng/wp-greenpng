@@ -121,6 +121,17 @@ final class Gr_Admin_Menu {
             array( Gr_Login_Protection_Page::class, 'render' )
         );
 
+        // Bot & Device Signals beside its sibling engines (docs/06
+        // tree); read-only summaries, no write handler of its own.
+        add_submenu_page(
+            Gr_Traffic_Page::SLUG,
+            __( 'Bot & Device Signals', 'greenpng' ),
+            __( 'Bot & Device Signals', 'greenpng' ),
+            'manage_options',
+            Gr_Bot_Signals_Page::SLUG,
+            array( Gr_Bot_Signals_Page::class, 'render' )
+        );
+
         // Marketing section opens under the top-level menu (docs/06
         // tree); read-only page, no write handler of its own.
         add_submenu_page(

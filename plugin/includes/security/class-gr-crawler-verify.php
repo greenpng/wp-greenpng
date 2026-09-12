@@ -44,6 +44,9 @@ final class Gr_Crawler_Verify {
     /** Result cache lifetime. */
     public const CACHE_TTL = 86400;
 
+    /** Security-log rule id the verdict rows file under. */
+    public const LOG_RULE = 'fcrdns';
+
     /** How long a queued-but-unrun job suppresses re-enqueueing. */
     public const PENDING_TTL = 900;
 
@@ -54,7 +57,11 @@ final class Gr_Crawler_Verify {
     public const SWEEP_HOURS = 24;
 
     /**
-     * Verifies one crawler claim, through the 24h cache.
+     * Verifies one crawler claim, through the 24h cache. A fresh
+     * resolution also files one row on the security track (docs/12:
+     * record-only) — the verdict lives in action_taken, the PTR
+     * hostname in reason, so the report page reads what the DNS walk
+     * actually found instead of scraping the ephemeral cache.
      *
      * @param string $ip Client address as text.
      * @param string $ua Claimed user agent.
@@ -70,6 +77,16 @@ final class Gr_Crawler_Verify {
 
         $result = self::resolve( $ip, $ua );
         set_transient( $key, $result, self::CACHE_TTL );
+
+        ( new Gr_Security_Log_Repository() )->log(
+            $result['ip'],
+            self::LOG_RULE,
+            '',
+            $result['ua'],
+            $result['host'],
+            0,
+            $result['status']
+        );
 
         return $result;
     }

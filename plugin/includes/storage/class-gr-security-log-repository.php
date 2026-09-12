@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Core\Gr_Database;
 use GreenPNG\Core\Gr_Settings;
+use GreenPNG\Security\Gr_Crawler_Verify;
 
 /**
  * Write access to the gr_security_logs table.
@@ -55,9 +56,12 @@ final class Gr_Security_Log_Repository {
      * @param int    $window Fold window id; 0 derives the current hour
      *                       (tests pass explicit ids to avoid boundary
      *                       flake).
+     * @param string $action Outcome word, at most 32 chars ('logged'
+     *                       for engine hits; the FCrDNS engine files
+     *                       its verdict here).
      * @return int Rows affected by the upsert.
      */
-    public function log( string $ip, string $rule_id, string $path = '', string $ua = '', string $reason = '', int $window = 0 ): int {
+    public function log( string $ip, string $rule_id, string $path = '', string $ua = '', string $reason = '', int $window = 0, string $action = 'logged' ): int {
         global $wpdb;
 
         $ip = $this->normalize_ip( $ip );
@@ -73,7 +77,7 @@ final class Gr_Security_Log_Repository {
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
             "INSERT INTO {$table}
                 (fold_key, ip, rule_id, request_path, user_agent, reason, action_taken, hit_count, first_seen, last_seen)
-            VALUES (%s, INET6_ATON(%s), %s, %s, %s, %s, 'logged', 1, %s, %s)
+            VALUES (%s, INET6_ATON(%s), %s, %s, %s, %s, %s, 1, %s, %s)
             ON DUPLICATE KEY UPDATE hit_count = hit_count + 1, last_seen = VALUES(last_seen)",
             array(
                 $fold_key,
@@ -82,6 +86,7 @@ final class Gr_Security_Log_Repository {
                 substr( $path, 0, 191 ),
                 substr( $ua, 0, 191 ),
                 substr( $reason, 0, 191 ),
+                substr( $action, 0, 32 ),
                 $now,
                 $now,
             )
@@ -280,6 +285,132 @@ final class Gr_Security_Log_Repository {
         }
 
         return $pairs;
+    }
+
+    /**
+     * Recent FCrDNS verdict rows, newest first: one row per fresh DNS
+     * walk (the 24h verdict cache suppresses repeats), the verdict in
+     * action_taken, the PTR hostname in reason. The page masks the
+     * address for display; the row keeps the full one like every
+     * security-track entry.
+     *
+     * @param int $hours Look-back window in hours.
+     * @param int $limit Row cap, newest first.
+     * @return array<int, array<string, string>> Rows keyed by column.
+     */
+    public function fcrdns_recent( int $hours, int $limit = 25 ): array {
+        global $wpdb;
+
+        $hours = max( 1, $hours );
+        $limit = max( 1, min( $limit, 100 ) );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $hours * HOUR_IN_SECONDS );
+        $table = Gr_Database::table( 'security_logs' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
+            "SELECT INET6_NTOA(ip) AS ip, user_agent, reason AS host, action_taken, hit_count, last_seen FROM {$table}
+                WHERE rule_id = %s AND last_seen >= %s
+                ORDER BY last_seen DESC, id DESC
+                LIMIT %d",
+            array(
+                Gr_Crawler_Verify::LOG_RULE,
+                $since,
+                $limit,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report read, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        return array_values( array_filter( $rows, 'is_array' ) );
+    }
+
+    /**
+     * Verdict totals for the window: one row per action_taken word
+     * with folded hit counts, so the summary line above the table
+     * counts DNS walks, not row explosions.
+     *
+     * @param int $hours Look-back window in hours.
+     * @return array<string, array{walks: int, rows: int}> Keyed by verdict word.
+     */
+    public function fcrdns_summary( int $hours ): array {
+        global $wpdb;
+
+        $hours = max( 1, $hours );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $hours * HOUR_IN_SECONDS );
+        $table = Gr_Database::table( 'security_logs' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
+            "SELECT action_taken, SUM(hit_count) AS walks, COUNT(*) AS fold_rows FROM {$table}
+                WHERE rule_id = %s AND last_seen >= %s
+                GROUP BY action_taken",
+            array(
+                Gr_Crawler_Verify::LOG_RULE,
+                $since,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report read, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        $out = array();
+        if ( is_array( $rows ) ) {
+            foreach ( $rows as $row ) {
+                if ( is_array( $row ) ) {
+                    $out[ (string) ( $row['action_taken'] ?? '' ) ] = array(
+                        'walks' => (int) ( $row['walks'] ?? 0 ),
+                        'rows'  => (int) ( $row['fold_rows'] ?? 0 ),
+                    );
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Scanner-UA engine statistics: one row per agent string the
+     * engine folded hits for, heaviest first. hit_count carries the
+     * real detection volume — the fold rows are just its container.
+     *
+     * @param int $hours Look-back window in hours.
+     * @param int $limit Agent cap, heaviest first.
+     * @return array<int, array<string, string|int>> Rows keyed by column.
+     */
+    public function ua_engine_stats( int $hours, int $limit = 15 ): array {
+        global $wpdb;
+
+        $hours = max( 1, $hours );
+        $limit = max( 1, min( $limit, 100 ) );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $hours * HOUR_IN_SECONDS );
+        $table = Gr_Database::table( 'security_logs' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
+            "SELECT user_agent, SUM(hit_count) AS hits, COUNT(*) AS fold_rows, MAX(last_seen) AS last_seen FROM {$table}
+                WHERE rule_id = 'scanner_ua' AND last_seen >= %s
+                GROUP BY user_agent
+                ORDER BY hits DESC
+                LIMIT %d",
+            array(
+                $since,
+                $limit,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report read, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        return array_values( array_filter( $rows, 'is_array' ) );
     }
 
     /**
