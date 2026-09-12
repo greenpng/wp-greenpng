@@ -30,6 +30,7 @@ use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Login_Protection;
+use GreenPNG\Security\Gr_Payload_Inspector;
 use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Security\Gr_Temp_Bans;
 use GreenPNG\Storage\Gr_Security_Log_Repository;
@@ -286,6 +287,21 @@ if ( ! function_exists( 'gr_is_scanner_ua' ) ) {
      */
     function gr_is_scanner_ua( string $ua ): bool {
         return Gr_Scanner_Ua::is_scanner( $ua );
+    }
+}
+
+if ( ! function_exists( 'gr_inspect_request_payload' ) ) {
+    /**
+     * Payload-inspection facade (docs/03 §3, docs/10 §4): the rewritten
+     * conservative ruleset — SQL UNION injection shapes and multi-hop
+     * path traversal chains only, on whatever data the caller chooses.
+     * Findings are markers, never blocks.
+     *
+     * @param array<int|string, mixed> $data Parameter name => raw value.
+     * @return array<int, array<string, string>> rule_id + reason rows.
+     */
+    function gr_inspect_request_payload( array $data ): array {
+        return Gr_Payload_Inspector::inspect( $data );
     }
 }
 

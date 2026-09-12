@@ -88,8 +88,9 @@ final class Gr_Request_Inspector {
     /**
      * Builds the shared request context and runs every registered
      * check. A check throwing never stops the others (docs/02 §2.7:
-     * per-unit isolation); findings are normalized here so no detector
-     * can smuggle arbitrary shapes downstream.
+     * per-unit isolation); a check returns one finding or a list of
+     * findings, and everything is normalized here so no detector can
+     * smuggle arbitrary shapes downstream.
      *
      * @return array<int, array<string, string>> rule_id + reason rows.
      */
@@ -119,8 +120,7 @@ final class Gr_Request_Inspector {
                 continue;
             }
 
-            $normalized = $this->normalize( $finding );
-            if ( null !== $normalized ) {
+            foreach ( $this->normalize_many( $finding ) as $normalized ) {
                 $findings[] = $normalized;
             }
         }
@@ -130,6 +130,41 @@ final class Gr_Request_Inspector {
         }
 
         return $findings;
+    }
+
+    /**
+     * A check may settle for one finding or return a numeric-keyed
+     * list of them (a payload scan can hit several parameters at
+     * once); anything else is treated as no finding. The two shapes
+     * are told apart by the rule_id key a single finding always has.
+     *
+     * @param mixed $finding Check return value.
+     * @return array<int, array<string, string>> Zero or more rows.
+     */
+    private function normalize_many( $finding ): array {
+        if ( ! is_array( $finding ) ) {
+            return array();
+        }
+
+        if ( isset( $finding['rule_id'] ) ) {
+            $one = $this->normalize( $finding );
+
+            return null === $one ? array() : array( $one );
+        }
+
+        $rows = array();
+        foreach ( $finding as $item ) {
+            if ( ! is_array( $item ) ) {
+                continue;
+            }
+
+            $one = $this->normalize( $item );
+            if ( null !== $one ) {
+                $rows[] = $one;
+            }
+        }
+
+        return $rows;
     }
 
     /**

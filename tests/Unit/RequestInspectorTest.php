@@ -147,6 +147,30 @@ final class RequestInspectorTest extends TestCase {
         $this->assertInstanceOf( \Throwable::class, $reported[1] );
     }
 
+    public function testCheckMayReturnAListOfFindings(): void {
+        $inspector = new Gr_Request_Inspector( new Gr_Settings() );
+
+        $this->register_checks(
+            array(
+                function (): array {
+                    // A payload-style check settles several parameters
+                    // at once: one list, garbage entries dropped.
+                    return array(
+                        array( 'rule_id' => 'sqli_union', 'reason' => 'cat:UNION SELECT' ),
+                        'not-a-finding',
+                        array( 'rule_id' => 'lfi_traversal', 'reason' => 'template:../../' ),
+                    );
+                },
+            )
+        );
+
+        $findings = $inspector->inspect();
+
+        $this->assertCount( 2, $findings );
+        $this->assertSame( 'sqli_union', $findings[0]['rule_id'] );
+        $this->assertSame( 'lfi_traversal', $findings[1]['rule_id'] );
+    }
+
     public function testFindingsAreNormalizedToRuleAndReason(): void {
         $inspector = new Gr_Request_Inspector( new Gr_Settings() );
 

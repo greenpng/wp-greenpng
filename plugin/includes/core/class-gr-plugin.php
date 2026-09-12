@@ -28,6 +28,7 @@ use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Rest\Gr_Probe_Script;
 use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Security\Gr_Login_Protection;
+use GreenPNG\Security\Gr_Payload_Inspector;
 use GreenPNG\Security\Gr_Request_Inspector;
 use GreenPNG\Security\Gr_Scanner_Ua;
 use GreenPNG\Security\Gr_Security_Logger;
@@ -249,6 +250,7 @@ final class Gr_Plugin {
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
         $this->inspector->register_hooks();
         Gr_Scanner_Ua::register_detector();
+        Gr_Payload_Inspector::register_detector();
         ( new Gr_Security_Logger( new Gr_Security_Log_Repository() ) )->register_hooks();
         Gr_Login_Protection::register_hooks();
         Gr_Honeypot::register_hooks();
