@@ -38,23 +38,23 @@ final class Gr_Diagnostics {
         $next = wp_next_scheduled( Gr_Queue::EVENT_HOOK );
 
         return array(
-            'plugin'        => array(
+            'plugin'       => array(
                 'version' => GR_VERSION,
             ),
-            'environment'   => array(
-                'php'        => PHP_VERSION,
-                'wp'         => get_bloginfo( 'version' ),
-                'db'         => self::db_family() . ' ' . $wpdb->db_version(),
-                'multisite'  => is_multisite(),
-                'locale'     => get_locale(),
+            'environment'  => array(
+                'php'       => PHP_VERSION,
+                'wp'        => get_bloginfo( 'version' ),
+                'db'        => self::db_family() . ' ' . $wpdb->db_version(),
+                'multisite' => is_multisite(),
+                'locale'    => get_locale(),
             ),
-            'queue'         => array(
+            'queue'        => array(
                 'backend'    => Gr_Queue::backend(),
                 'next_daily' => is_int( $next ) ? (int) $next : 0,
             ),
-            'adapters'      => self::adapters(),
-            'tables'        => Gr_Table_Stats::stats(),
-            'generated_at'  => gmdate( 'c' ),
+            'adapters'     => self::adapters(),
+            'tables'       => Gr_Table_Stats::stats(),
+            'generated_at' => gmdate( 'c' ),
         );
     }
 

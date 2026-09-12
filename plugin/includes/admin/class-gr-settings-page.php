@@ -124,9 +124,9 @@ final class Gr_Settings_Page {
         wp_safe_redirect(
             add_query_arg(
                 array(
-                    'page'      => self::SLUG,
-                    'tab'       => $tab,
-                    'gr_saved'  => 1,
+                    'page'     => self::SLUG,
+                    'tab'      => $tab,
+                    'gr_saved' => 1,
                 ),
                 admin_url( 'admin.php' )
             )
@@ -172,7 +172,7 @@ final class Gr_Settings_Page {
      * @return int 1 or 0.
      */
     private static function checkbox( string $key ): int {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write(); value is a strict '1' comparison.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); value is a strict '1' comparison.
         return isset( $_POST[ $key ] ) && '1' === (string) wp_unslash( $_POST[ $key ] ) ? 1 : 0;
     }
 
@@ -220,7 +220,7 @@ final class Gr_Settings_Page {
         // as a cleaned array, every entry still validated by the
         // resolver when it is used.
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); free-text list parsed and trimmed below.
-        $raw = isset( $_POST['trusted_proxies'] ) ? (string) wp_unslash( $_POST['trusted_proxies'] ) : '';
+        $raw  = isset( $_POST['trusted_proxies'] ) ? (string) wp_unslash( $_POST['trusted_proxies'] ) : '';
         $list = array_filter( array_map( 'trim', explode( ',', $raw ) ) );
         $settings->set( 'trusted_proxies', array_values( array_slice( $list, 0, 20 ) ) );
     }

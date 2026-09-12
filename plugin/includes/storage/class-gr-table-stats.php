@@ -50,9 +50,9 @@ final class Gr_Table_Stats {
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the LIKE pattern interpolates our own prefix plus a literal fragment; every value reaches prepare().
-                "SELECT table_name, table_rows, data_length, index_length
+                'SELECT table_name, table_rows, data_length, index_length
                  FROM information_schema.TABLES
-                 WHERE table_schema = DATABASE() AND table_name LIKE %s",
+                 WHERE table_schema = DATABASE() AND table_name LIKE %s',
                 $wpdb->prefix . 'gr\_%'
             ),
             ARRAY_A

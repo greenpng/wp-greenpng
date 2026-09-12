@@ -119,12 +119,12 @@ final class Gr_Retention {
      * first, in bounded batches. Days <= 0 means "keep everything" —
      * the documented 0 = days-only convention also guards the call.
      *
-     * @param string      $table_key     Short table key.
-     * @param string      $date_col      Age column; identifier-shaped
-     *                                   or the call refuses to run.
-     * @param int         $retention_days Days to keep; 0 keeps all.
-     * @param int         $batch         Rows per statement.
-     * @param float|null  $deadline      Wall-clock stop; null = no limit.
+     * @param string     $table_key     Short table key.
+     * @param string     $date_col      Age column; identifier-shaped
+     *                                  or the call refuses to run.
+     * @param int        $retention_days Days to keep; 0 keeps all.
+     * @param int        $batch         Rows per statement.
+     * @param float|null $deadline      Wall-clock stop; null = no limit.
      * @return int Rows deleted.
      */
     public static function prune( string $table_key, string $date_col, int $retention_days, int $batch = self::BATCH, ?float $deadline = null ): int {
@@ -140,9 +140,10 @@ final class Gr_Retention {
 
         $total = 0;
         do {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- maintenance rider; both interpolations are ours (DDL-registered table, validated identifier column), every value reaches prepare() below.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance rider, never a front-end request.
             $deleted = (int) $wpdb->query(
                 $wpdb->prepare(
+                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- both interpolations are ours (DDL-registered table, validated identifier column), every value reaches prepare(); they sit on this first string line on purpose, within the ignore's reach.
                     "DELETE FROM {$table} WHERE {$date_col} < %s ORDER BY id ASC LIMIT %d",
                     $cutoff,
                     $batch
@@ -182,9 +183,10 @@ final class Gr_Retention {
         $batch = max( 1, min( $batch, self::BATCH ) );
         $table = Gr_Database::table( $table_key );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- maintenance rider; the table name is DDL-registered, the LIMIT pair is derived from counts.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance rider; the LIMIT pair is derived from counts, never a front-end request.
         $boundary = $wpdb->get_var(
             $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name is DDL-registered; it sits on this first string line on purpose, within the ignore's reach.
                 "SELECT id FROM {$table} ORDER BY id DESC LIMIT %d, 1",
                 $max_rows
             )
@@ -199,9 +201,10 @@ final class Gr_Retention {
             // The boundary row is the first row the ceiling ejects
             // (the max_rows+1-th newest), so the delete includes it:
             // at max_rows+1 total rows this removes exactly one.
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- maintenance rider; the table name is DDL-registered, the boundary id is a read of our own primary key.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- maintenance rider; the boundary id is a read of our own primary key, never a front-end request.
             $deleted = (int) $wpdb->query(
                 $wpdb->prepare(
+                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name is DDL-registered; it sits on this first string line on purpose, within the ignore's reach.
                     "DELETE FROM {$table} WHERE id <= %d ORDER BY id ASC LIMIT %d",
                     $boundary,
                     $batch
@@ -234,7 +237,7 @@ final class Gr_Retention {
 
         $table = Gr_Database::table( $table_key );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- owner-initiated manual maintenance; the table name is DDL-registered, the statement carries no data.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- owner-initiated manual maintenance; the table name is DDL-registered, the statement carries no data.
         return false !== $wpdb->query( "OPTIMIZE TABLE {$table}" );
     }
 
@@ -249,7 +252,7 @@ final class Gr_Retention {
         $out = array();
         foreach ( array_keys( self::DATE_COLUMNS ) as $key ) {
             $table = Gr_Database::table( $key );
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- admin page read of maintenance state.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- admin page read of maintenance state; the only interpolation is the DDL table name.
             $out[ $key ] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
         }
 

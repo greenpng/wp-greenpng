@@ -153,7 +153,7 @@ final class Gr_Data_Retention_Page {
      * @return void
      */
     private static function optimize_tables(): void {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write(); values are sanitized below.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); keys are whitelist-checked and sanitized below.
         $tables = isset( $_POST['optimize_tables'] ) && is_array( $_POST['optimize_tables'] ) ? wp_unslash( $_POST['optimize_tables'] ) : array();
         $audit  = new Gr_Audit_Repository();
         $user   = get_current_user_id();
@@ -182,7 +182,7 @@ final class Gr_Data_Retention_Page {
         $rows     = (array) $settings->get( 'retention_rows', array() );
         $counts   = Gr_Retention::counts();
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only PRG flag on an owner-gated screen.
-        $saved    = isset( $_GET['gr_saved'] ) ? 1 : 0;
+        $saved = isset( $_GET['gr_saved'] ) ? 1 : 0;
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__( 'Data Retention', 'greenpng' ); ?></h1>
