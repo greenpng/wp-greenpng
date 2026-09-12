@@ -152,6 +152,18 @@ final class Gr_Admin_Menu {
             array( Gr_Url_Builder_Page::class, 'render' )
         );
 
+        // Funnels & Goals closes the marketing section (docs/06
+        // tree); the v1.0 A/B reporting page is read-only, no write
+        // handler of its own.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Funnels & Goals', 'greenpng' ),
+            __( 'Funnels & Goals', 'greenpng' ),
+            'manage_options',
+            Gr_Funnels_Page::SLUG,
+            array( Gr_Funnels_Page::class, 'render' )
+        );
+
         // Integrations section opens (docs/06 tree); the outbound
         // analytics page registers its own admin_init write handler.
         add_submenu_page(

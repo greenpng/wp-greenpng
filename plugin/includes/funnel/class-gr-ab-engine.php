@@ -56,6 +56,25 @@ final class Gr_Ab_Engine {
             return $forced;
         }
 
+        return self::pick_variant( $experiment, $visitor_id, $variants );
+    }
+
+    /**
+     * The pure consistent-hash split, exposed separately from assign()
+     * because the URL force parameter belongs to the browsing admin,
+     * not to the visitors an admin page previews: a distribution
+     * preview must answer the hash question alone.
+     *
+     * @param string             $experiment Experiment key.
+     * @param string             $visitor_id Visitor identity (either track).
+     * @param array<int, string> $variants   Declared variant slugs.
+     * @return string Variant slug, '' for an empty variant list.
+     */
+    public static function pick_variant( string $experiment, string $visitor_id, array $variants ): string {
+        if ( array() === $variants ) {
+            return '';
+        }
+
         // Consistent hash over experiment + visitor: the same pair
         // lands in the same bucket forever, on every request. crc32 is
         // normalized through %u so 32- and 64-bit PHP builds agree on

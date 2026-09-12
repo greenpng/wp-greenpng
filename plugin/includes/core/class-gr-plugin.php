@@ -28,6 +28,7 @@ use GreenPNG\Admin\Gr_Settings_Page;
 use GreenPNG\Admin\Gr_Status_Page;
 use GreenPNG\Admin\Gr_Analytics_Page;
 use GreenPNG\Admin\Gr_Ip_Intel_Page;
+use GreenPNG\Admin\Gr_Funnels_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
