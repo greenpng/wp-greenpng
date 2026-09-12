@@ -159,6 +159,38 @@ final class Gr_Security_Log_Repository {
     }
 
     /**
+     * Newest fold rows for the threat-events tab: the address comes
+     * back as TEXT (INET6_NTOA) because this is the display read; the
+     * masking itself stays with the page layer — the repository hands
+     * over the address, the page decides what a human sees.
+     *
+     * @param int $limit Row cap, newest first.
+     * @return array<int, array<string, string|int>> Rows keyed by column.
+     */
+    public function recent( int $limit = 30 ): array {
+        global $wpdb;
+
+        $limit = max( 1, min( $limit, 100 ) );
+        $table = Gr_Database::table( 'security_logs' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- admin report read, never a front-end request.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from the DDL registry, not user input.
+                "SELECT id, rule_id, INET6_NTOA(ip) AS ip, request_path, user_agent, hit_count, action_taken, last_seen FROM {$table} ORDER BY last_seen DESC, id DESC LIMIT %d",
+                $limit
+            ),
+            ARRAY_A
+        );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        return array_values( array_filter( $rows, 'is_array' ) );
+    }
+
+    /**
      * Address hygiene: invalid input falls back to the unspecified
      * address so one malformed call can never skip the log row, and
      * the anonymize switch truncates before storage.

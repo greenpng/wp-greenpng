@@ -13,6 +13,7 @@ declare( strict_types = 1 );
 namespace GreenPNG\Admin;
 
 use GreenPNG\Rest\Gr_Dashboard_Controller;
+use GreenPNG\Rest\Gr_Live_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -33,6 +34,13 @@ final class Gr_Admin_Menu {
      * @var string
      */
     private static $dashboard_hook = '';
+
+    /**
+     * Hook suffix of the traffic page, filled by register().
+     *
+     * @var string
+     */
+    private static $traffic_hook = '';
 
     /**
      * Hook registration.
@@ -70,44 +78,81 @@ final class Gr_Admin_Menu {
             self::SLUG,
             array( Gr_Dashboard_Page::class, 'render' )
         );
+
+        self::$traffic_hook = add_submenu_page(
+            self::SLUG,
+            __( 'Traffic & Security', 'greenpng' ),
+            __( 'Traffic & Security', 'greenpng' ),
+            'manage_options',
+            Gr_Traffic_Page::SLUG,
+            array( Gr_Traffic_Page::class, 'render' )
+        );
     }
 
     /**
      * Page-scoped asset loading: the dashboard page opts into the
-     * chart library and its own script; every other admin screen
-     * stays at registration only (docs/06 §2.3).
+     * chart library and its own script, the traffic page into the
+     * datagrid; every other admin screen stays at registration only
+     * (docs/06 §2.3).
      *
      * @param string $hook_suffix Current admin screen's hook suffix.
      * @return void
      */
     public static function enqueue_assets( string $hook_suffix ): void {
-        if ( '' === self::$dashboard_hook || $hook_suffix !== self::$dashboard_hook ) {
+        if ( '' !== self::$dashboard_hook && $hook_suffix === self::$dashboard_hook ) {
+            Gr_Chart_Assets::enqueue();
+
+            wp_enqueue_script(
+                'gr-dashboard',
+                GR_PLUGIN_URL . 'assets/js/gr-dashboard.js',
+                array( Gr_Chart_Assets::HANDLE ),
+                GR_VERSION,
+                true
+            );
+
+            wp_add_inline_script(
+                'gr-dashboard',
+                'window.GreenPNGDashboard=' . (string) wp_json_encode( Gr_Dashboard_Controller::script_data() ) . ';',
+                'before'
+            );
+
             return;
         }
 
-        Gr_Chart_Assets::enqueue();
+        if ( '' !== self::$traffic_hook && $hook_suffix === self::$traffic_hook ) {
+            wp_enqueue_script(
+                'gr-datagrid',
+                GR_PLUGIN_URL . 'assets/js/gr-datagrid.js',
+                array(),
+                GR_VERSION,
+                true
+            );
 
-        wp_enqueue_script(
-            'gr-dashboard',
-            GR_PLUGIN_URL . 'assets/js/gr-dashboard.js',
-            array( Gr_Chart_Assets::HANDLE ),
-            GR_VERSION,
-            true
-        );
+            $live    = Gr_Live_Controller::script_data();
+            $labels  = $live['labels'];
+            $inline  = 'window.GreenPNGLive=' . (string) wp_json_encode( $live ) . ';';
+            $inline .= 'new window.GrDataGrid({containerId:"' . Gr_Traffic_Page::GRID_MOUNT . '",'
+                . 'endpoint:' . (string) wp_json_encode( $live['endpoint'] ) . ','
+                . 'nonce:' . (string) wp_json_encode( $live['nonce'] ) . ','
+                . 'pollMs:' . (int) $live['pollMs'] . ','
+                . 'columns:['
+                . '{key:"time",label:' . (string) wp_json_encode( $labels['time'] ) . '},'
+                . '{key:"name",label:' . (string) wp_json_encode( $labels['name'] ) . '},'
+                . '{key:"group",label:' . (string) wp_json_encode( $labels['group'] ) . '},'
+                . '{key:"visitor",label:' . (string) wp_json_encode( $labels['visitor'] ) . '}'
+                . ']});';
 
-        wp_add_inline_script(
-            'gr-dashboard',
-            'window.GreenPNGDashboard=' . (string) wp_json_encode( Gr_Dashboard_Controller::script_data() ) . ';',
-            'before'
-        );
+            wp_add_inline_script( 'gr-datagrid', $inline, 'after' );
+        }
     }
 
     /**
-     * Test seam: forget the captured hook suffix.
+     * Test seam: forget the captured hook suffixes.
      *
      * @return void
      */
     public static function reset_for_tests(): void {
         self::$dashboard_hook = '';
+        self::$traffic_hook   = '';
     }
 }
