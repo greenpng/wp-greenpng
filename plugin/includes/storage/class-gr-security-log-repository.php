@@ -191,6 +191,98 @@ final class Gr_Security_Log_Repository {
     }
 
     /**
+     * Newest fold rows for one set of rules, as the login audit tab
+     * reads them (docs/13 U7): the address comes back as text for the
+     * page layer to mask; the repository has no display opinions.
+     *
+     * @param array<int, string> $rule_ids Rule identifiers to include.
+     * @param int                $limit    Row cap, newest first.
+     * @return array<int, array<string, string|int>> Rows keyed by column.
+     */
+    public function recent_by_rules( array $rule_ids, int $limit = 30 ): array {
+        global $wpdb;
+
+        $rule_ids = array_values( array_filter( array_map( 'strval', $rule_ids ), 'strlen' ) );
+        if ( array() === $rule_ids ) {
+            return array();
+        }
+
+        $limit        = max( 1, min( $limit, 100 ) );
+        $table        = Gr_Database::table( 'security_logs' );
+        $placeholders = implode( ',', array_fill( 0, count( $rule_ids ), '%s' ) );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- the placeholder list is built above from count(), not from data; prepare() gets every value below.
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- both interpolations are ours: the table from the DDL registry, the placeholder list from count().
+            "SELECT id, rule_id, INET6_NTOA(ip) AS ip, request_path, user_agent, reason, hit_count, action_taken, first_seen, last_seen FROM {$table} WHERE rule_id IN ({$placeholders})
+                ORDER BY last_seen DESC, id DESC
+                LIMIT %d",
+            array_merge( $rule_ids, array( $limit ) )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report read, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        return array_values( array_filter( $rows, 'is_array' ) );
+    }
+
+    /**
+     * Addresses the log has seen within the window, one row per
+     * address, newest activity first. The lock-management tab checks
+     * each candidate against the live lock store and only the locked
+     * ones survive; the window matches the longest TTL the lock store
+     * accepts, so a live lock's placement row is always a candidate.
+     *
+     * @param int $hours Look-back window in hours.
+     * @param int $limit Address cap, newest first.
+     * @return array<int, array{ip: string, last_seen: string}> Address text plus newest activity.
+     */
+    public function distinct_recent_ips( int $hours, int $limit = 100 ): array {
+        global $wpdb;
+
+        $hours = max( 1, $hours );
+        $limit = max( 1, min( $limit, 100 ) );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $hours * HOUR_IN_SECONDS );
+        $table = Gr_Database::table( 'security_logs' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
+            "SELECT INET6_NTOA(ip) AS ip, MAX(last_seen) AS last_seen FROM {$table}
+                WHERE last_seen >= %s
+                GROUP BY ip
+                ORDER BY last_seen DESC
+                LIMIT %d",
+            array(
+                $since,
+                $limit,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report read, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        $pairs = array();
+        foreach ( $rows as $row ) {
+            if ( is_array( $row ) ) {
+                $pairs[] = array(
+                    'ip'        => (string) ( $row['ip'] ?? '' ),
+                    'last_seen' => (string) ( $row['last_seen'] ?? '' ),
+                );
+            }
+        }
+
+        return $pairs;
+    }
+
+    /**
      * Address hygiene: invalid input falls back to the unspecified
      * address so one malformed call can never skip the log row, and
      * the anonymize switch truncates before storage.

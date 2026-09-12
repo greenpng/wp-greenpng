@@ -98,6 +98,17 @@ final class Gr_Admin_Menu {
             Gr_Access_Rules_Page::SLUG,
             array( Gr_Access_Rules_Page::class, 'render' )
         );
+
+        // Login Protection sits beside Access Rules in the docs/06
+        // tree; its write handler joins on admin_init.
+        add_submenu_page(
+            Gr_Traffic_Page::SLUG,
+            __( 'Login Protection', 'greenpng' ),
+            __( 'Login Protection', 'greenpng' ),
+            'manage_options',
+            Gr_Login_Protection_Page::SLUG,
+            array( Gr_Login_Protection_Page::class, 'render' )
+        );
     }
 
     /**
