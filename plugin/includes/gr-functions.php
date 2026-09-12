@@ -19,6 +19,7 @@ use GreenPNG\Attribution\Gr_Attribution_Params;
 use GreenPNG\Core\Gr_Audit_Diff;
 use GreenPNG\Core\Gr_Diagnostics;
 use GreenPNG\Core\Gr_Event;
+use GreenPNG\Core\Gr_Geoip;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Secrets;
@@ -454,6 +455,20 @@ if ( ! function_exists( 'gr_export_diagnostics' ) ) {
      */
     function gr_export_diagnostics(): array {
         return Gr_Diagnostics::export();
+    }
+}
+
+if ( ! function_exists( 'gr_geoip_country' ) ) {
+    /**
+     * Country facade (docs/03 §1, docs/07 §5.7): the local DB-IP
+     * lookup for one address, '' when unknown or no data. Zero
+     * outbound; the memoized lookup is one binary search.
+     *
+     * @param string $ip Textual address.
+     * @return string Two-letter country code, or ''.
+     */
+    function gr_geoip_country( string $ip ): string {
+        return Gr_Geoip::country( $ip );
     }
 }
 

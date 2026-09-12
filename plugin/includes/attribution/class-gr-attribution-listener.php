@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Core\Gr_Geoip;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Privacy\Gr_Consent;
@@ -99,21 +100,33 @@ final class Gr_Attribution_Listener {
 
         $visitor = $this->identity->visitor_id();
         $session = $this->identity->session_id();
-        $landing = array();
 
         $parsed = Gr_Attribution_Params::parse( $this->query_params() );
         $host   = $this->referrer_host();
         $parsed = Gr_Attribution_Params::apply_referrer( $parsed, $host );
 
+        // The country code is a landing attribute, so it rides the
+        // consent gate like every other one (docs/07 §1); without
+        // consent the technical slide stays attribute-free and the
+        // dashboard country chart keeps its Unknown bucket. GeoIP
+        // is the purely local DB-IP lookup, one binary search.
+        $landing = array();
+        if ( $consent ) {
+            $landing['country_code'] = Gr_Geoip::country( gr_get_client_ip() );
+        }
+
         if ( $consent && Gr_Attribution_Params::is_campaign_entry( $parsed ) ) {
-            $landing = array(
-                'channel'       => $parsed['channel'],
-                'utm_source'    => $parsed['utm_source'],
-                'utm_medium'    => $parsed['utm_medium'],
-                'utm_campaign'  => $parsed['utm_campaign'],
-                'click_id'      => $parsed['click_id'],
-                'landing_path'  => $this->landing_path(),
-                'referrer_host' => $host,
+            $landing = array_merge(
+                $landing,
+                array(
+                    'channel'       => $parsed['channel'],
+                    'utm_source'    => $parsed['utm_source'],
+                    'utm_medium'    => $parsed['utm_medium'],
+                    'utm_campaign'  => $parsed['utm_campaign'],
+                    'click_id'      => $parsed['click_id'],
+                    'landing_path'  => $this->landing_path(),
+                    'referrer_host' => $host,
+                )
             );
 
             $this->touchpoints->record(

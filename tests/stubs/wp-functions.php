@@ -91,6 +91,25 @@ if ( ! function_exists( 'wp_salt' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_upload_dir' ) ) {
+    /**
+     * Uploads directory stand-in: GeoIP override resolution reads it.
+     * The default basedir does not exist, so tests fall back to the
+     * bundled data unless a test points the knob at a fixture
+     * directory.
+     *
+     * @return array<string, string>
+     */
+    function wp_upload_dir() {
+        $basedir = $GLOBALS['gr_stub_uploads']['basedir'] ?? '/gr-stub-uploads-absent';
+
+        return array(
+            'basedir' => (string) $basedir,
+            'baseurl' => 'http://stub.example/wp-content/uploads',
+        );
+    }
+}
+
 if ( ! function_exists( 'sanitize_text_field' ) ) {
     /**
      * Text sanitization stand-in: strips tags and collapses whitespace.
@@ -164,6 +183,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_filters']           = array();
         $GLOBALS['gr_stub_consent']           = array();
         $GLOBALS['gr_stub_cookies']           = array();
+        $GLOBALS['gr_stub_uploads']           = array();
         $GLOBALS['gr_stub_rest_routes']       = array();
         $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['gr_stub_wc_orders']         = array();
@@ -209,6 +229,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         }
         if ( class_exists( 'GreenPNG\Core\Gr_Settings' ) ) {
             GreenPNG\Core\Gr_Settings::reset_for_tests();
+        }
+        if ( class_exists( 'GreenPNG\Core\Gr_Geoip' ) ) {
+            GreenPNG\Core\Gr_Geoip::reset_for_tests();
         }
         if ( class_exists( 'GreenPNG\Funnel\Gr_Ab_Experiments' ) ) {
             GreenPNG\Funnel\Gr_Ab_Experiments::reset_memo_for_tests();

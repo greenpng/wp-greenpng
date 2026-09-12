@@ -53,6 +53,31 @@ Permission notice (MIT, as required for substantial portions):
   OTHER DEALINGS IN THE SOFTWARE.
 
 ------------------------------------------------------------------
-2. Country-level IP geolocation database (lands with the GeoIP
-   phase; the data date will be recorded here at that time)
+2. Country-level IP geolocation database — plugin/assets/data/
 ------------------------------------------------------------------
+
+Files:
+  assets/data/gr-geoip-v4.bin    (IPv4 ranges, 9 bytes each: start,
+                                  end, country index)
+  assets/data/gr-geoip-v6.bin    (IPv6 ranges, 33 bytes each)
+  assets/data/gr-geoip.json      (country table, range counts,
+                                  build date, provenance)
+
+Source:   DB-IP — https://db-ip.com/
+          free "Country Lite" database
+
+License:  CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+          Attribution requirement is met by this notice and the
+          plugin readme's Attribution section; no additional
+          restrictions apply.
+
+The CSV was repacked into the plugin's fixed-width binary format by
+tools/pack-geoip.php; the country data itself is unchanged. The
+admin update button refreshes these files from the same source; the
+refresh writes to the uploads directory and never modifies the
+plugin directory.
+
+Data date: 2026-09 (357,325 IPv4 ranges, 359,845 IPv6 ranges, 251
+country codes, including the reserved-address code ZZ). Later
+refreshes record their own date in gr-geoip.json; this notice states
+the date of the copy bundled with the release.
