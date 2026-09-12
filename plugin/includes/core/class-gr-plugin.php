@@ -27,6 +27,7 @@ use GreenPNG\Admin\Gr_Data_Retention_Page;
 use GreenPNG\Admin\Gr_Settings_Page;
 use GreenPNG\Admin\Gr_Status_Page;
 use GreenPNG\Admin\Gr_Analytics_Page;
+use GreenPNG\Admin\Gr_Ip_Intel_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
@@ -257,6 +258,7 @@ final class Gr_Plugin {
     private function register_hooks(): void {
         Gr_Queue::boot();
         Gr_Daily_Aggregator::register();
+        Gr_Geoip_Refresh::register();
 
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
@@ -284,6 +286,7 @@ final class Gr_Plugin {
         Gr_Status_Page::register_hooks();
         Gr_Settings_Page::register_hooks();
         Gr_Analytics_Page::register_hooks();
+        Gr_Ip_Intel_Page::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

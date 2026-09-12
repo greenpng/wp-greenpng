@@ -163,6 +163,18 @@ final class Gr_Admin_Menu {
             array( Gr_Analytics_Page::class, 'render' )
         );
 
+        // IP Intelligence (docs/06 tree): GeoIP management with the
+        // owner-clicked refresh; the page registers its own
+        // admin_init write handler.
+        add_submenu_page(
+            self::SLUG,
+            __( 'IP Intelligence', 'greenpng' ),
+            __( 'IP Intelligence', 'greenpng' ),
+            'manage_options',
+            Gr_Ip_Intel_Page::SLUG,
+            array( Gr_Ip_Intel_Page::class, 'render' )
+        );
+
         // Tools section (docs/06 tree); read-only trail, server-side
         // pagination.
         add_submenu_page(
