@@ -30,6 +30,7 @@ use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Crawler_Verify;
 use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Storage\Gr_Audit_Repository;
+use GreenPNG\Storage\Gr_Retention;
 use GreenPNG\Security\Gr_Ip_Mask;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
@@ -410,6 +411,22 @@ if ( ! function_exists( 'gr_audit_query' ) ) {
      */
     function gr_audit_query( array $filters = array(), int $limit = 50, int $offset = 0 ): array {
         return ( new Gr_Audit_Repository() )->query( $filters, $limit, $offset );
+    }
+}
+
+if ( ! function_exists( 'gr_prune_table' ) ) {
+    /**
+     * Age-rail prune facade (docs/03 §10): deletes rows older than
+     * the window, oldest first, in bounded batches.
+     *
+     * @param string $table_key      Short table key from the DDL registry.
+     * @param string $date_col       Age column; identifier-shaped or the call refuses.
+     * @param int    $retention_days Days to keep; 0 keeps everything.
+     * @param int    $batch          Rows per statement.
+     * @return int Rows removed.
+     */
+    function gr_prune_table( string $table_key, string $date_col, int $retention_days, int $batch = 2000 ): int {
+        return Gr_Retention::prune( $table_key, $date_col, $retention_days, $batch );
     }
 }
 

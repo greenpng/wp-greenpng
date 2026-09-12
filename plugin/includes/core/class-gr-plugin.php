@@ -23,6 +23,7 @@ use GreenPNG\Admin\Gr_Access_Rules_Page;
 use GreenPNG\Admin\Gr_Admin_Menu;
 use GreenPNG\Admin\Gr_Chart_Assets;
 use GreenPNG\Admin\Gr_Login_Protection_Page;
+use GreenPNG\Admin\Gr_Data_Retention_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
@@ -44,6 +45,7 @@ use GreenPNG\Security\Gr_Security_Logger;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Daily_Aggregator;
 use GreenPNG\Storage\Gr_Event_Repository;
+use GreenPNG\Storage\Gr_Retention;
 use GreenPNG\Storage\Gr_Schema;
 use GreenPNG\Storage\Gr_Security_Log_Repository;
 use GreenPNG\Storage\Gr_Session_Repository;
@@ -274,6 +276,8 @@ final class Gr_Plugin {
         Gr_Admin_Menu::register_hooks();
         Gr_Access_Rules_Page::register_hooks();
         Gr_Login_Protection_Page::register_hooks();
+        Gr_Retention::register_hooks();
+        Gr_Data_Retention_Page::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

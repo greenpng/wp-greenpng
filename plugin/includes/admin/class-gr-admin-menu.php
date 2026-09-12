@@ -140,6 +140,17 @@ final class Gr_Admin_Menu {
             Gr_Audit_Log_Page::SLUG,
             array( Gr_Audit_Log_Page::class, 'render' )
         );
+
+        // Tools section (docs/06 tree); retention rails and the
+        // human-only rebuild.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Data Retention', 'greenpng' ),
+            __( 'Data Retention', 'greenpng' ),
+            'manage_options',
+            Gr_Data_Retention_Page::SLUG,
+            array( Gr_Data_Retention_Page::class, 'render' )
+        );
     }
 
     /**

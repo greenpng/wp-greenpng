@@ -89,6 +89,20 @@ final class Gr_Settings {
                 'audit_logs'        => 365,
                 'daily_stats'       => 365,
             ),
+
+            // Row ceilings per table, the second rail: 0 = the age
+            // rail alone decides. Wide by default — a ceiling is a
+            // runaway guard, not the primary trim.
+            'retention_rows'             => array(
+                'security_logs'     => 100000,
+                'sessions'          => 500000,
+                'events'            => 1000000,
+                'touchpoints'       => 200000,
+                'funnel_sessions'   => 500000,
+                'cart_abandonments' => 100000,
+                'audit_logs'        => 200000,
+                'daily_stats'       => 0,
+            ),
         );
     }
 
