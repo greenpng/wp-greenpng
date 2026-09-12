@@ -231,12 +231,12 @@ final class Gr_Login_Protection {
     }
 
     /**
-     * The module runs under the global security switch.
+     * The module runs under the master security fuse (W11).
      *
      * @return bool
      */
     private static function enabled(): bool {
-        return 1 === (int) gr()->settings()->get( 'security_enabled' );
+        return Gr_Security_Gate::active();
     }
 
     /**

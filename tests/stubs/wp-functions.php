@@ -203,6 +203,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         if ( class_exists( 'GreenPNG\Security\Gr_Access_Rules' ) ) {
             GreenPNG\Security\Gr_Access_Rules::reset_for_tests();
         }
+        if ( class_exists( 'GreenPNG\Security\Gr_Security_Gate' ) ) {
+            GreenPNG\Security\Gr_Security_Gate::reset_for_tests();
+        }
     }
 }
 

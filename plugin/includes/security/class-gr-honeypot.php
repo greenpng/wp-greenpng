@@ -312,15 +312,13 @@ final class Gr_Honeypot {
     }
 
     /**
-     * Opt-in contract: the global security switch AND the module's own
-     * setting (default off, docs/13 W8).
+     * Opt-in contract: the master security fuse (W11) AND the module's
+     * own setting (default off, docs/13 W8).
      *
      * @return bool
      */
     private static function enabled(): bool {
-        $settings = gr()->settings();
-
-        return 1 === (int) $settings->get( 'security_enabled' ) && 1 === (int) $settings->get( 'honeypot_enabled' );
+        return Gr_Security_Gate::active() && 1 === (int) gr()->settings()->get( 'honeypot_enabled' );
     }
 
     /**

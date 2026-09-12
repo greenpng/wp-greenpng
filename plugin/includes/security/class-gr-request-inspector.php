@@ -20,7 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GreenPNG\Core\Gr_Request;
-use GreenPNG\Core\Gr_Settings;
 
 /**
  * The init@10 request inspection frame.
@@ -37,22 +36,6 @@ final class Gr_Request_Inspector {
     public const ERROR_HOOK = 'gr_inspector_error';
 
     /**
-     * Settings service.
-     *
-     * @var Gr_Settings
-     */
-    private Gr_Settings $settings;
-
-    /**
-     * Wires the settings service.
-     *
-     * @param Gr_Settings $settings Settings.
-     */
-    public function __construct( Gr_Settings $settings ) {
-        $this->settings = $settings;
-    }
-
-    /**
      * Hook registration: the frame runs at init@10, before the theme
      * renders, on every non-admin request.
      *
@@ -64,8 +47,8 @@ final class Gr_Request_Inspector {
 
     /**
      * The init callback. Admin panels are out of scope (their
-     * protections live in later W tasks); the disabled switch means
-     * zero work; any Throwable is reported and swallowed.
+     * protections live in later W tasks); the master gate being down
+     * means zero work; any Throwable is reported and swallowed.
      *
      * @return void
      */
@@ -74,7 +57,7 @@ final class Gr_Request_Inspector {
             return;
         }
 
-        if ( 1 !== (int) $this->settings->get( 'security_enabled' ) ) {
+        if ( ! Gr_Security_Gate::active() ) {
             return;
         }
 

@@ -161,7 +161,7 @@ final class Gr_Plugin {
             new Gr_Touchpoint_Repository(),
             $this->settings
         );
-        $this->inspector   = new Gr_Request_Inspector( $this->settings );
+        $this->inspector   = new Gr_Request_Inspector();
     }
 
     /**

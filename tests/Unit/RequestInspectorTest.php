@@ -12,7 +12,6 @@ declare( strict_types = 1 );
 namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Core\Gr_Plugin;
-use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Security\Gr_Request_Inspector;
 use PHPUnit\Framework\TestCase;
 
@@ -65,7 +64,7 @@ final class RequestInspectorTest extends TestCase {
     }
 
     public function testRunBuildsContextAndCollectsFindings(): void {
-        $inspector = new Gr_Request_Inspector( new Gr_Settings() );
+        $inspector = new Gr_Request_Inspector();
 
         $this->register_checks(
             array(
@@ -110,14 +109,14 @@ final class RequestInspectorTest extends TestCase {
             )
         );
 
-        ( new Gr_Request_Inspector( new Gr_Settings() ) )->inspect();
+        ( new Gr_Request_Inspector() )->inspect();
 
         $this->assertSame( 'GET', $seen['method'] );
         $this->assertSame( '/some/path/?q=1', $seen['path'] );
     }
 
     public function testThrowingCheckIsIsolatedAndReported(): void {
-        $inspector = new Gr_Request_Inspector( new Gr_Settings() );
+        $inspector = new Gr_Request_Inspector();
 
         $this->register_checks(
             array(
@@ -148,7 +147,7 @@ final class RequestInspectorTest extends TestCase {
     }
 
     public function testCheckMayReturnAListOfFindings(): void {
-        $inspector = new Gr_Request_Inspector( new Gr_Settings() );
+        $inspector = new Gr_Request_Inspector();
 
         $this->register_checks(
             array(
@@ -172,7 +171,7 @@ final class RequestInspectorTest extends TestCase {
     }
 
     public function testFindingsAreNormalizedToRuleAndReason(): void {
-        $inspector = new Gr_Request_Inspector( new Gr_Settings() );
+        $inspector = new Gr_Request_Inspector();
 
         $this->register_checks(
             array(
@@ -212,14 +211,14 @@ final class RequestInspectorTest extends TestCase {
                 },
             )
         );
-        ( new Gr_Request_Inspector( new Gr_Settings() ) )->run();
+        ( new Gr_Request_Inspector() )->run();
         $this->assertTrue( $ran );
 
         // Switched off: zero work, the filter is never even applied.
         gr()->settings()->set( 'security_enabled', 0 );
         $GLOBALS['gr_stub_fired_action_args'] = array();
         $ran = false;
-        ( new Gr_Request_Inspector( gr()->settings() ) )->run();
+        ( new Gr_Request_Inspector() )->run();
         $this->assertFalse( $ran );
         $this->assertSame( array(), $GLOBALS['gr_stub_fired_action_args'] );
 
@@ -227,7 +226,7 @@ final class RequestInspectorTest extends TestCase {
         gr()->settings()->set( 'security_enabled', 1 );
         $GLOBALS['gr_stub_is_admin'] = true;
         $ran = false;
-        ( new Gr_Request_Inspector( gr()->settings() ) )->run();
+        ( new Gr_Request_Inspector() )->run();
         $this->assertFalse( $ran );
         unset( $GLOBALS['gr_stub_is_admin'] );
     }
@@ -242,7 +241,7 @@ final class RequestInspectorTest extends TestCase {
             },
         );
 
-        $inspector = new Gr_Request_Inspector( new Gr_Settings() );
+        $inspector = new Gr_Request_Inspector();
 
         try {
             $inspector->run();

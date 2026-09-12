@@ -142,7 +142,7 @@ final class ScannerUaTest extends TestCase {
         Gr_Scanner_Ua::register_detector();
 
         $_SERVER['HTTP_USER_AGENT'] = 'sqlmap/1.7.2#pip (stable Python3.11)';
-        $findings                   = ( new Gr_Request_Inspector( gr()->settings() ) )->inspect();
+        $findings                   = ( new Gr_Request_Inspector() )->inspect();
 
         $this->assertCount( 1, $findings );
         $this->assertSame( 'scanner_ua', $findings[0]['rule_id'] );
@@ -150,7 +150,7 @@ final class ScannerUaTest extends TestCase {
 
         // An ordinary browser produces no finding at all.
         $_SERVER['HTTP_USER_AGENT'] = self::BROWSERS[0];
-        $this->assertSame( array(), ( new Gr_Request_Inspector( gr()->settings() ) )->inspect() );
+        $this->assertSame( array(), ( new Gr_Request_Inspector() )->inspect() );
     }
 
     public function testPluginRegistersTheDetector(): void {

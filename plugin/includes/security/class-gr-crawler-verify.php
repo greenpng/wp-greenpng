@@ -155,12 +155,18 @@ final class Gr_Crawler_Verify {
 
     /**
      * Queue worker: run the verification and let the 24h cache land.
+     * Cron paths gate themselves on the master fuse (W11) — queue work
+     * is security work and stands down with the stack.
      *
      * @param string $ip Client address as text.
      * @param string $ua Claimed user agent.
      * @return void
      */
     public static function handle_job( string $ip, string $ua ): void {
+        if ( ! Gr_Security_Gate::active() ) {
+            return;
+        }
+
         self::verify( $ip, $ua );
         delete_transient( 'gr_fcrdns_pending_' . md5( $ip . '|' . $ua ) );
     }
@@ -174,6 +180,10 @@ final class Gr_Crawler_Verify {
      * @return void
      */
     public static function sweep(): void {
+        if ( ! Gr_Security_Gate::active() ) {
+            return;
+        }
+
         $rows = ( new Gr_Security_Log_Repository() )->recent_scanner_ips( self::SWEEP_HOURS, self::SWEEP_LIMIT );
 
         foreach ( $rows as $row ) {

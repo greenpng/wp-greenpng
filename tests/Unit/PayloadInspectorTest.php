@@ -203,7 +203,7 @@ final class PayloadInspectorTest extends TestCase {
 
         // Through the whole frame, with no UA finding in the way: the
         // payload finding lands exactly like the scanner detector's.
-        $framed = ( new Gr_Request_Inspector( gr()->settings() ) )->inspect();
+        $framed = ( new Gr_Request_Inspector() )->inspect();
         $this->assertCount( 1, $framed );
         $this->assertSame( Gr_Payload_Inspector::RULE_SQLI, $framed[0]['rule_id'] );
         $this->assertStringStartsWith( 'cat:', $framed[0]['reason'] );
