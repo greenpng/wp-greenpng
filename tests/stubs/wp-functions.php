@@ -177,6 +177,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_nonce_fields']      = array();
         $GLOBALS['gr_stub_redirects']         = array();
         $GLOBALS['gr_stub_submit_buttons']    = array();
+        $GLOBALS['gr_stub_paginate_calls']    = array();
         $GLOBALS['gr_stub_shortcodes']        = array();
         $GLOBALS['gr_stub_cli_commands']      = array();
         $GLOBALS['gr_stub_cli_messages']      = array(
@@ -1188,5 +1189,46 @@ if ( ! function_exists( 'do_action' ) ) {
                 $registration[2]( ...$extra_args );
             }
         }
+    }
+}
+
+if ( ! function_exists( 'paginate_links' ) ) {
+    /**
+     * Pagination link list stand-in: core builds anchor markup from
+     * base/current/total; the stand-in keeps the same contract —
+     * each page one anchor (the href carries the page number where
+     * the caller's base put %#%), the current page a span — and
+     * records the call for assertions.
+     *
+     * @param array<string, mixed> $args base/format/current/total.
+     * @return string|void
+     */
+    function paginate_links( $args = array() ) {
+        $args    = is_array( $args ) ? $args : array();
+        $base    = (string) ( $args['base'] ?? '' );
+        $current = max( 1, (int) ( $args['current'] ?? 1 ) );
+        $total   = max( 1, (int) ( $args['total'] ?? 1 ) );
+
+        $GLOBALS['gr_stub_paginate_calls'][] = array(
+            'base'    => $base,
+            'current' => $current,
+            'total'   => $total,
+        );
+
+        if ( $total <= 1 ) {
+            return '';
+        }
+
+        $links = array();
+        for ( $page = 1; $page <= $total; $page++ ) {
+            $href = str_replace( '%#%', (string) $page, $base );
+            if ( $page === $current ) {
+                $links[] = '<span aria-current="page" class="page-numbers current">' . (string) $page . '</span>';
+            } else {
+                $links[] = '<a class="page-numbers" href="' . esc_attr( $href ) . '">' . (string) $page . '</a>';
+            }
+        }
+
+        return implode( "\n", $links );
     }
 }

@@ -129,6 +129,17 @@ final class Gr_Admin_Menu {
             Gr_Url_Builder_Page::SLUG,
             array( Gr_Url_Builder_Page::class, 'render' )
         );
+
+        // Tools section (docs/06 tree); read-only trail, server-side
+        // pagination.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Audit Log', 'greenpng' ),
+            __( 'Audit Log', 'greenpng' ),
+            'manage_options',
+            Gr_Audit_Log_Page::SLUG,
+            array( Gr_Audit_Log_Page::class, 'render' )
+        );
     }
 
     /**

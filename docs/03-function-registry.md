@@ -112,9 +112,10 @@
 
 | 函数 | 签名 | 说明 |
 | :--- | :--- | :--- |
-| `gr_audit_diff()` | `gr_audit_diff(array $old, array $new): array` | 递归 added/modified/removed |
-| `gr_audit_log()` | `gr_audit_log(string $action, string $object_type, string $object_id, array $old, array $new, int $user_id=0): int` | 写审计流水 |
+| `gr_audit_diff()` | `gr_audit_diff(array $before, array $after): array` | 递归 added/modified/removed |
+| `gr_audit_log()` | `gr_audit_log(string $action, string $object_type, string $object_id, array $before, array $after, int $user_id=0): int` | 写审计流水 |
 | `gr_audit_query()` | `gr_audit_query(array $filters=[], int $limit=50, int $offset=0): array` | 过滤分页查询 |
+> **U10 落地（2026-09-12）**：三门面全部就位。`gr_audit_diff` → `GreenPNG\Core\Gr_Audit_Diff::diff()`（纯函数：共享键双方皆数组则递归、数组↔标量转变记单条 modified（整值级 old/new）、比较严格 `!==`、点路径基于标识符键——本插件快照键无点号；参数名 `before`/`after` 避开 `$new` 保留字告警）。`gr_audit_log`/`gr_audit_query` → `GreenPNG\Storage\Gr_Audit_Repository`——**diff 在写时计算一次**，行存 `diff_json`（表无 old/new 原料列，存结果而非原料；展示层不再重算，DB 往返字符串化后重算会报出没人做过的类型变化）；`query()` 过滤白名单 user_id/object_type/object_id/action（未知键零子句），无过滤 COUNT 直接裸跑（真核对无占位符语句 prepare 是 doing-it_wrong；表名来自 DDL 注册表非用户输入），LIMIT 钳 1..200、OFFSET ≥0，COUNT 与页读共用同一 WHERE。首个产出方 = Access Rules 页三写（add/delete/toggle 各记一行，`row_of()` 单行读做写前快照；双门失败零审计行）。页面 `Gr_Audit_Log_Page`（SLUG greenpng-audit，顶级 Tools 首员）服务端分页 PER_PAGE=20（`paginate_links` core 锚点），diff 展开为纯文本行（`+ path = value` / `~ path: old → new` / `- path`，60 字符截断）逐行 esc_html。
 
 ## 9. 动态事件嗅探（Dynamic Events）
 

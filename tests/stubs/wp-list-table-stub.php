@@ -88,7 +88,9 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 		}
 
 		/**
-		 * One body row: each column through the subclass hooks.
+		 * One body row: each column through the subclass hooks, in
+		 * core's order — the checkbox column, then a column_{$key}
+		 * method when the subclass defines one, then column_default().
 		 *
 		 * @param array<string, mixed> $item Row data.
 		 * @return void
@@ -99,6 +101,8 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 				echo '<td class="column-' . esc_attr( (string) $key ) . '">';
 				if ( 'cb' === $key ) {
 					$this->column_cb( $item );
+				} elseif ( method_exists( $this, 'column_' . $key ) ) {
+					$this->{ 'column_' . $key }( $item );
 				} else {
 					$this->column_default( $item, (string) $key );
 				}

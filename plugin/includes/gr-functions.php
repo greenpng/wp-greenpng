@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Attribution\Gr_Attribution_Models;
 use GreenPNG\Attribution\Gr_Attribution_Params;
+use GreenPNG\Core\Gr_Audit_Diff;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
@@ -28,6 +29,7 @@ use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Crawler_Verify;
 use GreenPNG\Security\Gr_Honeypot;
+use GreenPNG\Storage\Gr_Audit_Repository;
 use GreenPNG\Security\Gr_Ip_Mask;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
@@ -361,6 +363,53 @@ if ( ! function_exists( 'gr_is_trusted_ip' ) ) {
      */
     function gr_is_trusted_ip( string $ip ): bool {
         return Gr_Access_Rules::is_trusted_ip( $ip );
+    }
+}
+
+if ( ! function_exists( 'gr_audit_diff' ) ) {
+    /**
+     * Audit diff facade (docs/03 §8): recursive added/modified/removed
+     * report between two state snapshots, keyed by dotted paths.
+     *
+     * @param array<string, mixed> $before Earlier state.
+     * @param array<string, mixed> $after Later state.
+     * @return array{added: array<string, mixed>, modified: array<string, array{old: mixed, new: mixed}>, removed: array<string, mixed>}
+     */
+    function gr_audit_diff( array $before, array $after ): array {
+        return Gr_Audit_Diff::diff( $before, $after );
+    }
+}
+
+if ( ! function_exists( 'gr_audit_log' ) ) {
+    /**
+     * Audit write facade (docs/03 §8): one row per admin change, the
+     * diff computed and stored at write time.
+     *
+     * @param string               $action      Short verb, e.g. 'add'.
+     * @param string               $object_type Object family, e.g. 'access_rule'.
+     * @param string               $object_id   Object identifier as text.
+     * @param array<string, mixed> $before        Earlier state, array() for creations.
+     * @param array<string, mixed> $after        Later state, array() for removals.
+     * @param int                  $user_id     Acting user, 0 for system.
+     * @return int Inserted row id, 0 on failure.
+     */
+    function gr_audit_log( string $action, string $object_type, string $object_id, array $before, array $after, int $user_id = 0 ): int {
+        return ( new Gr_Audit_Repository() )->log( $action, $object_type, $object_id, $before, $after, $user_id );
+    }
+}
+
+if ( ! function_exists( 'gr_audit_query' ) ) {
+    /**
+     * Audit read facade (docs/03 §8): filtered, newest-first page of
+     * audit rows plus the total the filter matches.
+     *
+     * @param array<string, mixed> $filters Whitelisted keys: user_id, object_type, object_id, action.
+     * @param int                  $limit   Page size, clamped 1..200.
+     * @param int                  $offset  Row offset, at least 0.
+     * @return array{rows: array<int, array<string, string>>, total: int}
+     */
+    function gr_audit_query( array $filters = array(), int $limit = 50, int $offset = 0 ): array {
+        return ( new Gr_Audit_Repository() )->query( $filters, $limit, $offset );
     }
 }
 

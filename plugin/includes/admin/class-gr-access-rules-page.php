@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Storage\Gr_Access_Rules_Repository;
+use GreenPNG\Storage\Gr_Audit_Repository;
 
 /**
  * Owner-facing rule management.
@@ -88,9 +89,11 @@ final class Gr_Access_Rules_Page {
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write(); reading the tab the write belongs to.
-        $tab  = isset( $_POST['tab'] ) ? sanitize_key( (string) wp_unslash( $_POST['tab'] ) ) : '';
-        $type = ( Gr_Access_Rules::TYPE_ALLOW === $tab ) ? Gr_Access_Rules::TYPE_ALLOW : Gr_Access_Rules::TYPE_BAN;
-        $repo = new Gr_Access_Rules_Repository();
+        $tab     = isset( $_POST['tab'] ) ? sanitize_key( (string) wp_unslash( $_POST['tab'] ) ) : '';
+        $type    = ( Gr_Access_Rules::TYPE_ALLOW === $tab ) ? Gr_Access_Rules::TYPE_ALLOW : Gr_Access_Rules::TYPE_BAN;
+        $repo    = new Gr_Access_Rules_Repository();
+        $audit   = new Gr_Audit_Repository();
+        $user_id = get_current_user_id();
 
         if ( self::ACTION_ADD === $action ) {
             // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write().
@@ -106,14 +109,33 @@ final class Gr_Access_Rules_Page {
                 && ( Gr_Access_Rules::KIND_IP === $kind || Gr_Access_Rules::TYPE_ALLOW === $type );
 
             if ( $kind_ok && self::valid_value( $kind, $value ) ) {
-                $repo->add( $type, $kind, $value, $note );
+                $new_id = $repo->add( $type, $kind, $value, $note );
+                if ( $new_id > 0 ) {
+                    $audit->log(
+                        'add',
+                        'access_rule',
+                        (string) $new_id,
+                        array(),
+                        array(
+                            'rule_type'   => $type,
+                            'match_kind'  => $kind,
+                            'match_value' => $value,
+                            'note'        => $note,
+                            'is_active'   => 1,
+                        ),
+                        $user_id
+                    );
+                }
             }
         } elseif ( self::ACTION_DELETE === $action ) {
             // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write(); ids are absint-cast.
             $ids = isset( $_POST['rule'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['rule'] ) ) : array();
             foreach ( $ids as $id ) {
                 if ( $id > 0 ) {
-                    $repo->delete( (int) $id, $type );
+                    $before = $repo->row_of( (int) $id, $type );
+                    if ( $repo->delete( (int) $id, $type ) ) {
+                        $audit->log( 'delete', 'access_rule', (string) $id, $before, array(), $user_id );
+                    }
                 }
             }
         } elseif ( self::ACTION_TOGGLE === $action ) {
@@ -122,7 +144,17 @@ final class Gr_Access_Rules_Page {
             // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); value is a strict '1' comparison.
             $to = isset( $_POST['to_active'] ) ? ( '1' === (string) wp_unslash( $_POST['to_active'] ) ) : false;
             if ( $id > 0 ) {
-                $repo->set_active( $id, $type, $to );
+                $before = $repo->row_of( $id, $type );
+                if ( array() !== $before && $repo->set_active( $id, $type, $to ) ) {
+                    $audit->log(
+                        'toggle',
+                        'access_rule',
+                        (string) $id,
+                        array( 'is_active' => (int) $before['is_active'] ),
+                        array( 'is_active' => $to ? 1 : 0 ),
+                        $user_id
+                    );
+                }
             }
         }
 

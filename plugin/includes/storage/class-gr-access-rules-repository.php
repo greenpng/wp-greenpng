@@ -60,6 +60,32 @@ final class Gr_Access_Rules_Repository {
     }
 
     /**
+     * One row of one list, keyed by column; an empty array when the
+     * id does not exist in that type. Write paths use this to
+     * snapshot the state they are about to change.
+     *
+     * @param int    $id   Rule id.
+     * @param string $type Rule type the row must belong to.
+     * @return array<string, string>
+     */
+    public function row_of( int $id, string $type ): array {
+        global $wpdb;
+        $table = Gr_Database::table( 'access_rules' );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-row admin read on a write path, never a front-end request.
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from the DDL registry, not user input.
+                "SELECT id, rule_type, match_kind, match_value, note, is_active, created_by, created_at, updated_at FROM {$table} WHERE id = %d AND rule_type = %s",
+                $id,
+                $type
+            ),
+            ARRAY_A
+        );
+
+        return is_array( $row ) ? $row : array();
+    }
+
+    /**
      * Every rule of one type, inactive included — the admin list
      * manages state, so hiding rows would hide the work.
      *
