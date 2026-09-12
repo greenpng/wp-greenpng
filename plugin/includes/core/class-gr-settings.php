@@ -76,6 +76,12 @@ final class Gr_Settings {
             'attribution_cookie_days'    => 30,
             'attribution_default_model'  => 'last',
 
+            // Outbound analytics (docs/13 U15, docs/07 §5): both
+            // default off, opt-in only. The toggles live here; the
+            // credentials never do — they ride Gr_Secrets options.
+            'capi_meta_enabled'          => 0,
+            'capi_ga4_enabled'           => 0,
+
             // Privacy: marketing-track IP anonymization on by default;
             // when the host has no Consent API, this stand-in toggle
             // decides marketing tracking, defaulting to off (ADR-0005 §1).

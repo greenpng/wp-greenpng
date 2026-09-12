@@ -142,6 +142,27 @@ final class Gr_Secrets {
     }
 
     /**
+     * Display mask for a credential (docs/10 §2: keep the first and
+     * last 2 characters, nothing between). Short values hide entirely
+     * — a fixed-width mask, never a length-revealing one, and never
+     * the value.
+     *
+     * @param string $value Credential plaintext.
+     * @return string
+     */
+    public static function mask( string $value ): string {
+        if ( '' === $value ) {
+            return '';
+        }
+
+        if ( strlen( $value ) <= 6 ) {
+            return '****';
+        }
+
+        return substr( $value, 0, 2 ) . '****' . substr( $value, -2 );
+    }
+
+    /**
      * Normalized SHA-256 for PII joins (docs/03 §1): lowercase + trim so
      * the same email/IP hash identically wherever it is captured; the
      * type prefixes the hash input so one value cannot be linked across

@@ -123,8 +123,8 @@ final class BotSignalsPageTest extends TestCase {
         $GLOBALS['wpdb']->results = static function ( string $sql ): array {
             if ( false !== strpos( $sql, 'GROUP BY action_taken' ) ) {
                 return array(
-                    array( 'action_taken' => 'verified', 'walks' => '3', 'rows' => '2' ),
-                    array( 'action_taken' => 'unverified', 'walks' => '1', 'rows' => '1' ),
+                    array( 'action_taken' => 'verified', 'walks' => '3', 'fold_rows' => '2' ),
+                    array( 'action_taken' => 'unverified', 'walks' => '1', 'fold_rows' => '1' ),
                 );
             }
 

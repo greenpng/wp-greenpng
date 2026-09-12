@@ -152,6 +152,17 @@ final class Gr_Admin_Menu {
             array( Gr_Url_Builder_Page::class, 'render' )
         );
 
+        // Integrations section opens (docs/06 tree); the outbound
+        // analytics page registers its own admin_init write handler.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Analytics & CAPI', 'greenpng' ),
+            __( 'Analytics & CAPI', 'greenpng' ),
+            'manage_options',
+            Gr_Analytics_Page::SLUG,
+            array( Gr_Analytics_Page::class, 'render' )
+        );
+
         // Tools section (docs/06 tree); read-only trail, server-side
         // pagination.
         add_submenu_page(
