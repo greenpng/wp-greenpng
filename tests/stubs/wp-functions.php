@@ -1192,6 +1192,45 @@ if ( ! function_exists( 'do_action' ) ) {
     }
 }
 
+if ( ! function_exists( 'get_bloginfo' ) ) {
+    /**
+     * Site info stand-in; the version knob keeps environment exports
+     * assertable.
+     *
+     * @param string $show Info key; only 'version' is modeled.
+     * @return string
+     */
+    function get_bloginfo( $show = '' ) {
+        if ( 'version' === (string) $show ) {
+            return (string) ( $GLOBALS['gr_stub_wp_version'] ?? '6.0' );
+        }
+
+        return '';
+    }
+}
+
+if ( ! function_exists( 'get_locale' ) ) {
+    /**
+     * Locale stand-in.
+     *
+     * @return string
+     */
+    function get_locale() {
+        return (string) ( $GLOBALS['gr_stub_locale'] ?? 'en_US' );
+    }
+}
+
+if ( ! function_exists( 'is_multisite' ) ) {
+    /**
+     * Multisite flag stand-in.
+     *
+     * @return bool
+     */
+    function is_multisite() {
+        return (bool) ( $GLOBALS['gr_stub_multisite'] ?? false );
+    }
+}
+
 if ( ! function_exists( 'paginate_links' ) ) {
     /**
      * Pagination link list stand-in: core builds anchor markup from

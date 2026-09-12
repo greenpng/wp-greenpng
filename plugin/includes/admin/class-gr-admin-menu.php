@@ -151,6 +151,17 @@ final class Gr_Admin_Menu {
             Gr_Data_Retention_Page::SLUG,
             array( Gr_Data_Retention_Page::class, 'render' )
         );
+
+        // Tools section (docs/06 tree); environment snapshot and the
+        // sanitized export.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Status & Diagnostics', 'greenpng' ),
+            __( 'Status & Diagnostics', 'greenpng' ),
+            'manage_options',
+            Gr_Status_Page::SLUG,
+            array( Gr_Status_Page::class, 'render' )
+        );
     }
 
     /**

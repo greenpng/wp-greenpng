@@ -73,6 +73,29 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         public $query_result = 0;
 
         /**
+         * Server family flag mirroring core's property.
+         *
+         * @var bool
+         */
+        public $is_mariadb = false;
+
+        /**
+         * Server version text behind db_version().
+         *
+         * @var string
+         */
+        public $server_version = '12.3';
+
+        /**
+         * Server identity string behind db_server_info(); models
+         * core's shape, including "version-family" outputs where the
+         * family is not spelled out (CLI contexts).
+         *
+         * @var string
+         */
+        public $server_info = '12.3.3-MariaDB';
+
+        /**
          * Insert stand-in: records the call and fakes a successful write.
          *
          * @param string              $table  Table name.
@@ -183,6 +206,24 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
             $this->queries[] = (string) $query;
 
             return $this->var_result;
+        }
+
+        /**
+         * Server version stand-in, mirroring core's method shape.
+         *
+         * @return string
+         */
+        public function db_version() {
+            return $this->server_version;
+        }
+
+        /**
+         * Server identity stand-in, mirroring core's method shape.
+         *
+         * @return string
+         */
+        public function db_server_info() {
+            return $this->server_info;
         }
     }
 }

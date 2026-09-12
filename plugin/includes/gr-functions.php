@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Attribution\Gr_Attribution_Models;
 use GreenPNG\Attribution\Gr_Attribution_Params;
 use GreenPNG\Core\Gr_Audit_Diff;
+use GreenPNG\Core\Gr_Diagnostics;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Request;
@@ -31,6 +32,7 @@ use GreenPNG\Security\Gr_Crawler_Verify;
 use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Storage\Gr_Audit_Repository;
 use GreenPNG\Storage\Gr_Retention;
+use GreenPNG\Storage\Gr_Table_Stats;
 use GreenPNG\Security\Gr_Ip_Mask;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
@@ -427,6 +429,31 @@ if ( ! function_exists( 'gr_prune_table' ) ) {
      */
     function gr_prune_table( string $table_key, string $date_col, int $retention_days, int $batch = 2000 ): int {
         return Gr_Retention::prune( $table_key, $date_col, $retention_days, $batch );
+    }
+}
+
+if ( ! function_exists( 'gr_get_table_stats' ) ) {
+    /**
+     * Table capacity facade (docs/03 §10): row estimates and byte
+     * sizes per plugin table, catalog read behind a short cache.
+     *
+     * @return array<string, array{rows: int, data_bytes: int, index_bytes: int, total_bytes: int}>
+     */
+    function gr_get_table_stats(): array {
+        return Gr_Table_Stats::stats();
+    }
+}
+
+if ( ! function_exists( 'gr_export_diagnostics' ) ) {
+    /**
+     * Diagnostics facade (docs/03 §10): the whitelisted support
+     * snapshot — versions, queue posture, adapter mounts, table
+     * capacity. No credentials, no addresses, no content data.
+     *
+     * @return array<string, mixed>
+     */
+    function gr_export_diagnostics(): array {
+        return Gr_Diagnostics::export();
     }
 }
 
