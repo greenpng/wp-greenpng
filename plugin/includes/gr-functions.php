@@ -26,6 +26,7 @@ use GreenPNG\Funnel\Gr_Ab_Significance;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Security\Gr_Access_Rules;
+use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Security\Gr_Ip_Matcher;
 use GreenPNG\Security\Gr_Ip_Resolver;
 use GreenPNG\Security\Gr_Login_Protection;
@@ -417,5 +418,33 @@ if ( ! function_exists( 'gr_record_login_failure' ) ) {
      */
     function gr_record_login_failure( string $username, string $ip ): void {
         Gr_Login_Protection::record_failure( $username, $ip );
+    }
+}
+
+if ( ! function_exists( 'gr_render_honeypot' ) ) {
+    /**
+     * Honeypot render facade (docs/03 §3): the trap and carrier inputs
+     * for one form context; empty when the module is off or the site
+     * crypto cannot seal the carrier.
+     *
+     * @param string $form_context Form context, e.g. 'login'.
+     * @return string
+     */
+    function gr_render_honeypot( string $form_context ): string {
+        return Gr_Honeypot::render( $form_context );
+    }
+}
+
+if ( ! function_exists( 'gr_check_honeypot' ) ) {
+    /**
+     * Honeypot judgement facade (docs/03 §3): true when the submitted
+     * payload reads as automated — trap filled or round trip under
+     * two seconds. Pure: no settings reads, no storage.
+     *
+     * @param array<int|string, mixed> $post Submitted fields.
+     * @return bool
+     */
+    function gr_check_honeypot( array $post ): bool {
+        return Gr_Honeypot::check( $post );
     }
 }

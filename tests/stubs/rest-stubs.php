@@ -161,30 +161,25 @@ if ( ! function_exists( 'wp_cache_incr' ) ) {
 
 if ( ! class_exists( 'WP_Error' ) ) {
     /**
-     * Error stand-in carrying the controller's code and status data.
+     * Error stand-in with core's multi-error semantics: several codes
+     * can accumulate (registration_errors grows one entry per veto),
+     * accessors read the first unless a code is named.
      */
     final class WP_Error {
 
         /**
-         * Error code.
+         * Messages per code.
          *
-         * @var string|int
+         * @var array<string|int, list<string>>
          */
-        private $code;
+        private $errors = array();
 
         /**
-         * Error message.
+         * Data per code.
          *
-         * @var string
+         * @var array<string|int, mixed>
          */
-        private $message;
-
-        /**
-         * Extra data, e.g. the HTTP status.
-         *
-         * @var mixed
-         */
-        private $data;
+        private $error_data = array();
 
         /**
          * Constructor.
@@ -194,36 +189,75 @@ if ( ! class_exists( 'WP_Error' ) ) {
          * @param mixed      $data    Extra data.
          */
         public function __construct( $code = '', $message = '', $data = null ) {
-            $this->code    = $code;
-            $this->message = $message;
-            $this->data    = $data;
+            if ( null === $code || '' === $code ) {
+                return;
+            }
+
+            $this->add( $code, $message, $data );
         }
 
         /**
-         * Code accessor.
+         * Appends one more code/message pair, like core.
+         *
+         * @param string|int $code    Error code.
+         * @param string     $message Error message.
+         * @param mixed      $data    Extra data.
+         * @return void
+         */
+        public function add( $code, $message = '', $data = null ) {
+            $this->errors[ $code ][] = $message;
+
+            if ( null !== $data ) {
+                $this->error_data[ $code ] = $data;
+            }
+        }
+
+        /**
+         * Every accumulated code, in insertion order.
+         *
+         * @return array<int, string|int>
+         */
+        public function get_error_codes() {
+            return array_keys( $this->errors );
+        }
+
+        /**
+         * First code, or '' when the error is empty.
          *
          * @return string|int
          */
         public function get_error_code() {
-            return $this->code;
+            $codes = $this->get_error_codes();
+
+            return empty( $codes ) ? '' : $codes[0];
         }
 
         /**
-         * Message accessor.
+         * Message for one code, or the first code's.
          *
+         * @param string|int $code Error code.
          * @return string
          */
-        public function get_error_message() {
-            return $this->message;
+        public function get_error_message( $code = '' ) {
+            if ( '' === $code ) {
+                $code = $this->get_error_code();
+            }
+
+            return isset( $this->errors[ $code ] ) ? (string) $this->errors[ $code ][0] : '';
         }
 
         /**
-         * Data accessor.
+         * Data for one code, or the first code's.
          *
+         * @param string|int $code Error code.
          * @return mixed
          */
-        public function get_error_data() {
-            return $this->data;
+        public function get_error_data( $code = '' ) {
+            if ( '' === $code ) {
+                $code = $this->get_error_code();
+            }
+
+            return $this->error_data[ $code ] ?? null;
         }
     }
 }

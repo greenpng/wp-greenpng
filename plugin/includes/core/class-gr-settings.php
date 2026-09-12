@@ -54,6 +54,11 @@ final class Gr_Settings {
             'login_fail_threshold'       => 5,
             'login_lockout_base'         => 300,
 
+            // Honeypot traps (docs/13 W8): opt-in — the trap and its
+            // carrier appear in the login/registration forms only when
+            // the site owner turns this on.
+            'honeypot_enabled'           => 0,
+
             // Client probe: default on (safety signals only, Recital 49
             // basis; toggle + readme disclosure per ADR-0007).
             'probe_enabled'              => 1,

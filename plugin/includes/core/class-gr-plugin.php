@@ -26,6 +26,7 @@ use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Rest\Gr_Probe_Script;
+use GreenPNG\Security\Gr_Honeypot;
 use GreenPNG\Security\Gr_Login_Protection;
 use GreenPNG\Security\Gr_Request_Inspector;
 use GreenPNG\Security\Gr_Scanner_Ua;
@@ -250,6 +251,7 @@ final class Gr_Plugin {
         Gr_Scanner_Ua::register_detector();
         ( new Gr_Security_Logger( new Gr_Security_Log_Repository() ) )->register_hooks();
         Gr_Login_Protection::register_hooks();
+        Gr_Honeypot::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

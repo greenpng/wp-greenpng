@@ -213,6 +213,19 @@ if ( ! defined( 'ARRAY_A' ) ) {
     define( 'ARRAY_A', 'ARRAY_A' );
 }
 
+if ( ! function_exists( 'esc_attr' ) ) {
+    /**
+     * Attribute-escaping stand-in mirroring core's contract closely
+     * enough for markup assertions.
+     *
+     * @param mixed $text Value to escape.
+     * @return string
+     */
+    function esc_attr( $text ) {
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
 if ( ! function_exists( 'wp_unslash' ) ) {
     /**
      * Slash-stripping stand-in mirroring core's recursive behavior.
