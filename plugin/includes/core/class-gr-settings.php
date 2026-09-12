@@ -59,6 +59,10 @@ final class Gr_Settings {
             // the site owner turns this on.
             'honeypot_enabled'           => 0,
 
+            // Blackhole trap (docs/13 W12): opt-in — the virtual path is
+            // declared in robots.txt and answered only when enabled.
+            'blackhole_enabled'          => 0,
+
             // Client probe: default on (safety signals only, Recital 49
             // basis; toggle + readme disclosure per ADR-0007).
             'probe_enabled'              => 1,

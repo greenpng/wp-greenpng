@@ -52,15 +52,18 @@ final class RequestInspectorTest extends TestCase {
         Gr_Plugin::reset_instance();
         Gr_Plugin::run();
 
+        // Match by callback, not by hook: other modules ride init too
+        // (W12's trap at 5), and any-init-matching would find the
+        // wrong registration.
         $found = null;
         foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
-            if ( 'init' === (string) $registration['hook'] ) {
+            if ( 'init' === (string) $registration['hook']
+                && array( gr()->inspector(), 'run' ) === $registration['callback'] ) {
                 $found = $registration;
             }
         }
         $this->assertNotNull( $found );
         $this->assertSame( 10, $found['priority'] );
-        $this->assertSame( array( gr()->inspector(), 'run' ), $found['callback'] );
     }
 
     public function testRunBuildsContextAndCollectsFindings(): void {

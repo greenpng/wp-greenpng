@@ -157,6 +157,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
             'forward' => array(),
             'calls'   => array(),
         );
+        $GLOBALS['gr_stub_wp_die']            = array();
         $GLOBALS['gr_stub_actions']           = array();
         $GLOBALS['gr_stub_fired_actions']     = array();
         $GLOBALS['gr_stub_fired_action_args'] = array();
@@ -231,6 +232,34 @@ if ( ! function_exists( 'esc_attr' ) ) {
      */
     function esc_attr( $text ) {
         return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+    /**
+     * Translate-and-escape stand-in: identity translation plus HTML
+     * escaping, the same contract core composes.
+     *
+     * @param string $text   Text to translate.
+     * @param string $domain Text domain.
+     * @return string
+     */
+    function esc_html__( $text, $domain = 'default' ) {
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+    /**
+     * URL parsing stand-in delegating to parse_url, matching core's
+     * wrapper contract.
+     *
+     * @param string $url      The URL to parse.
+     * @param int    $component The specific component.
+     * @return mixed
+     */
+    function wp_parse_url( $url, $component = -1 ) {
+        return parse_url( (string) $url, $component );
     }
 }
 
@@ -586,6 +615,26 @@ if ( ! defined( 'DNS_AAAA' ) ) {
 
 if ( ! defined( 'DNS_ANY' ) ) {
     define( 'DNS_ANY', 268435456 );
+}
+
+if ( ! function_exists( 'wp_die' ) ) {
+    /**
+     * Termination stand-in: records the message and response args and
+     * returns — the production contract (no-cache headers, status,
+     * exit) is the caller's business, tests assert what was sent.
+     *
+     * @param string                       $message Message body.
+     * @param string                       $title   Page title.
+     * @param array<string, mixed>|string $args    Response args.
+     * @return void
+     */
+    function wp_die( $message, $title = '', $args = array() ) {
+        $GLOBALS['gr_stub_wp_die'][] = array(
+            'message' => $message,
+            'title'   => $title,
+            'args'    => $args,
+        );
+    }
 }
 
 if ( ! function_exists( 'add_action' ) ) {
