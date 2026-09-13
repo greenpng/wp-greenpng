@@ -187,10 +187,22 @@ final class Gr_Queue {
             return;
         }
 
-        foreach ( $cron as $events ) {
-            foreach ( array_keys( $events ) as $hook ) {
-                if ( is_string( $hook ) && 0 === strpos( $hook, 'gr_' ) ) {
-                    wp_clear_scheduled_hook( $hook );
+        // Per-instance unscheduling, because wp_clear_scheduled_hook()
+        // only removes events whose args exactly match the ones passed
+        // with it — arg-carrying work events would survive a hook-only
+        // clear.
+        foreach ( $cron as $timestamp => $events ) {
+            foreach ( $events as $hook => $signatures ) {
+                if ( ! is_string( $hook ) || 0 !== strpos( $hook, 'gr_' ) ) {
+                    continue;
+                }
+                foreach ( $signatures as $data ) {
+                    // isset() on a garbage bucket is safely false; the
+                    // args check is the one carrying real weight.
+                    if ( ! isset( $data['args'] ) || ! is_array( $data['args'] ) ) {
+                        continue;
+                    }
+                    wp_unschedule_event( (int) $timestamp, $hook, $data['args'] );
                 }
             }
         }

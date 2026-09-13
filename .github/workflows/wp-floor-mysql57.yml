@@ -22,12 +22,15 @@ jobs:
       - uses: actions/checkout@v4
 
       # Same slug staging as the wp-env workflows: run.sh's restore
-      # step swaps this copy's contents between the uninstall arms.
+      # step swaps this copy's contents between the uninstall arms. The
+      # permissions matter here: the CLI container runs as www-data and
+      # must be able to delete files through the bind mount.
       - name: Stage the plugin under its slug directory
         run: |
           rm -rf .wp-env-plugins
           mkdir -p .wp-env-plugins
           cp -a plugin .wp-env-plugins/greenpng
+          chmod -R a+rwX .wp-env-plugins
 
       - name: Start the compose stack
         run: docker compose -f tests/integration/docker-compose.floor.yml --project-directory . up -d

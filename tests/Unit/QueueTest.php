@@ -116,9 +116,12 @@ final class QueueTest extends TestCase {
     public function testTeardownClearsSchedulesMutexAndPendingEvents(): void {
         Gr_Queue::ensure_daily();
         wp_schedule_single_event( time(), Gr_Queue::DAILY_HOOK );
-        // Pending work events run under caller-owned gr_ hooks; the
-        // sweep must take those too, while never touching foreign ones.
+        // Pending work events run under caller-owned gr_ hooks and
+        // carry args; core's wp_clear_scheduled_hook() would not touch
+        // them with a hook-only clear, so the sweep must unschedule
+        // per instance. Foreign hooks survive untouched either way.
         wp_schedule_single_event( time() + 60, 'gr_crawler_verify_job', array( '203.0.113.9', 'curl/8' ) );
+        wp_schedule_single_event( time() + 61, 'gr_ga4_mp_send', array( array( 'id' => 7 ) ) );
         wp_schedule_single_event( time() + 120, 'wp_scheduled_delete' );
         set_transient( 'gr_queue_lock_daily', time(), Gr_Queue::LOCK_TTL );
 
@@ -130,5 +133,18 @@ final class QueueTest extends TestCase {
             'Only foreign cron work may survive deactivation.'
         );
         self::assertArrayNotHasKey( 'gr_queue_lock_daily', $GLOBALS['gr_stub_transients'] );
+    }
+
+    public function testClearPluginCronRemovesArgfulWorkEventsButNotForeignOnes(): void {
+        wp_schedule_single_event( time() + 30, 'gr_crawler_verify_job', array( '198.51.100.4', 'bot/1' ) );
+        wp_schedule_single_event( time() + 40, 'wp_scheduled_delete' );
+
+        Gr_Queue::clear_plugin_cron();
+
+        self::assertSame(
+            array( 'wp_scheduled_delete' ),
+            array_column( $GLOBALS['gr_stub_cron'], 'hook' ),
+            'The namespace sweep must take arg-carrying gr_ events and leave foreign work alone.'
+        );
     }
 }

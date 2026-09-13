@@ -1183,17 +1183,45 @@ if ( ! function_exists( 'wp_next_scheduled' ) ) {
 
 if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
     /**
-     * Removes every scheduled instance of a hook.
+     * Removes every scheduled instance of a hook with exactly the
+     * given arguments — core semantics, which is what makes an
+     * arg-carrying event survive a hook-only clear.
      *
-     * @param string $hook Hook to clear.
+     * @param string                   $hook Hook to clear.
+     * @param array<int|string, mixed> $args Exact argument signature to match.
      * @return bool
      */
-    function wp_clear_scheduled_hook( $hook ) {
+    function wp_clear_scheduled_hook( $hook, $args = array() ) {
         $GLOBALS['gr_stub_cron'] = array_values(
             array_filter(
                 $GLOBALS['gr_stub_cron'],
-                static function ( $event ) use ( $hook ): bool {
-                    return $event['hook'] !== $hook;
+                static function ( $event ) use ( $hook, $args ): bool {
+                    return $event['hook'] !== $hook || $event['args'] !== $args;
+                }
+            )
+        );
+
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_unschedule_event' ) ) {
+    /**
+     * Removes one exact cron instance (timestamp, hook, args).
+     *
+     * @param int                      $timestamp Unix timestamp of the instance.
+     * @param string                   $hook      Hook name.
+     * @param array<int|string, mixed> $args      Hook arguments.
+     * @return bool
+     */
+    function wp_unschedule_event( $timestamp, $hook, $args = array() ) {
+        $GLOBALS['gr_stub_cron'] = array_values(
+            array_filter(
+                $GLOBALS['gr_stub_cron'],
+                static function ( $event ) use ( $timestamp, $hook, $args ): bool {
+                   	return $event['timestamp'] !== (int) $timestamp
+                        || $event['hook'] !== $hook
+                        || $event['args'] !== $args;
                 }
             )
         );
