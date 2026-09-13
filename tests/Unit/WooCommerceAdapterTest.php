@@ -13,6 +13,7 @@ namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Core\Gr_Meta_Capi;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
@@ -112,6 +113,37 @@ final class WooCommerceAdapterTest extends TestCase {
         self::assertContains( 'woocommerce_checkout_update_order_meta', $hooks );
         self::assertContains( 'woocommerce_store_api_checkout_update_order_from_request', $hooks );
         self::assertContains( 'woocommerce_payment_complete', $hooks );
+    }
+
+    public function testPresentTargetAlsoRegistersTheCapiPaymentForwarder(): void {
+        // The marker class is already defined by this point in the
+        // process, so the CAPI forwarder's own gate resolves present —
+        // proving the wiring joins exactly when the target does.
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        Gr_Plugin::reset_instance();
+        Gr_Plugin::run();
+
+        $capi_payment = null;
+        foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
+            // The adapter registers the same hook with an instance
+            // callback; only the class-based registration is the
+            // forwarder's.
+            if ( 'woocommerce_payment_complete' === (string) $registration['hook']
+                && is_array( $registration['callback'] )
+                && is_string( $registration['callback'][0] )
+                && Gr_Meta_Capi::class === $registration['callback'][0] ) {
+                $capi_payment = $registration;
+            }
+        }
+
+        self::assertNotNull( $capi_payment );
+        self::assertSame( 11, (int) $capi_payment['priority'] );
+        self::assertSame( 'on_payment_complete', (string) $capi_payment['callback'][1] );
+
+        Gr_Plugin::reset_instance();
     }
 
     public function testClassicCapturePersistsTheCookieTrackVisitor(): void {

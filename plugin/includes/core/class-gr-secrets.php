@@ -195,6 +195,24 @@ final class Gr_Secrets {
     }
 
     /**
+     * Provider-side PII digest (Meta CAPI em/ph): sha-256 of the
+     * normalized value alone, with no local type prefix, because the
+     * receiving side must be able to reproduce the same digest from
+     * its own browser-side copy of the value — the prefixed hash_pii()
+     * only works when both ends are this plugin. Empty in, empty out.
+     *
+     * @param string $value Raw value.
+     * @return string
+     */
+    public static function hash_pii_sha256( string $value ): string {
+        if ( '' === $value ) {
+            return '';
+        }
+
+        return hash( 'sha256', strtolower( trim( $value ) ) );
+    }
+
+    /**
      * HMAC-SHA256 for webhook signing (docs/03 §1); deterministic so the
      * receiving side can verify with hash_equals().
      *

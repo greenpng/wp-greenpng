@@ -72,7 +72,7 @@ GreenPNG\Core\Http_Client::post('meta_capi', $endpoint, $payload);
 
 ### 5.1 Meta CAPI（v1.0）
 - 版本号：`GR_META_API_VERSION` 常量 + `gr_meta_api_version` filter。
-- PII 处理：`gr_hash_pii()`（小写+trim+SHA-256）后出网；浏览器 Pixel 与服务端 CAPI 以 `event_id` 48h 去重（文档化机制，不承诺具体 EMQ 分数）。
+- PII 处理：出网摘要 `Gr_Secrets::hash_pii_sha256()`（小写+trim+SHA-256，**无本地前缀**——Meta 必须能从浏览器侧复算同一摘要；带 `类型|` 前缀的 `gr_hash_pii()` 只用于插件内部 join，两语义分立）；浏览器 Pixel 与服务端 CAPI 以 `event_id` 48h 去重（文档化机制，不承诺具体 EMQ 分数）。
 - 仅回传**通过流量质量过滤的**事件（这是产品差异化：不把机器人喂给广告算法）。
 - 派发经 `Gr_Queue`（宿主有 AS 时用其重试/并发锁）。
 

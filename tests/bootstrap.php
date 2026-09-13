@@ -33,6 +33,10 @@ if ( ! defined( 'GR_PLUGIN_FILE' ) ) {
     define( 'GR_PLUGIN_FILE', dirname( __DIR__ ) . '/plugin/greenpng.php' );
 }
 
+if ( ! defined( 'GR_META_API_VERSION' ) ) {
+    define( 'GR_META_API_VERSION', 'v23.0' );
+}
+
 require_once __DIR__ . '/stubs/wp-functions.php';
 require_once __DIR__ . '/stubs/wpdb-stub.php';
 require_once __DIR__ . '/stubs/rest-stubs.php';

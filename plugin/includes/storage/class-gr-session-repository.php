@@ -156,6 +156,42 @@ final class Gr_Session_Repository {
     }
 
     /**
+     * Traffic-quality verdict for one visitor: the bot conclusion of
+     * their most recent session, or null when the visitor has no
+     * sessions at all (no evidence either way — admin-created orders
+     * and API orders look like this). Read by the outbound forwarders
+     * whose product promise is never feeding robots to an ad
+     * platform's algorithm.
+     *
+     * @param string $visitor_id Visitor identity.
+     * @return bool|null True when the latest session is a known bot.
+     */
+    public function visitor_bot_verdict( string $visitor_id ): ?bool {
+        global $wpdb;
+
+        if ( '' === $visitor_id ) {
+            return null;
+        }
+
+        $table = Gr_Database::table( 'sessions' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+            "SELECT is_bot FROM {$table} WHERE visitor_id = %s ORDER BY last_active DESC, session_id DESC LIMIT 1",
+            $visitor_id
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; single-row indexed lookup on the visitor index (docs/05 §3.2), off the front-end path.
+        $is_bot = $wpdb->get_var( $sql );
+
+        if ( null === $is_bot || '' === (string) $is_bot ) {
+            return null;
+        }
+
+        return '1' === (string) $is_bot;
+    }
+
+    /**
      * The zero state of the band vocabulary.
      *
      * @return array<string, int>

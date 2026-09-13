@@ -48,6 +48,13 @@ if ( ! class_exists( 'WC_Order' ) ) {
         public string $currency = 'USD';
 
         /**
+         * Billing email.
+         *
+         * @var string
+         */
+        public string $billing_email = '';
+
+        /**
          * When true, every method throws (Throwable-isolation fixture).
          *
          * @var bool
@@ -125,6 +132,19 @@ if ( ! class_exists( 'WC_Order' ) ) {
          */
         public function get_total(): float {
             return $this->total;
+        }
+
+        /**
+         * Billing email accessor.
+         *
+         * @return string
+         */
+        public function get_billing_email(): string {
+            if ( $this->explode ) {
+                throw new RuntimeException( 'order store unavailable' );
+            }
+
+            return $this->billing_email;
         }
 
         /**

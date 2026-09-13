@@ -122,6 +122,20 @@ final class Gr_Http_Client {
     }
 
     /**
+     * Whether the owner has enabled a service and stored its full
+     * credential pair. Capture-side producers ask this before queueing
+     * anything, so an off service never even manufactures work — the
+     * request path re-checks at send time regardless, which is what
+     * actually keeps the network quiet.
+     *
+     * @param string $service Service key constant.
+     * @return bool
+     */
+    public static function is_configured( string $service ): bool {
+        return self::configured( $service );
+    }
+
+    /**
      * The shared request path: gates, one wire call, state transitions.
      *
      * @param string               $service Service key constant.

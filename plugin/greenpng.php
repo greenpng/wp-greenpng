@@ -27,6 +27,14 @@ if ( ! defined( 'GR_VERSION' ) ) {
     define( 'GR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 }
 
+if ( ! defined( 'GR_META_API_VERSION' ) ) {
+    // The reference archive hardcoded v19.0 and the version retired
+    // under it; a Graph version is a moving target, so the default
+    // ships with the plugin and the gr_meta_api_version filter is the
+    // owner's bump path that needs no plugin update.
+    define( 'GR_META_API_VERSION', 'v23.0' );
+}
+
 /*
  * The "Requires PHP / Requires at least" header only gates activation through
  * the admin UI. CLI and programmatic activation bypass it, so the floors are
