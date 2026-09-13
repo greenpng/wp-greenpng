@@ -11,9 +11,15 @@
 set -uo pipefail
 
 SITE="${SITE_URL:-http://localhost:8888}"
-REST="$SITE/wp-json/greenpng/v1/collect"
+# The collect endpoint is read from the page-embedded probe data
+# (rest_url), because wp-env sites ship with plain permalinks where
+# the /wp-json/ pretty path does not resolve.
+REST=""
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-BACKUP="/tmp/greenpng-plugin-src"
+# The slug-staged copy wp-env mounts (workflows create it). Deleting
+# the plugin through WordPress removes the staged copy, never the
+# repository source, which restores it between uninstall arms.
+STAGED="$REPO_ROOT/.wp-env-plugins/greenpng"
 
 cd "$REPO_ROOT"
 
@@ -54,14 +60,12 @@ schema_digest() {
     done | md5sum | cut -d' ' -f1
 }
 restore_plugin() {
-    # wp plugin delete removes the bind-mounted host directory, so the
-    # source comes back from the pre-uninstall copy and the containers
-    # restart to pick up the fresh mount.
-    rm -rf "$REPO_ROOT/plugin"
-    cp -a "$BACKUP" "$REPO_ROOT/plugin"
-    npx wp-env stop >/dev/null 2>&1 || true
-    npx wp-env start >/dev/null 2>&1
-    curl -s -o /dev/null --retry 60 --retry-delay 3 --retry-connrefused "$SITE" || true
+    # The staged directory is the bind mount; replacing its contents
+    # host-side is visible in the container immediately (the mount
+    # inode stays alive), so no container restart is needed.
+    mkdir -p "$STAGED"
+    find "$STAGED" -mindepth 1 -delete
+    cp -a "$REPO_ROOT/plugin/." "$STAGED/"
 }
 
 say "ARM 1: activation and schema"
@@ -79,8 +83,11 @@ check "schema byte-identical after forced reinstall" "$BEFORE" "$(schema_digest)
 check_ge "still 15 tables after reinstall" 15 "$(table_count)"
 
 say "ARM 3: collect REST contract"
-TOKEN="$(curl -s "$SITE/" | grep -oE '"token":"[a-f0-9]{32,}"' | head -1 | cut -d'"' -f4)"
+PROBE_JSON="$(curl -s "$SITE/" | grep -oE 'window\.GreenPNGProbe=\{[^}]*\}' | head -1)"
+REST="$(printf '%s' "$PROBE_JSON" | grep -oE '"url":"[^"]*"' | cut -d'"' -f4 | sed 's|\\\/|/|g')"
+TOKEN="$(printf '%s' "$PROBE_JSON" | grep -oE '"token":"[a-f0-9]{32,}"' | cut -d'"' -f4)"
 if [ -n "$TOKEN" ]; then pass "daily token embedded on the front page"; else fail "daily token embedded on the front page"; fi
+if [ -n "$REST" ]; then pass "collect endpoint read from the probe data"; else fail "collect endpoint read from the probe data"; fi
 BODY="$(mktemp)"
 HDRS="$(mktemp)"
 code() { curl -s -o "$BODY" -w '%{http_code}' -X POST "$REST" -H 'Content-Type: application/json' --data "$1"; }
@@ -120,7 +127,6 @@ check_ge "schedule restored on reactivation" 1 "$(cron_gr)"
 check_ge "still 15 tables after reactivation" 15 "$(table_count)"
 
 say "ARM 6: uninstall, keep-data mode (T2/T6 deferred arm)"
-cp -a "$REPO_ROOT/plugin" "$BACKUP"
 cli wp plugin deactivate greenpng >/dev/null
 cli wp plugin delete greenpng >/dev/null 2>&1
 check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"

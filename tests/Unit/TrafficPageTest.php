@@ -23,10 +23,15 @@ final class TrafficPageTest extends TestCase {
     protected function setUp(): void {
         parent::setUp();
         gr_stub_reset_options();
+        // CLI runtimes before PHP 8.1 do not pre-create the request
+        // superglobals, so the unset below would raise an undefined
+        // variable notice there; vivify the array when it is absent.
+        $_GET = $_GET ?? array();
         unset( $_GET['tab'] );
     }
 
     protected function tearDown(): void {
+        $_GET = $_GET ?? array();
         unset( $_GET['tab'] );
         parent::tearDown();
     }

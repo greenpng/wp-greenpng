@@ -34,6 +34,15 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
+      # wp-env mounts local sources under their directory basename, so
+      # the plugin must be staged under its real slug for activation
+      # ("greenpng", not "plugin").
+      - name: Stage the plugin under its slug directory
+        run: |
+          rm -rf .wp-env-plugins
+          mkdir -p .wp-env-plugins
+          cp -a plugin .wp-env-plugins/greenpng
+
       - name: Write the wp-env config
         run: |
           cat > .wp-env.json <<'JSON'
@@ -41,7 +50,7 @@ jobs:
             "core": "https://wordpress.org/wordpress-7.1.zip",
             "phpVersion": "8.1",
             "plugins": [
-              "./plugin",
+              "./.wp-env-plugins/greenpng",
               "https://downloads.wordpress.org/plugin/woocommerce.zip",
               "https://downloads.wordpress.org/plugin/contact-form-7.zip"
             ]

@@ -20,6 +20,7 @@ composer.phar
 # wp-env runtime configs are generated per CI job (ADR-0008).
 /.wp-env.json
 /.wp-env.override.json
+/.wp-env-plugins/
 
 # Playwright output (ADR-0008).
 /test-results/

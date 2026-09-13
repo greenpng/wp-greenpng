@@ -41,13 +41,22 @@ jobs:
 
       - run: npm ci
 
+      # wp-env mounts local sources under their directory basename, so
+      # the plugin must be staged under its real slug for activation,
+      # plugin list, and uninstall arms to address "greenpng".
+      - name: Stage the plugin under its slug directory
+        run: |
+          rm -rf .wp-env-plugins
+          mkdir -p .wp-env-plugins
+          cp -a plugin .wp-env-plugins/greenpng
+
       - name: Write the wp-env config for this cell
         run: |
           cat > .wp-env.json <<'JSON'
           {
             "core": "https://wordpress.org/wordpress-${{ matrix.wp }}.zip",
             "phpVersion": "${{ matrix.php }}",
-            "plugins": ["./plugin"]
+            "plugins": ["./.wp-env-plugins/greenpng"]
           }
           JSON
 
