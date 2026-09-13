@@ -45,6 +45,15 @@ cli() {
         npx wp-env run cli "$@" 2>/dev/null
     fi
 }
+# Unsilenced variant for the steps whose own diagnostics are the
+# evidence (the uninstall arms); failures there must explain themselves.
+cli_raw() {
+    if [ -n "${CLI_PREFIX:-}" ]; then
+        ${CLI_PREFIX} "$@"
+    else
+        npx wp-env run cli "$@"
+    fi
+}
 q() { cli wp db query "$1" 2>/dev/null; }
 first_int() { grep -oE '[0-9]+' | head -1; }
 
@@ -84,10 +93,38 @@ schema_digest() {
 restore_plugin() {
     # The staged directory is the bind mount; replacing its contents
     # host-side is visible in the container immediately (the mount
-    # inode stays alive), so no container restart is needed.
+    # inode stays alive), so no container restart is needed. The chmod
+    # repeats because cp -a restores the repository's own permission
+    # bits, and the compose CLI container (www-data) must be able to
+    # delete files through the mount.
     mkdir -p "$STAGED"
     find "$STAGED" -mindepth 1 -delete
     cp -a "$REPO_ROOT/plugin/." "$STAGED/"
+    chmod -R a+rwX "$STAGED"
+}
+
+delete_plugin() {
+    # Deleting a bind-mounted plugin cannot remove the mount-point
+    # directory itself (rmdir on a live bind returns EBUSY), so
+    # success is judged by the plugin vanishing from the list, not by
+    # wp-cli's exit status. On failure the log gets the full picture:
+    # the delete's own output, who the CLI runs as, what survives on
+    # disk through the mount, what WordPress still believes, and a
+    # direct rm probe — if rm succeeds where delete_plugins() did not,
+    # the fault is in WordPress, not the filesystem.
+    DELETE_OUT="$(cli_raw wp plugin delete greenpng 2>&1)"; DELETE_CODE=$?
+    ACTUAL="$(cli wp plugin list --name=greenpng --field=status)"
+    if [ -z "$ACTUAL" ]; then
+        pass "plugin gone from the list"
+        return 0
+    fi
+    fail "plugin gone from the list (expected [], got [$ACTUAL])"
+    printf '     delete exit=%d output=%s\n' "$DELETE_CODE" "${DELETE_OUT:-<none>}"
+    cli_raw sh -c 'id; echo --plugins-dir--; ls -la /var/www/html/wp-content/plugins/; echo --plugin-dir--; ls -la /var/www/html/wp-content/plugins/greenpng/ | head -20' 2>&1 | sed 's/^/     /'
+    cli_raw wp plugin list 2>&1 | sed 's/^/     /'
+    cli_raw wp option get active_plugins --format=json 2>&1 | sed 's/^/     /'
+    cli_raw sh -c 'rm -v /var/www/html/wp-content/plugins/greenpng/greenpng.php; echo rm-exit=$?' 2>&1 | sed 's/^/     /'
+    return 1
 }
 
 say "ARM 1: activation and schema"
@@ -156,8 +193,7 @@ cli wp plugin deactivate greenpng >/dev/null
 cli wp eval 'require_once ABSPATH . "wp-admin/includes/plugin.php"; uninstall_plugin( "greenpng/greenpng.php" );' >/dev/null
 check_ge "tables survive keep-mode uninstall" 15 "$(table_count)"
 check_ge "options survive keep-mode uninstall" 2 "$(gr_options)"
-cli wp plugin delete greenpng >/dev/null 2>&1
-check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"
+delete_plugin
 
 say "ARM 7: uninstall, delete-data mode (T2/T6 deferred arm)"
 restore_plugin
@@ -168,8 +204,7 @@ cli wp eval 'require_once ABSPATH . "wp-admin/includes/plugin.php"; uninstall_pl
 check "all tables dropped by delete-mode uninstall" 0 "$(table_count)"
 check "all gr_ options removed" 0 "$(gr_options)"
 check_cron "no scheduled work lingers" 0
-cli wp plugin delete greenpng >/dev/null 2>&1
-check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"
+delete_plugin
 restore_plugin
 
 say "SUMMARY"

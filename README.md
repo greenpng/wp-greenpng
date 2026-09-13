@@ -30,9 +30,9 @@ Four suites run on every push, pull request, and manual dispatch (see `docs/adr/
 
 | Suite | What it proves | Matrix |
 | :--- | :--- | :--- |
-| Unit | Plugin logic (stubbed WordPress API), 649 assertions | PHP 7.4 – 8.5 (8.4/8.5 experimental) |
+| Unit | Plugin logic (stubbed WordPress API), 653 tests / 3,887 assertions | PHP 7.4 – 8.5 (8.4/8.5 experimental) |
 | Static & security | WordPress coding standard, PHP 7.4 syntax compatibility, PHPStan level 6, JS component tests, secret scanning | 1 environment each |
-| WP integration | Real WordPress in Docker (wp-env): schema install, dbDelta idempotency, collect REST API contract (401/400/413/200/rate-limit), activate/deactivate/reactivate lifecycle, uninstall in **both** data modes | PHP {7.4, 8.1, 8.3} × WP {6.0, 7.1}, MySQL 5.7 on the floor cell |
+| WP integration | Real WordPress in Docker (wp-env): schema install, dbDelta idempotency, collect REST API contract (401/400/413/200/rate-limit), activate/deactivate/reactivate lifecycle, uninstall in **both** data modes | PHP {8.1, 8.3} × WP {6.0, 7.1}; PHP 7.4 + MySQL 5.7 floor on its own compose workflow |
 | E2E (Playwright) | Simulated customers in a real browser: first-time visitor, consent/DNT gating, crawler user-agent, collect API, admin settings, access rules, URL builder, Contact Form 7 conversion, WooCommerce order attribution, privacy policy registration | WP 7.1 + PHP 8.1 + WooCommerce + CF7 |
 
 All CI runs on free GitHub-hosted Ubuntu runners (public repositories); peak concurrency stays below the 20-job free-tier cap, and no paid runners are used.

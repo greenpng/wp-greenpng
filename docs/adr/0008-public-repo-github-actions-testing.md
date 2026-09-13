@@ -36,3 +36,9 @@ GitHub 免费额度事实：公共仓库标准 Linux runner 分钟数免费且�
 wp-env 的配置模式**不接受 `services` 键**（`.wp-env.override.json` 报 "services is not a configuration option"），即 wp-env 没有数据库版本旋钮——原第 2 条「下界格用 override 换 mysql:5.7」不可行。修正：MySQL 5.7 地板证明移入独立工作流 `wp-floor-mysql57.yml`，脱离 wp-env，直接用官方 `wordpress:6.0-php7.4` + `mysql:5.7` + `wordpress:cli-php7.4` 镜像的 compose 栈（`tests/integration/docker-compose.floor.yml`）；`tests/integration/run.sh` 经 `CLI_PREFIX` 参数化后两种环境共用全部断言臂。集成矩阵随之改为 5 格（PHP 7.4/8.1/8.3 × WP 7.1 + 8.1/8.3 × WP 6.0，MySQL 8 由 wp-env 默认携带），峰值并发 7+3+5+1+1 = 17，仍在 20 以内。
 
 首轮实测同时揪出两处真实生命周期缺陷（停用与删除式卸载均遗留 gr_ 命名空间的待执行 wp-cron 单次事件，违反两类各自文档声明的「不留工作/干净重来」承诺），修复入 `Gr_Queue::clear_plugin_cron()`（停用清扫 + 卸载清扫共用）——CI 的价值即在此：dev 主站因 WooCommerce 携带 Action Scheduler，单次事件从不落入 wp-cron，该缺陷在本地环境不可复现。
+
+## 勘误与修正记录（2026-09-13，第七、八轮实测后）
+
+E2E 首轮产物（Playwright error-context 页面快照）证实两处真实缺陷并已修复：其一，两个 `WP_List_Table` 子类（访问规则、审计日志）在真实后台渲染为空表——核心在未声明表头时从已注册列表屏解析列头，而本插件页面未注册任何屏，构造器现显式声明 `_column_headers` 元组；其二，全新 WooCommerce 默认以「Store coming soon」占位页替换未登录访客的前台（即全部模拟顾客），seed 现显式关闭该模式。运行时桩同步对齐核心语义（`WP_List_Table` 桩改经 `get_column_info()` 解析，空表头即空渲染），延续「桩不许替被测物遮丑」的既定原则。
+
+第八轮定案：wp-env 的 PHP 7.4 镜像构建在其生成的 Dockerfile 内部执行 `apt-get install $PHPIZE_DEPS`，而基底镜像为 **EOL Debian bullseye**，内置 apt 索引已陈旧（`dpkg-dev_1.20.14` 现于 deb.debian.org 404），且该 RUN 行无法经任何配置项注入 `apt-get update`——上游不可修。修正：移除 (PHP 7.4 · WP 7.1) wp-env 矩阵格；PHP 7.4 运行时证明保留在 compose 地板工作流（`wordpress:6.0-php7.4` 官方镜像、无构建步骤、全断言臂），矩阵定格 4 格（PHP 8.1/8.3 × WP 6.0/7.1）。地板栈卸载臂的「插件应从列表消失」检查在恢复重拷后仍见 inactive 条目（wp-env 各格全过、floor 独有），`run.sh` 已插桩取证：delete 退出码与输出、容器内 `id`/目录清单、`active_plugins`、以及直接的 `rm` 探针——若 rm 成功而 `delete_plugins()` 未删，则故障在 WordPress 层而非文件系统层。

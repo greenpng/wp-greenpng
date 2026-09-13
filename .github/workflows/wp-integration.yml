@@ -20,11 +20,16 @@ jobs:
       fail-fast: false
       matrix:
         # The docs/11 cross product on its diagonal budget (ADR-0008).
-        # The MySQL 5.7 floor proof runs in its own compose-based
-        # workflow (wp-floor-mysql57.yml): wp-env's config schema has
-        # no database version knob.
+        # PHP 7.4 is absent here on purpose: wp-env's PHP 7.4 image
+        # builds on EOL Debian bullseye whose baked-in apt index now
+        # 404s (dpkg-dev), and the failing RUN line lives inside
+        # wp-env's generated Dockerfile where no config option can
+        # inject an apt-get update. The PHP 7.4 runtime proof runs on
+        # the compose floor workflow instead (wordpress:6.0-php7.4,
+        # no image build), which executes the same arms in full.
+        # The MySQL 5.7 floor proof also runs there: wp-env's config
+        # schema has no database version knob.
         include:
-          - { php: '7.4', wp: '7.1', mysql: '8' }
           - { php: '8.1', wp: '6.0', mysql: '8' }
           - { php: '8.1', wp: '7.1', mysql: '8' }
           - { php: '8.3', wp: '6.0', mysql: '8' }
@@ -61,7 +66,17 @@ jobs:
           JSON
 
       - name: Start wp-env
-        run: npx wp-env start
+        run: |
+          # Transient docker-compose failures (image pull contention
+          # when many matrix cells start at once) get two retries;
+          # a clean stop precedes each attempt.
+          for attempt in 1 2 3; do
+            if npx wp-env start; then exit 0; fi
+            echo "wp-env start failed (attempt ${attempt})"
+            npx wp-env stop || true
+            sleep 20
+          done
+          exit 1
 
       - name: Wait for WordPress
         run: curl --silent --output /dev/null --retry 60 --retry-delay 3 --retry-connrefused "$SITE_URL"
