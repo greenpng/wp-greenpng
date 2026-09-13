@@ -433,7 +433,7 @@ final class Gr_Privacy_Api {
                 '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p>',
                 esc_html__( 'greenpng analytics', 'greenpng' ),
                 esc_html__( 'Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time.', 'greenpng' ),
-                esc_html__( 'Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage.', 'greenpng' ),
+                esc_html__( 'Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings.', 'greenpng' ),
                 esc_html__( 'Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin\'s marketing tables.', 'greenpng' )
             )
         );

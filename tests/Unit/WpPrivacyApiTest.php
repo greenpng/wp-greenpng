@@ -359,6 +359,8 @@ final class WpPrivacyApiTest extends TestCase {
         $text = (string) $GLOBALS['gr_stub_privacy_policy']['greenpng'];
         self::assertStringContainsString( 'anonymized IP addresses', $text );
         self::assertStringContainsString( 'legitimate-interest', $text );
+        self::assertStringContainsString( 'client probe', $text );
+        self::assertStringContainsString( 'no fingerprint data', $text );
         self::assertStringContainsString( 'export and erasure', $text );
     }
 

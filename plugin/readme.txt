@@ -44,7 +44,7 @@ In your own WordPress database. The plugin creates fifteen tables prefixed with 
 
 = Does this plugin contact any external server? =
 
-Not by default, and never any GreenPNG-operated server. The optional integrations (GA4, Meta, TikTok, generic webhook) only send data after you enter credentials and enable them. The DB-IP geolocation database update only fetches when you click the update button.
+Not by default, and never any GreenPNG-operated server. The optional integrations (GA4, Meta) only send data after you enter credentials and enable them. The DB-IP geolocation database update only fetches when you click the update button. Crawler verification resolves connecting addresses through your server's normal DNS infrastructure and stores only the resulting verdict.
 
 = What does the client probe collect? =
 
@@ -58,16 +58,18 @@ It is kept by default. For a full wipe, enable the delete-all-data-on-uninstall 
 
 This plugin performs no outbound requests by default. Each item below is opt-in and off until you enable it:
 
-* **Google Analytics 4 (Measurement Protocol)** — Purpose: forward purchase events to your GA4 property. Sends: event name, event parameters (order value, currency, transaction id), and the client identifier from the visitor's own `_ga` cookie; no event is sent without that cookie. When: on paid orders, after marketing consent. Privacy policy: https://policies.google.com/privacy
+* **Google Analytics 4 (Measurement Protocol)** — Purpose: forward purchase events to your GA4 property. Sends: event name, event parameters (order value, currency, transaction id), and the client identifier from the visitor's own `_ga` cookie; no event is sent without that cookie. When: on paid orders, after marketing consent. The "Test connection" button in settings sends one validation request to Google's debug endpoint with a placeholder client identifier; the debug endpoint validates without ingesting, and the button is the only thing that ever triggers it. Privacy policy: https://policies.google.com/privacy
 * **Meta Conversions API** — Purpose: server-side conversion tracking. Sends: event name, order value and currency, and the SHA-256-hashed billing email; no raw identifiers, no IP address, no user agent. When: on paid orders, after marketing consent. The thank-you page also exposes the shared event id as `window.GreenPNGPurchaseEventId` so your existing browser pixel can deduplicate. Privacy policy: https://www.facebook.com/privacy/policy
-* **TikTok Events API** — Purpose: server-side conversion tracking. Sends: event name, event properties, hashed identifiers. When: on conversion events. Privacy policy: https://www.tiktok.com/legal/page/row/privacy-policy/en
-* **Generic outgoing webhook** — Purpose: notify any endpoint you own. Sends: the JSON payload you configure. When: on the events you choose. No third party is involved; the destination is yours.
 * **DB-IP Lite geolocation database update** — Purpose: refresh the bundled country-level IP database. Sends: a single HTTP request to db-ip.com, only when you click the update button in settings; no visitor data is sent. Receives: the country-level database file. Terms and attribution: https://db-ip.com/
+
+Planned for later versions and not present in 1.0: AbuseIPDB blocklist checks and search-engine spider IP-segment subscriptions. Both will be opt-in, off by default, and disclosed in this section when they land.
 
 == Privacy ==
 
 * Marketing-track data (sessions, touchpoints, behavior, CRM) stores anonymized IPs by default; identifiable marketing collection is gated on visitor consent through the WordPress Consent API.
 * Security logs store full client IPs on a legitimate-interest basis (site protection, GDPR Recital 49), are masked in the admin by default, and can be set to truncated storage instead, with the admin clearly noting that blocking then degrades to subnet level.
+* The client probe's security module reports only automation conclusions (a bot score and automation flags) for form and checkout protection under the same legitimate-interest basis; it collects no fingerprint identifier strings, no canvas or audio data, and no persistent identifiers, and can be switched off with one setting. The behavior module (dwell, scrolling, rage clicks) runs only after you enable it and the visitor consents through the WordPress Consent API.
+* Crawler verification resolves connecting addresses through your server's normal DNS infrastructure and records only the verdict word and the resolved hostname on the security track; it uses no third-party API, stores no credentials, and a failed lookup always resolves to allow.
 * Visitor identity: a 30-day signed cookie when consent allows it; otherwise a daily-rotated salted hash of the anonymized IP and browser type, which cannot link visits across days.
 * The WordPress privacy API is supported where it applies: personal data export and erase handlers cover this plugin's marketing tables (sessions, touchpoints, conversions, the CRM contact row) and the visitor binding on orders. Security logs are retained on a legitimate-interest basis with short retention and masked display, and are intentionally outside person-level erasure.
 * Email addresses are stored as a searchable hash plus encrypted form and are never written outside the contacts table.
