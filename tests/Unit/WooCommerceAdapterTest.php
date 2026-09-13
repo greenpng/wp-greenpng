@@ -143,6 +143,20 @@ final class WooCommerceAdapterTest extends TestCase {
         self::assertSame( 11, (int) $capi_payment['priority'] );
         self::assertSame( 'on_payment_complete', (string) $capi_payment['callback'][1] );
 
+        // The browser-side half of the deduplication pair joins with
+        // the payment hook when the target is present.
+        $capi_thankyou = null;
+        foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
+            if ( 'woocommerce_thankyou' === (string) $registration['hook']
+                && is_array( $registration['callback'] )
+                && is_string( $registration['callback'][0] )
+                && Gr_Meta_Capi::class === $registration['callback'][0] ) {
+                $capi_thankyou = $registration;
+            }
+        }
+        self::assertNotNull( $capi_thankyou );
+        self::assertSame( 'print_event_id', (string) $capi_thankyou['callback'][1] );
+
         Gr_Plugin::reset_instance();
     }
 

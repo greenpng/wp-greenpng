@@ -341,4 +341,76 @@ final class MetaCapiTest extends TestCase {
 
         self::assertContains( Gr_Meta_Capi::SEND_HOOK . '@10', $hooks );
     }
+
+    public function testOrderIdIsTheSingleDerivationBothEndsShare(): void {
+        $expected = Gr_Meta_Capi::order_event_id( 5 );
+
+        self::assertSame( gr_generate_event_id( 'capi', 'order|5' ), $expected );
+        self::assertSame( $expected, Gr_Meta_Capi::order_event_id( 5 ) );
+
+        // The queued server payload carries exactly this id: the two
+        // ends of the pair converge by construction.
+        $this->stage_capture( 5 );
+        Gr_Meta_Capi::on_payment_complete( 5 );
+
+        $jobs = $this->queued();
+        self::assertSame( $expected, $jobs[0]['args'][0]['event_id'] );
+    }
+
+    public function testThankYouPagePrintsTheSharedIdWhenConfigured(): void {
+        $this->enable_meta();
+        $this->seed_order( 5 );
+
+        ob_start();
+        Gr_Meta_Capi::print_event_id( 5 );
+        $out = (string) ob_get_clean();
+
+        $expected = Gr_Meta_Capi::order_event_id( 5 );
+        self::assertStringContainsString(
+            'window.GreenPNGPurchaseEventId=' . (string) wp_json_encode( $expected ),
+            $out
+        );
+        self::assertStringContainsString( 'gr-meta-event-id', $out );
+        self::assertStringContainsString( '<script', $out );
+    }
+
+    public function testThankYouPagePrintsNothingWhenUnconfiguredOrOrderless(): void {
+        $this->seed_order( 5 );
+
+        ob_start();
+        Gr_Meta_Capi::print_event_id( 5 );
+        $out = (string) ob_get_clean();
+        self::assertSame( '', $out );
+
+        $this->enable_meta();
+        ob_start();
+        Gr_Meta_Capi::print_event_id( 999 );
+        $out = (string) ob_get_clean();
+        self::assertSame( '', $out );
+
+        ob_start();
+        Gr_Meta_Capi::print_event_id( 'not-an-id' );
+        $out = (string) ob_get_clean();
+        self::assertSame( '', $out );
+    }
+
+    public function testThankYouPageSurvivesAnExplodingOrderStore(): void {
+        $this->enable_meta();
+        $order = $this->seed_order( 5 );
+        $order->explode = true;
+
+        $seen = array();
+        add_action( 'gr_adapter_error', static function ( $id ) use ( &$seen ): void {
+            $seen[] = (string) $id;
+        }, 10, 2 );
+
+        ob_start();
+        Gr_Meta_Capi::print_event_id( 5 );
+        $out = (string) ob_get_clean();
+
+        // wc_get_order succeeded; the derivation needs nothing from
+        // the order object, so the id still prints and the page lives.
+        self::assertStringContainsString( 'window.GreenPNGPurchaseEventId=', $out );
+        self::assertSame( array(), $seen );
+    }
 }

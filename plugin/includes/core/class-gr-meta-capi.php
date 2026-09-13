@@ -37,11 +37,11 @@ final class Gr_Meta_Capi {
     public const EVENT_PURCHASE = 'Purchase';
 
     /**
-     * Hook registration. The payment hook joins only when the target
-     * actually runs on the site, keeping the adapter contract that an
-     * absent target leaves no woocommerce_* hooks behind; the queue
-     * hook must exist on every request path because the enqueueing
-     * request is long gone by the time the job runs.
+     * Hook registration. The payment and thank-you hooks join only
+     * when the target actually runs on the site, keeping the adapter
+     * contract that an absent target leaves no woocommerce_* hooks
+     * behind; the queue hook must exist on every request path because
+     * the enqueueing request is long gone by the time the job runs.
      *
      * @return void
      */
@@ -50,9 +50,67 @@ final class Gr_Meta_Capi {
             // After the adapter's visitor binding (priority 10): the
             // quality verdict reads the visitor id that binding wrote.
             add_action( 'woocommerce_payment_complete', array( __CLASS__, 'on_payment_complete' ), 11, 1 );
+            // The browser-side half of the deduplication pair: the
+            // owner's pixel snippet reads the global this prints.
+            add_action( 'woocommerce_thankyou', array( __CLASS__, 'print_event_id' ), 10, 1 );
         }
 
         add_action( self::SEND_HOOK, array( __CLASS__, 'send' ) );
+    }
+
+    /**
+     * The server-side event id for one order: the single derivation
+     * point both ends of the deduplication pair share. A browser
+     * pixel event that carries this same id is what Meta's event_id
+     * deduplication window collapses onto this server event.
+     *
+     * @param int $order_id Order id.
+     * @return string Deterministic event id.
+     */
+    public static function order_event_id( int $order_id ): string {
+        return gr_generate_event_id( 'capi', 'order|' . $order_id );
+    }
+
+    /**
+     * The thank-you-page half: prints one machine-readable global
+     * holding the order's event id, so the site owner's existing
+     * browser pixel can pass it as eventID. No tracking of its own
+     * happens here — the id is a public-order-scope string, and the
+     * actual sends stay gated exactly where they were.
+     *
+     * @param int|string $order_id Order id from the thank-you hook.
+     * @return void
+     */
+    public static function print_event_id( $order_id ): void {
+        try {
+            $id = is_numeric( $order_id ) ? (int) $order_id : 0;
+            if ( 0 === $id ) {
+                return;
+            }
+
+            // Only meaningful when the server side is live; exposing
+            // an id no server event will carry helps nobody.
+            if ( ! Gr_Http_Client::is_configured( Gr_Http_Client::SERVICE_META_CAPI ) ) {
+                return;
+            }
+
+            // A real order only: the derivation is pure, but printing
+            // ids for arbitrary numbers would be noise on the page.
+            $order = wc_get_order( $id );
+            if ( ! $order instanceof \WC_Order ) {
+                return;
+            }
+
+            // wp_print_inline_script_tag is the core-native emitter;
+            // wp_json_encode is the escaper for the JS string context.
+            wp_print_inline_script_tag(
+                'window.GreenPNGPurchaseEventId=' . (string) wp_json_encode( self::order_event_id( $id ) ) . ';',
+                array( 'id' => 'gr-meta-event-id' )
+            );
+        } catch ( \Throwable $error ) {
+            // A thank-you page must render no matter what.
+            do_action( 'gr_adapter_error', 'meta_capi', $error );
+        }
     }
 
     /**
@@ -97,7 +155,7 @@ final class Gr_Meta_Capi {
 
             $payload = self::build_purchase_payload(
                 array(
-                    'event_id'   => gr_generate_event_id( 'capi', 'order|' . $id ),
+                    'event_id'   => self::order_event_id( $id ),
                     'email'      => (string) $order->get_billing_email(),
                     'phone'      => '',
                     'value'      => (float) $order->get_total(),

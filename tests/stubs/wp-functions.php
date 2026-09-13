@@ -1291,6 +1291,24 @@ if ( ! function_exists( 'apply_filters' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_print_inline_script_tag' ) ) {
+    /**
+     * Inline script emitter stand-in, mirroring core's shape closely
+     * enough for format-independent assertions.
+     *
+     * @param string                       $javascript Inline code.
+     * @param array<string, string|bool>   $attributes Tag attributes.
+     * @return void
+     */
+    function wp_print_inline_script_tag( $javascript, $attributes = array() ) {
+        $attrs = '';
+        foreach ( (array) $attributes as $name => $value ) {
+            $attrs .= ' ' . (string) $name . '="' . esc_attr( (string) $value ) . '"';
+        }
+        echo '<script type="text/javascript"' . $attrs . ">\n" . (string) $javascript . "\n</script>\n";
+    }
+}
+
 if ( ! function_exists( 'do_action' ) ) {
     /**
      * Hook execution: the firing is recorded AND the registered
