@@ -58,7 +58,8 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 			throw new Error( `Store checkout failed (${ order.status() }): ${ ( await order.text() ).slice( 0, 400 ) }` );
 		}
 		const orderBody = await order.text();
-		const orderId = ( await order.json() ).id as number | undefined;
+		// The Store API's checkout envelope names the order order_id.
+		const orderId = ( await order.json() ).order_id as number | undefined;
 		// A thrown error prints its message in full, unlike an expect
 		// message riding a matcher error — the checkout's response
 		// body is the only way to see why no order id came back.

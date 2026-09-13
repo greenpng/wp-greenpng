@@ -28,17 +28,23 @@ test( 'a crawler user-agent lands in Bot & Device Signals', async ( { page, brow
 	};
 	runQueue();
 
-	const evidence = (): string => {
+	// Evidence pieces are independent: one failing queue view must
+	// not hide the others, and the security log answers the deciding
+	// question — did the scanner finding fire at all?
+	const piece = ( label: string, cmd: string ): string => {
 		try {
-			return [
-				`security-log=[${ wpcli( 'wp db query "SELECT id, rule_id, last_seen FROM wp_gr_security_logs ORDER BY id DESC LIMIT 3"' ).slice( 0, 240 ) }]`,
-				`as=[${ wpcli( 'wp action-scheduler list --group=greenpng --fields=hook,status --format=csv' ).slice( 0, 160 ) }]`,
-				`cron=[${ wpcli( 'wp cron event list --fields=hook --format=csv' ).slice( 0, 160 ) }]`,
-			].join( ' ' );
+			return `${ label }=[${ wpcli( cmd ).slice( 0, 240 ) }]`;
 		} catch ( e ) {
-			return `diagnostics unavailable: ${ String( e ).slice( 0, 200 ) }`;
+			return `${ label }=failed:${ String( e ).split( '\n' ).slice( -2 ).join( ' ' ).slice( 0, 200 ) }`;
 		}
 	};
+	const evidence = (): string => [
+		piece( 'security-log', 'wp db query "SELECT id, rule_id, last_seen FROM wp_gr_security_logs ORDER BY id DESC LIMIT 4"' ),
+		piece( 'as-actions', 'wp action-scheduler list --fields=hook,status,group --format=csv' ),
+		piece( 'cron', 'wp cron event list --fields=hook --format=csv' ),
+		piece( 'fcrdns-transients', 'wp db query "SELECT option_name FROM wp_options WHERE option_name LIKE \'%fcrdns%\'"' ),
+		piece( 'settings', 'wp option get gr_settings --format=json' ),
+	].join( ' ' );
 
 	await login( page );
 	await page.goto( adminPage( slug.bot ) );
