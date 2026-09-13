@@ -138,6 +138,19 @@ switch ( $task ) {
 		echo $row->source_type . ' ' . $row->source_id . ' ' . $row->amount;
 		break;
 
+	case 'conversion-count':
+		// Rows bound to one order, for the idempotency assertion: the
+		// meta lock and the source UNIQUE key must collapse replays.
+		$order_id = isset( $args[1] ) ? (int) $args[1] : 0;
+		if ( ! $order_id ) {
+			fwrite( STDERR, 'order id required' );
+			exit( 1 );
+		}
+		global $wpdb;
+		$table3 = $wpdb->prefix . 'gr_conversions';
+		echo (string) (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table3} WHERE source_type = 'woocommerce' AND source_id = {$order_id}" );
+		break;
+
 	case 'scanner-hits':
 		// Sum of folded scanner-UA hits, off the argument layer. The
 		// fold writer keys rows by address+rule+hour window, so a hit

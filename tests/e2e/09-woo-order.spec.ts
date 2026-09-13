@@ -67,20 +67,38 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 			throw new Error( `checkout returned no order id (status ${ order.status() }): ${ orderBody.slice( 0, 400 ) }` );
 		}
 
-		// Payment completes out-of-band: the gateway's webhook (here
-		// the seed's CLI stand-in) fires the payment hook from a
-		// request carrying no session state at all.
+		// A Store API order on an offline gateway is born directly in
+		// 'processing' (ADR-0008 round 14): payment_complete is
+		// structurally unreachable on this path, so the status
+		// transition is the binding moment — the conversion exists as
+		// soon as checkout answers, with no stand-in completion.
+		const born = wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php latest-conversion ${ orderId }` );
+		expect( born ).toContain( `woocommerce ${ orderId }` );
+		expect( conversionCount( orderId ) ).toBe( 1 );
+
+		// The card-gateway replay (checkout pending, the gateway's
+		// webhook completing out-of-band) arrives later on the same
+		// order: the meta lock collapses it and one conversion stays.
 		wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php complete-order ${ orderId }` );
 
 		expect( dbCount( 'wp_gr_conversions' ) ).toBeGreaterThanOrEqual( 1 );
-		// Read through the seed task, not `wp db query`: the row is
-		// this order's, immune to the argument layer and to a
-		// parallel worker's CF7 conversion owning the latest id.
-		const conversion = wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php latest-conversion ${ orderId }` );
-		expect( conversion ).toContain( `woocommerce ${ orderId }` );
+		expect( conversionCount( orderId ) ).toBe( 1 );
 
 		await visitor.close();
 	} finally {
 		await resetConsentFallback( page );
 	}
 } );
+
+/**
+ * Conversion rows bound to one order, off the argument layer like the
+ * other seed reads: the count is the replay's deciding evidence.
+ */
+function conversionCount( orderId: number ): number {
+	const out = wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php conversion-count ${ orderId }` );
+	const parsed = parseInt( out, 10 );
+	if ( Number.isNaN( parsed ) ) {
+		throw new Error( `No count in conversion-count output: ${ out.slice( 0, 200 ) }` );
+	}
+	return parsed;
+}
