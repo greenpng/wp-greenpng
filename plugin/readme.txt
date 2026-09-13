@@ -80,6 +80,14 @@ This plugin bundles a country-level IP geolocation database from DB-IP (https://
 
 The scanner user-agent detection rules bundled in assets/data/ are seeded from JayBizzle/Crawler-Detect (https://github.com/JayBizzle/Crawler-Detect), used under the MIT license, and maintained locally from that seed. The NOTICE file inside the plugin package states the license, source, and data date.
 
+== Screenshots ==
+
+1. Dashboard — sessions, visitors, and conversion trends computed locally.
+2. Settings — privacy defaults (IP anonymization, consent gate), security switches, and attribution options.
+3. Traffic & Security — the request log with bot verdicts and the allow/block rule table.
+4. Campaigns — attribution breakdowns by channel, source, and campaign.
+5. Funnels & Goals — funnel results and A/B significance testing.
+
 == Changelog ==
 
 = 1.0.0 =

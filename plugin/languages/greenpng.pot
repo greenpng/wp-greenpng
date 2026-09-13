@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-09T18:08:15+00:00\n"
+"POT-Creation-Date: 2026-09-13T05:59:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -26,15 +26,1491 @@ msgid "Traffic security and anti-bot signals, marketing attribution, conversion 
 msgstr ""
 
 #. translators: 1: current PHP version, 2: current WordPress version
-#: greenpng.php:52
+#: greenpng.php:60
 #, php-format
 msgid "GreenPNG did not load because it requires PHP 7.4 or newer and WordPress 6.0 or newer. This site runs PHP %1$s and WordPress %2$s, so no GreenPNG features are active and no data is collected."
 msgstr ""
 
-#: includes/core/class-gr-cli.php:57
+#: includes/admin/class-gr-access-rules-page.php:187
+#: includes/admin/class-gr-admin-menu.php:106
+#: includes/admin/class-gr-admin-menu.php:107
+msgid "Access Rules"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:193
+msgid "Ban list"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:194
+msgid "Allow list"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:221
+msgid "Delete selected"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:224
+msgid "Add a rule"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:231
+#: includes/admin/class-gr-access-rules-table.php:49
+msgid "Matches"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:234
+msgid "IP address or range"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:235
+msgid "URL path (allow list only)"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:240
+#: includes/admin/class-gr-access-rules-table.php:48
+msgid "Value"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:244
+#: includes/admin/class-gr-access-rules-table.php:50
+#: includes/admin/class-gr-login-protection-page.php:209
+msgid "Note"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-page.php:248
+msgid "Add rule"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-table.php:51
+msgid "Active"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-table.php:52
+msgid "Added"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-table.php:79
+#: includes/admin/class-gr-status-page.php:136
+#: includes/admin/class-gr-traffic-page.php:199
+msgid "Yes"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-table.php:79
+#: includes/admin/class-gr-status-page.php:136
+#: includes/admin/class-gr-traffic-page.php:199
+msgid "No"
+msgstr ""
+
+#: includes/admin/class-gr-access-rules-table.php:93
+msgid "No rules yet."
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:64
+#: includes/admin/class-gr-admin-menu.php:65
+msgid "greenpng"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:77
+#: includes/admin/class-gr-admin-menu.php:78
+#: includes/admin/class-gr-settings-page.php:264
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:86
+#: includes/admin/class-gr-admin-menu.php:87
+#: includes/admin/class-gr-dashboard-page.php:60
+msgid "Dashboard"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:95
+#: includes/admin/class-gr-admin-menu.php:96
+msgid "Traffic & Security"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:117
+#: includes/admin/class-gr-admin-menu.php:118
+#: includes/admin/class-gr-login-protection-page.php:140
+msgid "Login Protection"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:128
+#: includes/admin/class-gr-admin-menu.php:129
+#: includes/admin/class-gr-bot-signals-page.php:66
+msgid "Bot & Device Signals"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:139
+#: includes/admin/class-gr-admin-menu.php:140
+#: includes/admin/class-gr-campaigns-page.php:70
+#: includes/admin/class-gr-campaigns-page.php:76
+msgid "Campaigns"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:148
+#: includes/admin/class-gr-admin-menu.php:149
+#: includes/admin/class-gr-url-builder-page.php:114
+msgid "URL Builder"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:160
+#: includes/admin/class-gr-admin-menu.php:161
+#: includes/admin/class-gr-funnels-page.php:56
+msgid "Funnels & Goals"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:171
+#: includes/admin/class-gr-admin-menu.php:172
+#: includes/admin/class-gr-analytics-page.php:407
+msgid "Analytics & CAPI"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:183
+#: includes/admin/class-gr-admin-menu.php:184
+#: includes/admin/class-gr-ip-intel-page.php:116
+msgid "IP Intelligence"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:194
+#: includes/admin/class-gr-admin-menu.php:195
+#: includes/admin/class-gr-audit-log-page.php:69
+msgid "Audit Log"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:205
+#: includes/admin/class-gr-admin-menu.php:206
+#: includes/admin/class-gr-data-retention-page.php:188
+msgid "Data Retention"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:216
+#: includes/admin/class-gr-admin-menu.php:217
+#: includes/admin/class-gr-status-page.php:126
+msgid "Status & Diagnostics"
+msgstr ""
+
+#. translators: %s: service name, meta or ga4.
+#: includes/admin/class-gr-analytics-page.php:416
+#, php-format
+msgid "Saved. The %s block now holds exactly what you entered."
+msgstr ""
+
+#. translators: %s: field flag from the refused save.
+#: includes/admin/class-gr-analytics-page.php:430
+#, php-format
+msgid "Refused: %s. Credentials are stored whole or not at all, so nothing was saved."
+msgstr ""
+
+#. translators: 1: service name, 2: check result word.
+#: includes/admin/class-gr-analytics-page.php:444
+#, php-format
+msgid "Local self-check (%1$s): %2$s."
+msgstr ""
+
+#. translators: %s: probe result word.
+#: includes/admin/class-gr-analytics-page.php:459
+#, php-format
+msgid "Connectivity probe (GA4 debug endpoint): %s. The probe validates one test event and ingests nothing; it sends only on this click and never on a schedule."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:467
+msgid "Both services stay off until you turn them on, and neither sends anything without credentials. Dispatch is consent-gated: events travel only after the visitor gave marketing consent, PII leaves only as hashes, and every data request goes through the plugin queue, never during a page view. The local self-check tests decryption and shape; the GA4 block also offers a connectivity probe that sends one validation request to Google's debug endpoint when you click it, and nothing ever on its own."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:472
+msgid "Meta Conversions API"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:474
+msgid "Pixel ID"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:475
+msgid "The numeric id of the pixel this site already runs."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:476
+msgid "Access token"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:477
+msgid "A system-user token with the pixel's events permission."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:482
+msgid "GA4 Measurement Protocol"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:484
+msgid "Measurement ID"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:485
+msgid "The G-… id of this site's GA4 property."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:486
+msgid "API secret"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:487
+msgid "Created in GA4 under the property's Measurement Protocol settings."
+msgstr ""
+
+#. translators: %s: masked credential preview.
+#: includes/admin/class-gr-analytics-page.php:524
+#, php-format
+msgid "Configured (secret %s). Fields left empty keep the stored credentials."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:529
+msgid "Stored credentials no longer decrypt (a changed salt or a mangled row). Enter them again or remove the block."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:531
+msgid "Not configured. Nothing is sent for this service, and its toggle has no effect until credentials exist."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:541
+msgid "Enabled"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:545
+msgid "Send conversion events (consent-gated, opt-in)"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:554
+msgid "— stored. Type a new value to replace it."
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:569
+msgid "Remove"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:573
+msgid "Forget the credentials of this service entirely; the toggle turns off with them"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:580
+msgid "Save"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:581
+msgid "Self-check"
+msgstr ""
+
+#: includes/admin/class-gr-analytics-page.php:583
+msgid "Test connection (one validation request to Google, this click only)"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-page.php:75
+msgid "Object type"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-page.php:77
+msgid "User id"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-page.php:79
+#: includes/admin/class-gr-audit-log-table.php:48
+#: includes/admin/class-gr-login-protection-page.php:264
+#: includes/admin/class-gr-traffic-page.php:146
+msgid "Action"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-page.php:81
+msgid "Filter"
+msgstr ""
+
+#. translators: %d: number of pages.
+#: includes/admin/class-gr-audit-log-page.php:101
+#, php-format
+msgid "%d pages"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-table.php:46
+#: includes/admin/class-gr-traffic-page.php:103
+#: includes/admin/class-gr-traffic-page.php:183
+#: includes/rest/class-gr-live-controller.php:63
+msgid "Time"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-table.php:47
+msgid "User"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-table.php:49
+msgid "Object"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-table.php:50
+msgid "Changes"
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-table.php:74
+msgid "No field changes."
+msgstr ""
+
+#: includes/admin/class-gr-audit-log-table.php:108
+msgid "No audited changes recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:69
+msgid "Read-only summaries from the crawler-verification engines. Verification never blocks anyone: a crawler claim it cannot prove is merely unproven. Device signals arrive in a later version."
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:71
+msgid "FCrDNS verification"
+msgstr ""
+
+#. translators: 1: verified count, 2: unverified count, 3: hours.
+#: includes/admin/class-gr-bot-signals-page.php:78
+#, php-format
+msgid "%1$d verified and %2$d unverified verdicts in the last %3$d hours. Forward-confirmed reverse DNS: a PTR hostname counts only when resolving it forward again contains the original address, A and AAAA alike."
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:89
+msgid "Address (masked)"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:90
+msgid "Claimed agent"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:91
+msgid "PTR hostname"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:92
+msgid "Verdict"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:93
+msgid "Walks"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:94
+#: includes/admin/class-gr-bot-signals-page.php:120
+#: includes/admin/class-gr-campaigns-page.php:136
+#: includes/admin/class-gr-campaigns-page.php:241
+#: includes/admin/class-gr-login-protection-page.php:205
+#: includes/admin/class-gr-login-protection-page.php:262
+#: includes/admin/class-gr-traffic-page.php:141
+#: includes/privacy/class-gr-privacy-api.php:308
+msgid "Last seen"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:98
+msgid "No crawler claims verified yet."
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:114
+msgid "Scanner-UA engine"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:117
+msgid "User agent"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:118
+#: includes/admin/class-gr-login-protection-page.php:208
+#: includes/admin/class-gr-traffic-page.php:145
+msgid "Hits"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:119
+msgid "Fold rows"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:124
+msgid "No scanner agents recorded in the window."
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:138
+msgid "bot_score distribution"
+msgstr ""
+
+#. translators: 1: human sessions, 2: bot sessions, 3: days.
+#: includes/admin/class-gr-bot-signals-page.php:145
+#, php-format
+msgid "%1$d human and %2$d bot-flagged sessions in the last %3$d days, by the client probe score the session carries."
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:156
+msgid "Score band"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:157
+#: includes/admin/class-gr-dashboard-page.php:80
+#: includes/admin/class-gr-dashboard-page.php:109
+#: includes/rest/class-gr-dashboard-controller.php:76
+msgid "Sessions"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:158
+msgid "Share"
+msgstr ""
+
+#: includes/admin/class-gr-bot-signals-page.php:162
+msgid "No scored sessions in the window."
+msgstr ""
+
+#. translators: %s: percentage.
+#: includes/admin/class-gr-bot-signals-page.php:173
+#: includes/admin/class-gr-funnels-page.php:215
+#, php-format
+msgid "%s%%"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:77
+msgid "UTM parameters"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:78
+msgid "Click IDs"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:79
+msgid "Attribution models"
+msgstr ""
+
+#. translators: %d: number of days.
+#: includes/admin/class-gr-campaigns-page.php:117
+#, php-format
+msgid "Campaign entries in the last %d days"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:124
+msgid "No campaign entries recorded yet. A row appears when a visit lands with a utm_campaign parameter."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:129
+#: includes/admin/class-gr-campaigns-page.php:187
+#: includes/admin/class-gr-campaigns-page.php:347
+msgid "Campaign"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:130
+#: includes/admin/class-gr-campaigns-page.php:238
+msgid "Channel"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:131
+#: includes/admin/class-gr-campaigns-page.php:185
+msgid "Source"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:132
+#: includes/admin/class-gr-campaigns-page.php:186
+msgid "Medium"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:133
+#: includes/admin/class-gr-campaigns-page.php:190
+#: includes/admin/class-gr-campaigns-page.php:239
+msgid "Entries"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:134
+#: includes/admin/class-gr-campaigns-page.php:191
+#: includes/admin/class-gr-campaigns-page.php:240
+#: includes/admin/class-gr-dashboard-page.php:81
+#: includes/rest/class-gr-dashboard-controller.php:77
+msgid "Visitors"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:135
+#: includes/privacy/class-gr-privacy-api.php:304
+msgid "First seen"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:154
+msgid "Entries are campaign landings, not pageviews; a visitor counted once per campaign row."
+msgstr ""
+
+#. translators: %d: number of days.
+#: includes/admin/class-gr-campaigns-page.php:173
+#, php-format
+msgid "UTM parameter combinations in the last %d days"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:180
+msgid "No UTM parameters recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:188
+msgid "Term"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:189
+msgid "Content"
+msgstr ""
+
+#. translators: %d: number of days.
+#: includes/admin/class-gr-campaigns-page.php:225
+#, php-format
+msgid "Click IDs in the last %d days"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:232
+msgid "No click IDs recorded yet. A row appears when a visit lands with gclid, fbclid, or another click parameter."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:237
+msgid "Click ID"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:274
+msgid "Model comparison over recorded conversions"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:276
+msgid "No conversions recorded yet. The comparison fills from real orders and form conversions as they arrive."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:348
+msgid "Currency"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:368
+msgid "Each cell is the credit the model gave that campaign across recorded conversions; every model column sums to the same total conversion amount."
+msgstr ""
+
+#. translators: %s: number of conversions.
+#: includes/admin/class-gr-campaigns-page.php:374
+#, php-format
+msgid "%s conversion(s) arrived without campaign touchpoints and carry no model credit."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:390
+msgid "First touch"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:391
+msgid "Last touch"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:392
+msgid "Linear"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:393
+msgid "Position-based"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:394
+msgid "Time-decay"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:427
+msgid "(deleted touchpoint)"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:431
+msgid "(no campaign name)"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:52
+msgid "Sessions today"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:53
+msgid "Visitors today"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:54
+msgid "Page views today"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:55
+msgid "Conversions today"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:56
+msgid "Revenue today"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:72
+msgid "Sessions and page views, last 14 days"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:76
+msgid "Daily figures, last 14 days"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:79
+msgid "Date"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:82
+#: includes/rest/class-gr-dashboard-controller.php:78
+msgid "Page views"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:83
+#: includes/admin/class-gr-funnels-page.php:201
+#: includes/rest/class-gr-dashboard-controller.php:79
+msgid "Conversions"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:84
+msgid "Revenue"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:101
+msgid "Visitors by country, last 30 days"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:103
+msgid "No country data yet."
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:108
+msgid "Country"
+msgstr ""
+
+#: includes/admin/class-gr-dashboard-page.php:146
+msgid "Unknown"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:192
+msgid "Retention settings saved. The nightly pass trims from here on."
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:195
+msgid "Two independent rails, whichever fires first: an age in days, and a row ceiling. Zero disables a rail. Reports read the daily summary table, so trimming never eats a chart."
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:203
+#: includes/admin/class-gr-status-page.php:198
+msgid "Table"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:204
+msgid "Rows now"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:205
+msgid "Keep days"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:206
+msgid "Row ceiling"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:228
+msgid "Save retention settings"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:231
+msgid "Manual table rebuild"
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:232
+msgid "OPTIMIZE rewrites a table and locks it while it runs. It is button-only on purpose: the nightly pass never optimizes on its own."
+msgstr ""
+
+#: includes/admin/class-gr-data-retention-page.php:243
+msgid "Optimize selected tables"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:59
+msgid "A/B experiments: the variant split each visitor lands in, and the significance verdict over what was actually recorded. Funnel, step-loss, and goal tracking arrive in a later version."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:62
+msgid "No experiments defined yet. Experiment definitions are created through the experiments repository (the gr_ab_experiments option); content then splits per visitor with the [gr_ab] shortcode. This page reports on them and creates nothing."
+msgstr ""
+
+#. translators: 1: experiment key, 2: state word.
+#: includes/admin/class-gr-funnels-page.php:92
+#, php-format
+msgid "Experiment: %1$s (%2$s)"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:94
+msgid "running"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:94
+msgid "paused"
+msgstr ""
+
+#. translators: %s: comma-separated variant slugs.
+#: includes/admin/class-gr-funnels-page.php:105
+#, php-format
+msgid "Variants (first is control): %s"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:113
+msgid "Assignment is paused: the shortcode falls back to control content and the engine assigns nothing. Recorded data stays readable below."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:136
+msgid "Assignment split preview"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:137
+msgid "The same visitor always lands in the same variant on every request; the preview below is the pure hash split for eight fixed sample ids."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:140
+msgid "Sample visitor"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:141
+msgid "Assigned variant"
+msgstr ""
+
+#. translators: %s: comma-separated variant=count pairs.
+#: includes/admin/class-gr-funnels-page.php:163
+#, php-format
+msgid "Sample tally: %s"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:190
+msgid "Insufficient sample: each arm needs at least 30 impressions before the comparison is readable."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:191
+msgid "Inconclusive: no difference proven at 95% confidence yet."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:192
+msgid "Significant at 95% confidence."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:196
+msgid "Recorded counts and significance"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:199
+msgid "Variant"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:200
+msgid "Impressions"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:202
+msgid "CVR"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:229
+msgid "Comparison (control vs)"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:230
+msgid "z"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:231
+msgid "State"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:232
+msgid "Winner"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:119
+msgid "Data refresh queued. The version below updates once the download completes."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:121
+msgid "A data refresh is already queued."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:124
+msgid "Country database (DB-IP)"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:125
+msgid "Country-level lookups run entirely on this site against the bundled DB-IP Lite database; no lookup ever leaves the server."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:128
+msgid "No local database found. Reinstalling the plugin restores the bundled copy."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:133
+msgid "Data origin"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:134
+msgid "Owner-refreshed copy (uploads)"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:134
+msgid "Bundled with the plugin"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:137
+msgid "Data date"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:141
+msgid "IPv4 ranges"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:145
+msgid "IPv6 ranges"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:149
+msgid "Countries"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:153
+msgid "Generated"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:160
+#: includes/admin/class-gr-settings-page.php:276
+msgid "Attribution"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:162
+msgid "Country data by DB-IP, licensed under CC BY 4.0. The full attribution and data date ship in the plugin's NOTICE file."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:163
+msgid "View the license terms"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:165
+msgid "A refresh downloads from db-ip.com into the uploads directory; it never modifies the plugin directory, and a failed refresh keeps the current data."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:167
+msgid "Update now"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:169
+msgid "A refresh is already queued; the button returns when it finishes."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:173
+msgid "Clicking sends one download request to db-ip.com on your explicit instruction. There is no automatic or scheduled update."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:175
+msgid "Update country data now"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:180
+msgid "AbuseIPDB (threat intelligence)"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:181
+msgid "AbuseIPDB reputation checks ship with v1.2, default off, and only with your own API key."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:144
+msgid "Lock released. The address can sign in again."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:146
+msgid "No active lock was found for that address. It may have expired while the page was open."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:149
+msgid "If you are locked out of your own site, run the WP-CLI release command:"
+msgstr ""
+
+#. translators: %s: URL path of the Access Rules allow tab.
+#: includes/admin/class-gr-login-protection-page.php:156
+#, php-format
+msgid "Without CLI access, adding your address to the allow list on the Access Rules page (%s) overrides every lock; the allow list always wins."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:165
+msgid "Brute-force audit"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:166
+msgid "Active locks"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:198
+msgid "Failed sign-ins and lockouts, newest first"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:200
+msgid "No failed sign-ins recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:206
+#: includes/admin/class-gr-traffic-page.php:104
+#: includes/rest/class-gr-live-controller.php:64
+msgid "Event"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:207
+#: includes/admin/class-gr-login-protection-page.php:260
+#: includes/admin/class-gr-traffic-page.php:143
+msgid "Address"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:224
+msgid "Addresses are masked for display; one row folds all hits from the same address and rule within an hour."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:253
+msgid "Addresses currently locked out"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:255
+msgid "No active locks. Failed sign-ins are being counted; a lock starts at the threshold set under Settings."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:261
+msgid "Why"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:263
+msgid "Time left"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:279
+msgid "Release"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:286
+msgid "The list shows the masked form; releasing acts on the complete stored address."
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:299
+msgid "Lockout"
+msgstr ""
+
+#: includes/admin/class-gr-login-protection-page.php:302
+msgid "Failed sign-in"
+msgstr ""
+
+#. translators: 1: hours, 2: minutes.
+#: includes/admin/class-gr-login-protection-page.php:315
+#, php-format
+msgid "%1$dh %2$02dm"
+msgstr ""
+
+#. translators: 1: minutes, 2: seconds.
+#: includes/admin/class-gr-login-protection-page.php:323
+#, php-format
+msgid "%1$dm %2$02ds"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:268
+msgid "Settings saved."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:274
+msgid "General"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:275
+msgid "Security"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:295
+msgid "Anonymize marketing IPs"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:299
+msgid "Store marketing-track addresses anonymized (on by default)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:304
+msgid "Consent fallback"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:308
+msgid "Track marketing data when no Consent API is present (off by default)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:313
+msgid "Data retention"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:315
+msgid "Open the Data Retention page"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:319
+msgid "Delete data on uninstall"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:323
+msgid "Remove every plugin table and option when the plugin is uninstalled (off by default: data belongs to the site owner)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:329
+msgid "Security engine"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:333
+msgid "Master switch for every traffic-security engine (on by default)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:338
+msgid "Action mode"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:341
+msgid "Log only (default)"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:342
+msgid "Log and block"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:347
+msgid "Anonymize security logs"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:351
+msgid "Store security-log addresses anonymized (off by default: full addresses on the legitimate-interest track; degrades ban precision)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:356
+msgid "Trust proxy headers"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:360
+msgid "Read forwarded-for headers only from the trusted proxies below (off by default: REMOTE_ADDR only)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:365
+msgid "Trusted proxies"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:369
+msgid "Comma-separated addresses or CIDR ranges, at most 20."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:373
+msgid "Client probe"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:377
+msgid "Collect client safety signals (on by default; disclosed in the readme)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:383
+msgid "Attribution engine"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:387
+msgid "Record touchpoints and bind conversions (on by default)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:392
+msgid "Cookie window"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:396
+msgid "days (1 to 365, default 30)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:400
+msgid "Default model"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:407
+msgid "Reports compare all five models; this is the highlighted default."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:412
+msgid "Save settings"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:129
+msgid "Environment"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:132
+msgid "Plugin version"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:133
+msgid "PHP"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:134
+msgid "WordPress"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:135
+msgid "Database"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:136
+msgid "Multisite"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:140
+msgid "Queue"
+msgstr ""
+
+#. translators: %s: queue backend name.
+#: includes/admin/class-gr-status-page.php:146
+#, php-format
+msgid "Backend: %s"
+msgstr ""
+
+#. translators: %s: UTC timestamp.
+#: includes/admin/class-gr-status-page.php:157
+#, php-format
+msgid "next daily pass at %s (server UTC)."
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:163
+msgid "no daily pass scheduled yet."
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:168
+msgid "On low-traffic sites WP-Cron only fires when a visitor arrives. Point a real system cron at the WP-CLI entry to keep maintenance on a fixed clock:"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:173
+msgid "Ecosystem adapters"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:176
+msgid "Bridge"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:177
+msgid "Status"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:186
+msgid "Mounted"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:187
+msgid "Not installed"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:195
+msgid "Table capacity"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:199
+msgid "Rows (estimate)"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:200
+msgid "Data"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:201
+msgid "Index"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:202
+msgid "Total"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:217
+msgid "Diagnostics export"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:218
+msgid "A JSON snapshot of everything on this page: versions, queue posture, adapter mounts, table capacity. It carries no credentials, no addresses, and no content data."
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:222
+msgid "Download diagnostics"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:54
+msgid "Traffic &amp; Security"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:60
+msgid "Live stream"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:61
+msgid "Threat events"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:62
+msgid "Fraud audit"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:95
+msgid "Newest events"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:98
+msgid "No events recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:105
+#: includes/rest/class-gr-live-controller.php:65
+msgid "Group"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:106
+#: includes/admin/class-gr-traffic-page.php:184
+#: includes/rest/class-gr-live-controller.php:66
+msgid "Visitor"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:134
+msgid "Threat events, newest first"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:136
+msgid "No security findings recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:142
+msgid "Rule"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:144
+msgid "Path"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:162
+msgid "Addresses are masked for display; the ban tooling works on the complete stored form."
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:176
+msgid "Bot conclusions, newest first"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:178
+msgid "No bot conclusions recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:185
+msgid "Suspected bot"
+msgstr ""
+
+#: includes/admin/class-gr-traffic-page.php:186
+msgid "Tier"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:117
+msgid "Compose a campaign link with UTM parameters. Everything runs locally in this page; no address is fetched or validated over the network."
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:123
+msgid "Landing URL"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:127
+msgid "The absolute http(s) address the campaign lands on."
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:131
+msgid "Campaign source"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:135
+msgid "Campaign medium"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:139
+msgid "Campaign name"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:143
+msgid "Campaign term"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:146
+#: includes/admin/class-gr-url-builder-page.php:153
+msgid "Optional."
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:150
+msgid "Campaign content"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:157
+msgid "Build link"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:161
+msgid "A campaign link needs a landing URL plus source, medium, and campaign name."
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:163
+msgid "The landing URL must be an absolute http(s) address."
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:165
+msgid "Your campaign link"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:170
+msgid "Campaign link, ready to copy"
+msgstr ""
+
+#: includes/admin/class-gr-url-builder-page.php:172
+msgid "Copy the link into your ad or newsletter; visits landing on it are attributed to this campaign."
+msgstr ""
+
+#: includes/core/class-gr-cli.php:58
 msgid "Skipped: another maintenance run holds the lock and started less than 5 minutes ago."
 msgstr ""
 
-#: includes/core/class-gr-cli.php:61
+#: includes/core/class-gr-cli.php:62
 msgid "Daily maintenance finished."
+msgstr ""
+
+#: includes/core/class-gr-cli.php:90
+msgid "No address given: wp greenpng unblock <ip>"
+msgstr ""
+
+#. translators: %s: IP address.
+#: includes/core/class-gr-cli.php:97
+#, php-format
+msgid "No temporary lock found for %s. Static ban rules are managed on the Access Rules page; the allow list also overrides every ban."
+msgstr ""
+
+#. translators: %s: IP address.
+#: includes/core/class-gr-cli.php:107
+#, php-format
+msgid "Temporary lock released for %s."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:71
+#: includes/privacy/class-gr-privacy-api.php:98
+#: includes/privacy/class-gr-privacy-api.php:171
+#: includes/privacy/class-gr-privacy-api.php:327
+msgid "greenpng sessions"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:75
+#: includes/privacy/class-gr-privacy-api.php:102
+#: includes/privacy/class-gr-privacy-api.php:206
+#: includes/privacy/class-gr-privacy-api.php:341
+msgid "greenpng touchpoints"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:79
+#: includes/privacy/class-gr-privacy-api.php:106
+#: includes/privacy/class-gr-privacy-api.php:235
+#: includes/privacy/class-gr-privacy-api.php:358
+msgid "greenpng conversions"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:83
+#: includes/privacy/class-gr-privacy-api.php:110
+#: includes/privacy/class-gr-privacy-api.php:279
+msgid "greenpng CRM contact"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:281
+msgid "CRM contact"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:284
+msgid "First name"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:288
+msgid "Last name"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:292
+msgid "Lead score"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:296
+msgid "Lifetime value"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:300
+msgid "RFM segment"
+msgstr ""
+
+#. translators: %s: number of items removed.
+#: includes/privacy/class-gr-privacy-api.php:415
+#, php-format
+msgid "%s items removed from the CRM contact and order bindings."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:434
+msgid "greenpng analytics"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:435
+msgid "Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:436
+msgid "Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:437
+msgid "Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin's marketing tables."
+msgstr ""
+
+#. translators: 1: number of rows removed, 2: data family name.
+#: includes/privacy/class-gr-privacy-api.php:520
+#, php-format
+msgid "%1$s rows removed from %2$s."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:140
+msgid "Invalid collect token."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:158
+msgid "Too many collect requests."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:166
+msgid "Collect payload too large."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:188
+msgid "Unknown event name."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:202
+msgid "Unknown collect field."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:213
+msgid "Client signals are disabled."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:254
+msgid "Path too long."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:258
+msgid "Event id too long."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:266
+msgid "bot_score is required for signals."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:271
+msgid "Signal flags must be booleans."
+msgstr ""
+
+#: includes/rest/class-gr-dashboard-controller.php:97
+#: includes/rest/class-gr-live-controller.php:80
+msgid "You do not have permission to read this data."
+msgstr ""
+
+#: includes/security/class-gr-blackhole.php:85
+msgid "Access denied."
+msgstr ""
+
+#: includes/security/class-gr-honeypot.php:242
+#: includes/security/class-gr-honeypot.php:276
+msgid "Your submission could not be processed. Please try again."
+msgstr ""
+
+#: includes/security/class-gr-login-protection.php:108
+msgid "Too many failed sign-in attempts. Please try again later."
 msgstr ""
