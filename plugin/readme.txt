@@ -4,7 +4,7 @@ Tags: security, analytics, attribution, crm
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -89,6 +89,12 @@ The scanner user-agent detection rules bundled in assets/data/ are seeded from J
 5. Funnels & Goals — funnel results and A/B significance testing.
 
 == Changelog ==
+
+= 1.0.1 =
+* The client probe's bot score and verdict now land on the session row, so the bot reports and the outbound traffic-quality gate read real conclusions instead of the default.
+* Statically banned addresses are now refused (403) unconditionally; temporary locks refuse only in "log and block" mode. URL allow rules exempt detectors, never bans.
+* WooCommerce orders born directly in a paid status (offline gateways through the Store API) now bind their conversion through the status transition.
+* Settings, Security tab: bot verdict threshold, login failure threshold, lockout base duration, honeypot traps, and blackhole trap switches.
 
 = 1.0.0 =
 * Initial release.

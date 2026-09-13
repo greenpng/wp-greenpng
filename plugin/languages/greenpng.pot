@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: GreenPNG 1.0.0\n"
+"Project-Id-Version: GreenPNG 1.0.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/greenpng\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-13T05:59:40+00:00\n"
+"POT-Creation-Date: 2026-09-13T12:25:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -54,7 +54,7 @@ msgid "Add a rule"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-page.php:231
-#: includes/admin/class-gr-access-rules-table.php:49
+#: includes/admin/class-gr-access-rules-table.php:60
 msgid "Matches"
 msgstr ""
 
@@ -67,12 +67,12 @@ msgid "URL path (allow list only)"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-page.php:240
-#: includes/admin/class-gr-access-rules-table.php:48
+#: includes/admin/class-gr-access-rules-table.php:59
 msgid "Value"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-page.php:244
-#: includes/admin/class-gr-access-rules-table.php:50
+#: includes/admin/class-gr-access-rules-table.php:61
 #: includes/admin/class-gr-login-protection-page.php:209
 msgid "Note"
 msgstr ""
@@ -81,27 +81,27 @@ msgstr ""
 msgid "Add rule"
 msgstr ""
 
-#: includes/admin/class-gr-access-rules-table.php:51
+#: includes/admin/class-gr-access-rules-table.php:62
 msgid "Active"
 msgstr ""
 
-#: includes/admin/class-gr-access-rules-table.php:52
+#: includes/admin/class-gr-access-rules-table.php:63
 msgid "Added"
 msgstr ""
 
-#: includes/admin/class-gr-access-rules-table.php:79
+#: includes/admin/class-gr-access-rules-table.php:90
 #: includes/admin/class-gr-status-page.php:136
 #: includes/admin/class-gr-traffic-page.php:199
 msgid "Yes"
 msgstr ""
 
-#: includes/admin/class-gr-access-rules-table.php:79
+#: includes/admin/class-gr-access-rules-table.php:90
 #: includes/admin/class-gr-status-page.php:136
 #: includes/admin/class-gr-traffic-page.php:199
 msgid "No"
 msgstr ""
 
-#: includes/admin/class-gr-access-rules-table.php:93
+#: includes/admin/class-gr-access-rules-table.php:104
 msgid "No rules yet."
 msgstr ""
 
@@ -112,7 +112,7 @@ msgstr ""
 
 #: includes/admin/class-gr-admin-menu.php:77
 #: includes/admin/class-gr-admin-menu.php:78
-#: includes/admin/class-gr-settings-page.php:264
+#: includes/admin/class-gr-settings-page.php:288
 msgid "Settings"
 msgstr ""
 
@@ -311,7 +311,7 @@ msgid "User id"
 msgstr ""
 
 #: includes/admin/class-gr-audit-log-page.php:79
-#: includes/admin/class-gr-audit-log-table.php:48
+#: includes/admin/class-gr-audit-log-table.php:57
 #: includes/admin/class-gr-login-protection-page.php:264
 #: includes/admin/class-gr-traffic-page.php:146
 msgid "Action"
@@ -327,30 +327,30 @@ msgstr ""
 msgid "%d pages"
 msgstr ""
 
-#: includes/admin/class-gr-audit-log-table.php:46
+#: includes/admin/class-gr-audit-log-table.php:55
 #: includes/admin/class-gr-traffic-page.php:103
 #: includes/admin/class-gr-traffic-page.php:183
 #: includes/rest/class-gr-live-controller.php:63
 msgid "Time"
 msgstr ""
 
-#: includes/admin/class-gr-audit-log-table.php:47
+#: includes/admin/class-gr-audit-log-table.php:56
 msgid "User"
 msgstr ""
 
-#: includes/admin/class-gr-audit-log-table.php:49
+#: includes/admin/class-gr-audit-log-table.php:58
 msgid "Object"
 msgstr ""
 
-#: includes/admin/class-gr-audit-log-table.php:50
+#: includes/admin/class-gr-audit-log-table.php:59
 msgid "Changes"
 msgstr ""
 
-#: includes/admin/class-gr-audit-log-table.php:74
+#: includes/admin/class-gr-audit-log-table.php:83
 msgid "No field changes."
 msgstr ""
 
-#: includes/admin/class-gr-audit-log-table.php:108
+#: includes/admin/class-gr-audit-log-table.php:117
 msgid "No audited changes recorded yet."
 msgstr ""
 
@@ -864,7 +864,7 @@ msgid "Generated"
 msgstr ""
 
 #: includes/admin/class-gr-ip-intel-page.php:160
-#: includes/admin/class-gr-settings-page.php:276
+#: includes/admin/class-gr-settings-page.php:300
 msgid "Attribution"
 msgstr ""
 
@@ -998,127 +998,167 @@ msgstr ""
 msgid "%1$dm %2$02ds"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:268
+#: includes/admin/class-gr-settings-page.php:292
 msgid "Settings saved."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:274
+#: includes/admin/class-gr-settings-page.php:298
 msgid "General"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:275
+#: includes/admin/class-gr-settings-page.php:299
 msgid "Security"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:295
+#: includes/admin/class-gr-settings-page.php:319
 msgid "Anonymize marketing IPs"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:299
+#: includes/admin/class-gr-settings-page.php:323
 msgid "Store marketing-track addresses anonymized (on by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:304
+#: includes/admin/class-gr-settings-page.php:328
 msgid "Consent fallback"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:308
+#: includes/admin/class-gr-settings-page.php:332
 msgid "Track marketing data when no Consent API is present (off by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:313
+#: includes/admin/class-gr-settings-page.php:337
 msgid "Data retention"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:315
+#: includes/admin/class-gr-settings-page.php:339
 msgid "Open the Data Retention page"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:319
+#: includes/admin/class-gr-settings-page.php:343
 msgid "Delete data on uninstall"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:323
+#: includes/admin/class-gr-settings-page.php:347
 msgid "Remove every plugin table and option when the plugin is uninstalled (off by default: data belongs to the site owner)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:329
+#: includes/admin/class-gr-settings-page.php:353
 msgid "Security engine"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:333
+#: includes/admin/class-gr-settings-page.php:357
 msgid "Master switch for every traffic-security engine (on by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:338
+#: includes/admin/class-gr-settings-page.php:362
 msgid "Action mode"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:341
+#: includes/admin/class-gr-settings-page.php:365
 msgid "Log only (default)"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:342
+#: includes/admin/class-gr-settings-page.php:366
 msgid "Log and block"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:347
+#: includes/admin/class-gr-settings-page.php:371
 msgid "Anonymize security logs"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:351
+#: includes/admin/class-gr-settings-page.php:375
 msgid "Store security-log addresses anonymized (off by default: full addresses on the legitimate-interest track; degrades ban precision)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:356
+#: includes/admin/class-gr-settings-page.php:380
 msgid "Trust proxy headers"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:360
+#: includes/admin/class-gr-settings-page.php:384
 msgid "Read forwarded-for headers only from the trusted proxies below (off by default: REMOTE_ADDR only)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:365
+#: includes/admin/class-gr-settings-page.php:389
 msgid "Trusted proxies"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:369
+#: includes/admin/class-gr-settings-page.php:393
 msgid "Comma-separated addresses or CIDR ranges, at most 20."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:373
+#: includes/admin/class-gr-settings-page.php:397
 msgid "Client probe"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:377
+#: includes/admin/class-gr-settings-page.php:401
 msgid "Collect client safety signals (on by default; disclosed in the readme)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:383
+#: includes/admin/class-gr-settings-page.php:406
+msgid "Bot verdict threshold"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:410
+msgid "probe score (1 to 100, default 70: two corroborating signals). At or above it a session is treated as a bot and its conversions are not forwarded to analytics."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:414
+msgid "Login failure threshold"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:418
+msgid "failed sign-ins before the address locks out (2 to 100, default 5)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:422
+msgid "Lockout base duration"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:426
+msgid "seconds; each round doubles, capped at 24 hours (default 300)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:430
+msgid "Honeypot traps"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:434
+msgid "Add hidden trap fields to the login and registration forms (off by default)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:439
+msgid "Blackhole trap"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:443
+msgid "Declare a disallowed trap path in robots.txt and answer crawls of it (off by default)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:449
 msgid "Attribution engine"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:387
+#: includes/admin/class-gr-settings-page.php:453
 msgid "Record touchpoints and bind conversions (on by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:392
+#: includes/admin/class-gr-settings-page.php:458
 msgid "Cookie window"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:396
+#: includes/admin/class-gr-settings-page.php:462
 msgid "days (1 to 365, default 30)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:400
+#: includes/admin/class-gr-settings-page.php:466
 msgid "Default model"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:407
+#: includes/admin/class-gr-settings-page.php:473
 msgid "Reports compare all five models; this is the highlighted default."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:412
+#: includes/admin/class-gr-settings-page.php:478
 msgid "Save settings"
 msgstr ""
 
@@ -1457,43 +1497,43 @@ msgstr ""
 msgid "%1$s rows removed from %2$s."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:140
+#: includes/rest/class-gr-collect-controller.php:155
 msgid "Invalid collect token."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:158
+#: includes/rest/class-gr-collect-controller.php:173
 msgid "Too many collect requests."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:166
+#: includes/rest/class-gr-collect-controller.php:181
 msgid "Collect payload too large."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:188
+#: includes/rest/class-gr-collect-controller.php:203
 msgid "Unknown event name."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:202
+#: includes/rest/class-gr-collect-controller.php:217
 msgid "Unknown collect field."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:213
+#: includes/rest/class-gr-collect-controller.php:228
 msgid "Client signals are disabled."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:254
+#: includes/rest/class-gr-collect-controller.php:281
 msgid "Path too long."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:258
+#: includes/rest/class-gr-collect-controller.php:285
 msgid "Event id too long."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:266
+#: includes/rest/class-gr-collect-controller.php:293
 msgid "bot_score is required for signals."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:271
+#: includes/rest/class-gr-collect-controller.php:298
 msgid "Signal flags must be booleans."
 msgstr ""
 
@@ -1503,6 +1543,7 @@ msgid "You do not have permission to read this data."
 msgstr ""
 
 #: includes/security/class-gr-blackhole.php:85
+#: includes/security/class-gr-request-inspector.php:138
 msgid "Access denied."
 msgstr ""
 
