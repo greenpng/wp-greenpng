@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: shivammathur/setup-php@v6
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, curl
@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: shivammathur/setup-php@v6
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, curl
