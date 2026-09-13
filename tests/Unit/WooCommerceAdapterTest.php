@@ -265,6 +265,36 @@ final class WooCommerceAdapterTest extends TestCase {
         self::assertStringNotContainsString( 'wp_gr_conversions', implode( ' ', $wpdb->queries ) );
     }
 
+    public function testOutBandPaymentCompletionBindsThroughTheCapturedConsent(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        // Checkout happens with consent granted; the payment then
+        // completes in a request carrying no consent state at all (a
+        // gateway webhook, the owner's CLI). The snapshot on the
+        // order governs, so the binding still lands.
+        $visitor = $this->arm_cookie_track();
+        $order   = $this->order( 508 );
+
+        $GLOBALS['gr_adapter']->capture_classic( 508, array() );
+        self::assertSame( '1', $order->get_meta( Gr_Woocommerce_Adapter::CONSENT_META ) );
+
+        $_COOKIE                    = array();
+        $GLOBALS['gr_stub_consent'] = array( 'marketing' => false );
+
+        $wpdb->queries   = array();
+        $wpdb->results   = array();
+        $wpdb->insert_id = 41;
+
+        $GLOBALS['gr_adapter']->complete_payment( 508 );
+
+        self::assertSame( '1', $order->get_meta( Gr_Woocommerce_Adapter::ATTRIBUTED_META ) );
+        self::assertStringContainsString( 'INSERT IGNORE INTO wp_gr_conversions', implode( ' ', $wpdb->queries ) );
+    }
+
     public function testThrownErrorsAreIsolatedAndReported(): void {
         if ( ! class_exists( 'WooCommerce', false ) ) {
             eval( 'final class WooCommerce {}' );

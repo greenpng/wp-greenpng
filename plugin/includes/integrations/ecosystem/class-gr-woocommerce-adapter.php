@@ -40,6 +40,14 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
     public const ATTRIBUTED_META = '_gr_attributed';
 
     /**
+     * Order meta: the visitor's marketing-consent choice snapshotted
+     * at checkout, so a payment completing out-of-band (a gateway
+     * webhook, the owner's CLI) binds under the consent the visitor
+     * actually gave, not whatever the completing request carries.
+     */
+    public const CONSENT_META = '_gr_marketing_consent';
+
+    /**
      * Identity service (dual-track).
      *
      * @var Gr_Identity
@@ -174,6 +182,10 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         }
 
         $order->update_meta_data( self::VISITOR_META, $this->identity->visitor_id() );
+        // The consent choice rides with the visitor: payment often
+        // completes out-of-band, where the completing request carries
+        // no consent state at all.
+        $order->update_meta_data( self::CONSENT_META, Gr_Consent::allows( 'marketing' ) ? '1' : '0' );
         $order->save();
     }
 
@@ -203,7 +215,11 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
             $visitor = $this->identity->visitor_id();
         }
 
-        if ( '' === $visitor || ! Gr_Consent::allows( 'marketing' ) ) {
+        // The captured snapshot covers out-of-band completion; the
+        // current request's consent covers everything else. Either
+        // one green-lights the binding, neither forces it.
+        $captured = '1' === (string) $order->get_meta( self::CONSENT_META );
+        if ( '' === $visitor || ! ( $captured || Gr_Consent::allows( 'marketing' ) ) ) {
             return;
         }
 

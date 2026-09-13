@@ -79,8 +79,16 @@ final class Gr_Queue {
         $when = time() + max( 0, $delay );
 
         if ( self::uses_action_scheduler() ) {
-            as_schedule_single_action( $when, $hook, $args, self::AS_GROUP );
-            return;
+            $scheduled = as_schedule_single_action( $when, $hook, $args, self::AS_GROUP );
+            if ( is_numeric( $scheduled ) && (int) $scheduled > 0 ) {
+                return;
+            }
+
+            // AS refused the dispatch — a host whose scheduler tables
+            // are not created yet (a fresh WooCommerce before its
+            // installer ran) reports exactly that as a zero id — so
+            // the work rides wp-cron instead of being dropped: the
+            // queue never silently loses a dispatch.
         }
 
         wp_schedule_single_event( $when, $hook, $args );

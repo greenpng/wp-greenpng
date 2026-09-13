@@ -72,7 +72,10 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 		wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php complete-order ${ orderId }` );
 
 		expect( dbCount( 'wp_gr_conversions' ) ).toBeGreaterThanOrEqual( 1 );
-		const source = wpcli( 'wp db query "SELECT source_type FROM wp_gr_conversions ORDER BY id DESC LIMIT 1"' );
+		// Filtered, not "latest": the CF7 spec's conversion can land
+		// from a parallel worker after this one, and a bare ORDER BY
+		// id DESC would then read its row instead of the order's.
+		const source = wpcli( 'wp db query "SELECT source_type FROM wp_gr_conversions WHERE source_type=\'woocommerce\' ORDER BY id DESC LIMIT 1"' );
 		expect( source ).toContain( 'woocommerce' );
 
 		await visitor.close();

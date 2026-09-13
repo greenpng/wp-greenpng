@@ -18,13 +18,17 @@ if ( ! function_exists( 'as_schedule_single_action' ) ) {
     /**
      * Action Scheduler single-action enqueue.
      *
+     * The 3.x API answers with the action id, or a WP_Error when the
+     * scheduler tables are not installed — a fresh WooCommerce host
+     * before its installer ran refuses every dispatch that way.
+     *
      * @param int                 $timestamp When to run.
      * @param string              $hook      Hook name.
      * @param array<array-key, mixed> $args  Hook arguments.
      * @param string              $group     Group key.
-     * @return int Action id.
+     * @return int|\WP_Error Action id, or the refusal.
      */
-    function as_schedule_single_action( int $timestamp, string $hook, array $args = array(), string $group = '' ): int {
+    function as_schedule_single_action( $timestamp, $hook, $args = array(), $group = '' ) {
         return 0;
     }
 }

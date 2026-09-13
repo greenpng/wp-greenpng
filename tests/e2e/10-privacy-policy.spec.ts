@@ -11,10 +11,10 @@ test( 'the privacy policy guide includes the greenpng section', async ( { page }
 	await page.goto( '/wp-admin/privacy-policy-guide.php' );
 
 	// Each contributed section is an accordion titled with the plugin
-	// name passed to wp_add_privacy_policy_content; ours is "greenpng".
-	// The button's aria-controls names its own panel, so the assertion
-	// lands on exactly the section the click opened.
-	const trigger = page.getByRole( 'button', { name: 'greenpng' } );
+	// name passed to wp_add_privacy_policy_content; ours is "greenpng"
+	// exactly — a substring match also hits WP's own "Copy suggested
+	// policy text" button once the section opens.
+	const trigger = page.getByRole( 'button', { name: 'greenpng', exact: true } );
 	await trigger.click();
 	const panelId = await trigger.getAttribute( 'aria-controls' );
 	await expect( page.locator( `#${ panelId }` ) ).toContainText( 'anonymized IP addresses' );

@@ -42,6 +42,52 @@ final class QueueTest extends TestCase {
         self::assertGreaterThanOrEqual( $before, $GLOBALS['gr_stub_cron'][0]['timestamp'] );
     }
 
+    /**
+     * Runs one enqueue inside a plain CLI child with the AS stand-in
+     * installed, and returns its stdout report.
+     *
+     * @param string $mode 'refuse' or 'accept'.
+     * @return string Report lines joined with newlines.
+     */
+    private function enqueue_child( string $mode ): string {
+        // The interpreter is resolved from PATH, like every other PHP
+        // invocation in this repo's checks: this machine's PHP build
+        // reports a PHP_BINARY of argv[0] (inside phpunit that is the
+        // phpunit script itself), so spawning PHP_BINARY would rerun
+        // phpunit against the child script instead of executing it.
+        $command = 'php ' . escapeshellarg( __DIR__ . '/as-presence-child.php' ) . ' ' . escapeshellarg( $mode );
+
+        exec( $command, $output, $exit );
+        $report = implode( "\n", $output );
+
+        self::assertSame( 0, $exit, "child exited {$exit}: {$report}" );
+
+        return $report;
+    }
+
+    public function testEnqueueFallsBackToWpCronWhenActionSchedulerRefuses(): void {
+        // A fresh WooCommerce host: AS's API is loaded, but its
+        // tables are not created yet, so every dispatch is refused
+        // with a zero id — the work must ride wp-cron, not vanish.
+        // The stand-in lives in a child process only, so the rest of
+        // this suite keeps exercising the AS-absent world.
+        $report = $this->enqueue_child( 'refuse' );
+
+        self::assertStringContainsString( 'backend=action-scheduler', $report );
+        self::assertStringContainsString( 'cron_events=1', $report );
+        self::assertStringContainsString( 'cron_hook=gr_crawler_verify', $report );
+        self::assertStringContainsString( 'cron_args=["127.0.0.1","Googlebot"]', $report );
+    }
+
+    public function testEnqueueStaysOnActionSchedulerWhenItAccepts(): void {
+        // An id came back: the dispatch stays on AS and no wp-cron
+        // event is written behind its back.
+        $report = $this->enqueue_child( 'accept' );
+
+        self::assertStringContainsString( 'backend=action-scheduler', $report );
+        self::assertStringContainsString( 'cron_events=0', $report );
+    }
+
     public function testEnsureDailySchedulesOneRecurringEventAndHealsOnlyWhenMissing(): void {
         Gr_Queue::ensure_daily();
 
