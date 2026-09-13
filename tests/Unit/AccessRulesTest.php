@@ -12,6 +12,7 @@ declare( strict_types = 1 );
 namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Security\Gr_Access_Rules;
+use GreenPNG\Security\Gr_Temp_Bans;
 use PHPUnit\Framework\TestCase;
 
 final class AccessRulesTest extends TestCase {
@@ -299,5 +300,51 @@ final class AccessRulesTest extends TestCase {
         $this->assertTrue( gr_is_ip_blocked( '198.51.100.3' ) );
         $this->assertFalse( gr_is_ip_blocked( '10.0.0.3' ) );
         $this->assertTrue( gr_is_url_allowed( '/checkout/step' ) );
+    }
+
+    public function testStaticBansReadBanRulesAndIgnoreTransientLocks(): void {
+        $this->seed(
+            array(
+                array(
+                    'rule_type'   => 'ban',
+                    'match_kind'  => 'ip',
+                    'match_value' => '10.0.0.9',
+                ),
+            )
+        );
+
+        $this->assertTrue( Gr_Access_Rules::is_static_banned( '10.0.0.9' ) );
+        $this->assertFalse( Gr_Access_Rules::is_static_banned( '10.0.0.8' ) );
+
+        // A transient lock alone never reads as a static ban: the
+        // front door refuses locks only in block mode (ADR-0009 D3),
+        // which is exactly why the two arms live in separate
+        // predicates.
+        Gr_Temp_Bans::block( '10.0.0.8', 'login gradient', 300 );
+        Gr_Access_Rules::reset_for_tests();
+
+        $this->assertFalse( Gr_Access_Rules::is_static_banned( '10.0.0.8' ) );
+        $this->assertTrue( Gr_Access_Rules::is_ip_blocked( '10.0.0.8' ) );
+    }
+
+    public function testTheAllowListWinsInsideTheStaticBanPredicateToo(): void {
+        $this->seed(
+            array(
+                array(
+                    'rule_type'   => 'allow',
+                    'match_kind'  => 'ip',
+                    'match_value' => '10.0.0.9',
+                ),
+                array(
+                    'rule_type'   => 'ban',
+                    'match_kind'  => 'ip',
+                    'match_value' => '10.0.0.0/24',
+                ),
+            )
+        );
+
+        // The recovery valve holds for the unconditional arm as well:
+        // an allowed address is never refused.
+        $this->assertFalse( Gr_Access_Rules::is_static_banned( '10.0.0.9' ) );
     }
 }

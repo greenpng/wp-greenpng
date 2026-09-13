@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GreenPNG\Core\Gr_Request;
+use GreenPNG\Storage\Gr_Security_Log_Repository;
 
 /**
  * The init@10 request inspection frame.
@@ -62,10 +63,79 @@ final class Gr_Request_Inspector {
         }
 
         try {
+            if ( ! $this->front_door() ) {
+                return;
+            }
+        } catch ( \Throwable $error ) {
+            // Fail-open: a guard failure must neither block the page
+            // nor silence the detectors (docs/02 §2.7).
+            do_action( self::ERROR_HOOK, 'front_door', $error );
+        }
+
+        try {
             $this->inspect();
         } catch ( \Throwable $error ) {
             do_action( self::ERROR_HOOK, 'inspector', $error );
         }
+    }
+
+    /**
+     * The enforcement door before the detectors (ADR-0009 D3): a
+     * statically banned address is refused outright — the owner wrote
+     * that rule by hand, so the heuristic caution behind the tier
+     * model does not apply (docs/10 §4 lists explicit bans among the
+     * high-confidence tier) — while a transient lock only refuses in
+     * block mode, keeping log mode a pure observer. A URL allow rule
+     * exempts the detectors, never the ban arms: the address axis and
+     * the content axis are orthogonal.
+     *
+     * @return bool True when the request may continue to inspection.
+     */
+    private function front_door(): bool {
+        $ip = Gr_Ip_Resolver::resolve();
+
+        if ( Gr_Access_Rules::is_static_banned( $ip ) ) {
+            $this->deny( $ip, 'ip_ban', 'static ban rule' );
+
+            return false;
+        }
+
+        $mode = (string) gr()->settings()->get( 'security_action_mode' );
+        if ( 'block' === $mode && Gr_Temp_Bans::is_locked( $ip ) ) {
+            $this->deny( $ip, 'temp_ban', 'temporary lock (block mode)' );
+
+            return false;
+        }
+
+        return ! Gr_Access_Rules::is_url_allowed( Gr_Request::path() );
+    }
+
+    /**
+     * The shared 403 answer, the same shape the blackhole trap gives
+     * (W12). The hit rides the surge-folded log so the owner can see
+     * the rule actually working from the Threat events table — under
+     * the 'blocked' action word, because this row was refused, not
+     * merely observed. It goes straight to the repository, not the
+     * findings hook, so a refused address never feeds the conclusions
+     * channel.
+     *
+     * @param string $ip     Resolved address.
+     * @param string $rule   Fold rule id.
+     * @param string $reason Fold first-seen reason.
+     * @return void
+     */
+    private function deny( string $ip, string $rule, string $reason ): void {
+        ( new Gr_Security_Log_Repository() )->log(
+            $ip,
+            $rule,
+            Gr_Request::path(),
+            Gr_Request::user_agent(),
+            $reason,
+            0,
+            'blocked'
+        );
+
+        wp_die( esc_html__( 'Access denied.', 'greenpng' ), '', array( 'response' => 403 ) );
     }
 
     /**

@@ -12,7 +12,10 @@ declare( strict_types = 1 );
 namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Core\Gr_Plugin;
+use GreenPNG\Core\Gr_Settings;
+use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Security\Gr_Request_Inspector;
+use GreenPNG\Security\Gr_Temp_Bans;
 use PHPUnit\Framework\TestCase;
 
 final class RequestInspectorTest extends TestCase {
@@ -261,6 +264,183 @@ final class RequestInspectorTest extends TestCase {
         }
         $this->assertNotNull( $reported );
         $this->assertSame( 'inspector', $reported[0] );
+        $this->assertInstanceOf( \Throwable::class, $reported[1] );
+    }
+
+    /**
+     * Seeds the active access-rule rows the way the repository reads
+     * them, for the front-door tests.
+     *
+     * @param array<int, array<string, string>> $rules Active rows.
+     * @return void
+     */
+    private function seed_rules( array $rules ): void {
+        global $wpdb;
+        $wpdb->results = $rules;
+    }
+
+    public function testRunRefusesAStaticallyBannedAddressBeforeTheDetectors(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+        $this->seed_rules(
+            array(
+                array(
+                    'rule_type'   => 'ban',
+                    'match_kind'  => 'ip',
+                    'match_value' => '10.0.0.9',
+                ),
+            )
+        );
+
+        $ran = false;
+        $this->register_checks(
+            array(
+                static function ( array $context ) use ( &$ran ): array {
+                    $ran = true;
+                    return array();
+                },
+            )
+        );
+
+        ( new Gr_Request_Inspector() )->run();
+
+        // Refused before the detectors ever ran (ADR-0009 D3): an
+        // owner-written ban is enforced unconditionally, in log mode
+        // too, because the tier model's heuristic caution never
+        // applied to a hand-written rule.
+        $this->assertFalse( $ran );
+        $this->assertNotSame( array(), $GLOBALS['gr_stub_wp_die'] );
+        $this->assertSame( 403, $GLOBALS['gr_stub_wp_die'][0]['args']['response'] );
+
+        // The hit rides the fold log straight to the repository under
+        // the 'blocked' action word; a refused address never feeds
+        // the conclusions channel.
+        $sql = implode( ' ', $wpdb->queries );
+        $this->assertStringContainsString( 'ip_ban', $sql );
+        $this->assertStringContainsString( 'blocked', $sql );
+
+        $fired_findings = false;
+        foreach ( $GLOBALS['gr_stub_fired_action_args'] as $record ) {
+            if ( Gr_Request_Inspector::FINDINGS_HOOK === $record['hook'] ) {
+                $fired_findings = true;
+            }
+        }
+        $this->assertFalse( $fired_findings );
+    }
+
+    public function testALockedAddressIsOnlyRefusedInBlockMode(): void {
+        Gr_Temp_Bans::block( '10.0.0.9', 'login gradient', 300 );
+
+        $ran = false;
+        $this->register_checks(
+            array(
+                static function ( array $context ) use ( &$ran ): array {
+                    $ran = true;
+                    return array();
+                },
+            )
+        );
+
+        // Log mode: the front door stays a pure observer, the
+        // detectors still see the request.
+        ( new Gr_Request_Inspector() )->run();
+        $this->assertTrue( $ran );
+        $this->assertSame( array(), $GLOBALS['gr_stub_wp_die'] );
+
+        // Block mode: the same lock now refuses before the detectors.
+        ( new Gr_Settings() )->set( 'security_action_mode', 'block' );
+        ( new Gr_Request_Inspector() )->run();
+
+        $this->assertNotSame( array(), $GLOBALS['gr_stub_wp_die'] );
+        $this->assertSame( 403, $GLOBALS['gr_stub_wp_die'][0]['args']['response'] );
+    }
+
+    public function testUrlAllowRulesSkipTheDetectorsButNeverTheBan(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+        $this->seed_rules(
+            array(
+                array(
+                    'rule_type'   => 'allow',
+                    'match_kind'  => 'url',
+                    'match_value' => '/some/path',
+                ),
+            )
+        );
+
+        $ran = false;
+        $this->register_checks(
+            array(
+                static function ( array $context ) use ( &$ran ): array {
+                    $ran = true;
+                    return array();
+                },
+            )
+        );
+
+        // An exempted URI: the detectors never run, nothing is
+        // refused.
+        ( new Gr_Request_Inspector() )->run();
+        $this->assertFalse( $ran );
+        $this->assertSame( array(), $GLOBALS['gr_stub_wp_die'] );
+
+        // The same exempted URI from a banned address: still refused.
+        // The URL axis exempts detectors, never the ban arms.
+        $this->seed_rules(
+            array(
+                array(
+                    'rule_type'   => 'allow',
+                    'match_kind'  => 'url',
+                    'match_value' => '/some/path',
+                ),
+                array(
+                    'rule_type'   => 'ban',
+                    'match_kind'  => 'ip',
+                    'match_value' => '10.0.0.9',
+                ),
+            )
+        );
+        Gr_Access_Rules::reset_for_tests();
+
+        ( new Gr_Request_Inspector() )->run();
+
+        $this->assertNotSame( array(), $GLOBALS['gr_stub_wp_die'] );
+        $this->assertSame( 403, $GLOBALS['gr_stub_wp_die'][0]['args']['response'] );
+    }
+
+    public function testAFrontDoorFailureFailsOpenToTheDetectors(): void {
+        global $wpdb;
+
+        // The rule store throwing stands in for any guard-layer
+        // failure: the frame must neither block the page nor silence
+        // the detectors (docs/02 §2.7 fail-open).
+        $wpdb->results = static function ( string $sql ): array {
+            throw new \RuntimeException( 'rules store down' );
+        };
+
+        $ran = false;
+        $this->register_checks(
+            array(
+                static function ( array $context ) use ( &$ran ): array {
+                    $ran = true;
+                    return array();
+                },
+            )
+        );
+
+        ( new Gr_Request_Inspector() )->run();
+
+        $this->assertTrue( $ran );
+        $this->assertSame( array(), $GLOBALS['gr_stub_wp_die'] );
+
+        $reported = null;
+        foreach ( $GLOBALS['gr_stub_fired_action_args'] as $record ) {
+            if ( Gr_Request_Inspector::ERROR_HOOK === $record['hook'] ) {
+                $reported = $record['args'];
+            }
+        }
+        $this->assertNotNull( $reported );
+        $this->assertSame( 'front_door', $reported[0] );
         $this->assertInstanceOf( \Throwable::class, $reported[1] );
     }
 }

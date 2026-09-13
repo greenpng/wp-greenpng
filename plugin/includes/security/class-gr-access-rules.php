@@ -79,6 +79,24 @@ final class Gr_Access_Rules {
     }
 
     /**
+     * Whether an address falls under a static ban rule — the owner's
+     * hand-written list only, no heuristic and no transient lock
+     * inside (ADR-0009 D3). The front door enforces this arm
+     * unconditionally while transient locks stay gated to the block
+     * mode, so the two must never share one predicate.
+     *
+     * @param string $ip Candidate address.
+     * @return bool
+     */
+    public static function is_static_banned( string $ip ): bool {
+        if ( self::matches_ip_rule( self::TYPE_ALLOW, $ip ) ) {
+            return false;
+        }
+
+        return self::matches_ip_rule( self::TYPE_BAN, $ip );
+    }
+
+    /**
      * Whether a URI is exempted by a URL allow rule. Values without a
      * wildcard match one whole path segment onward ('/checkout' covers
      * '/checkout' and '/checkout/thanks', never '/checkoutzone');
