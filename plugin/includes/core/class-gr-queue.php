@@ -160,8 +160,39 @@ final class Gr_Queue {
         wp_clear_scheduled_hook( self::EVENT_HOOK );
         delete_transient( 'gr_queue_lock_daily' );
 
+        // Pending single work events run under caller-owned gr_ hooks
+        // (crawler verification, queued sends), so the namespace needs
+        // a sweep beyond the queue's own two hooks.
+        self::clear_plugin_cron();
+
         if ( function_exists( 'as_unschedule_all_actions' ) ) {
             as_unschedule_all_actions( '', array(), self::AS_GROUP );
+        }
+    }
+
+    /**
+     * Clears every pending wp-cron event whose hook lives in the
+     * plugin's gr_ namespace. The prefix family is the plugin's
+     * reserved namespace (docs/04), so no foreign work is ever
+     * touched.
+     *
+     * @return void
+     */
+    public static function clear_plugin_cron(): void {
+        // Core yields false when the cron record is filtered away, and
+        // array keys are int|string by PHP law, so both guards carry
+        // real weight.
+        $cron = _get_cron_array();
+        if ( ! is_array( $cron ) ) {
+            return;
+        }
+
+        foreach ( $cron as $events ) {
+            foreach ( array_keys( $events ) as $hook ) {
+                if ( is_string( $hook ) && 0 === strpos( $hook, 'gr_' ) ) {
+                    wp_clear_scheduled_hook( $hook );
+                }
+            }
         }
     }
 }

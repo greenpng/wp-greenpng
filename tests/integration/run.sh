@@ -128,20 +128,26 @@ check_ge "still 15 tables after reactivation" 15 "$(table_count)"
 
 say "ARM 6: uninstall, keep-data mode (T2/T6 deferred arm)"
 cli wp plugin deactivate greenpng >/dev/null
-cli wp plugin delete greenpng >/dev/null 2>&1
-check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"
+# wp-cli's plugin delete removes files but never runs the core
+# uninstall machinery; the real path is uninstall_plugin(), which is
+# what delete_plugins() uses to load and run uninstall.php.
+cli wp eval 'require_once ABSPATH . "wp-admin/includes/plugin.php"; uninstall_plugin( "greenpng/greenpng.php" );' >/dev/null
 check_ge "tables survive keep-mode uninstall" 15 "$(table_count)"
 check_ge "options survive keep-mode uninstall" 2 "$(gr_options)"
+cli wp plugin delete greenpng >/dev/null 2>&1
+check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"
 
 say "ARM 7: uninstall, delete-data mode (T2/T6 deferred arm)"
 restore_plugin
 cli wp plugin activate greenpng >/dev/null
 cli wp option update gr_delete_data_on_uninstall '1' >/dev/null
 cli wp plugin deactivate greenpng >/dev/null
-cli wp plugin delete greenpng >/dev/null 2>&1
+cli wp eval 'require_once ABSPATH . "wp-admin/includes/plugin.php"; uninstall_plugin( "greenpng/greenpng.php" );' >/dev/null
 check "all tables dropped by delete-mode uninstall" 0 "$(table_count)"
 check "all gr_ options removed" 0 "$(gr_options)"
 check "no scheduled work lingers" 0 "$(cron_gr)"
+cli wp plugin delete greenpng >/dev/null 2>&1
+check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"
 restore_plugin
 
 say "SUMMARY"

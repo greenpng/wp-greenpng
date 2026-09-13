@@ -45,6 +45,11 @@ final class Gr_Uninstall {
 
         self::drop_all_tables();
         self::purge_options();
+
+        // A delete-mode uninstall promises a clean slate for a later
+        // re-install, which includes pending wp-cron work: the queue's
+        // sweep covers every gr_-namespaced hook (docs/04).
+        \GreenPNG\Core\Gr_Queue::clear_plugin_cron();
     }
 
     /**

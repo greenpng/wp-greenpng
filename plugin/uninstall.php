@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 require_once __DIR__ . '/includes/storage/class-gr-schema.php';
+require_once __DIR__ . '/includes/core/class-gr-queue.php';
 require_once __DIR__ . '/includes/storage/class-gr-uninstall.php';
 
 GreenPNG\Storage\Gr_Uninstall::run();

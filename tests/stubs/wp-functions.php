@@ -1202,6 +1202,33 @@ if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
     }
 }
 
+if ( ! function_exists( '_get_cron_array' ) ) {
+    /**
+     * Core's raw cron record, nested timestamp => hook => signature,
+     * derived from the flat stub list so both views of the same state
+     * stay consistent. The return mirrors core's own contract
+     * (array[]|false) with the array-key law applied to the hook
+     * level: buckets are arrays because core builds them that way,
+     * but keys are int|string by PHP law, not by choice.
+     *
+     * @return array<int, array<int|string, array<int|string, array<string, mixed>>>>|false
+     */
+    function _get_cron_array() {
+        $out = array();
+        foreach ( $GLOBALS['gr_stub_cron'] as $event ) {
+            $sig    = md5( serialize( $event['args'] ) );
+            $bucket = (int) $event['timestamp'];
+            $name   = (string) $event['hook'];
+            $out[ $bucket ][ $name ][ $sig ] = array(
+                'args'     => $event['args'],
+                'schedule' => $event['recurrence'],
+            );
+        }
+
+        return $out;
+    }
+}
+
 if ( ! defined( 'DNS_A' ) ) {
     // Real PHP constant value; the resolver engine references these
     // global-scope names, so the stub environment must provide them.

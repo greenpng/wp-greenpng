@@ -116,11 +116,19 @@ final class QueueTest extends TestCase {
     public function testTeardownClearsSchedulesMutexAndPendingEvents(): void {
         Gr_Queue::ensure_daily();
         wp_schedule_single_event( time(), Gr_Queue::DAILY_HOOK );
+        // Pending work events run under caller-owned gr_ hooks; the
+        // sweep must take those too, while never touching foreign ones.
+        wp_schedule_single_event( time() + 60, 'gr_crawler_verify_job', array( '203.0.113.9', 'curl/8' ) );
+        wp_schedule_single_event( time() + 120, 'wp_scheduled_delete' );
         set_transient( 'gr_queue_lock_daily', time(), Gr_Queue::LOCK_TTL );
 
         Gr_Queue::teardown();
 
-        self::assertSame( array(), $GLOBALS['gr_stub_cron'] );
+        self::assertSame(
+            array( 'wp_scheduled_delete' ),
+            array_column( $GLOBALS['gr_stub_cron'], 'hook' ),
+            'Only foreign cron work may survive deactivation.'
+        );
         self::assertArrayNotHasKey( 'gr_queue_lock_daily', $GLOBALS['gr_stub_transients'] );
     }
 }
