@@ -209,6 +209,18 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         }
 
         /**
+         * LIKE-escape stand-in, mirroring core: backslashes before the
+         * wildcard and escape characters so user input never becomes
+         * pattern syntax.
+         *
+         * @param string $text Raw text.
+         * @return string Escaped text.
+         */
+        public function esc_like( $text ) {
+            return addcslashes( (string) $text, '%_\\' );
+        }
+
+        /**
          * Server version stand-in, mirroring core's method shape.
          *
          * @return string

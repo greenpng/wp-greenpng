@@ -264,7 +264,8 @@ if ( ! class_exists( 'WP_Error' ) ) {
 
 if ( ! class_exists( 'WP_REST_Response' ) ) {
     /**
-     * Response stand-in exposing only the payload.
+     * Response stand-in exposing the payload and the recorded
+     * headers; the export tests assert the download contract.
      */
     final class WP_REST_Response {
 
@@ -276,14 +277,24 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
         private $data;
 
         /**
+         * Recorded headers, set-name keys.
+         *
+         * @var array<string, string>
+         */
+        private $headers = array();
+
+        /**
          * Constructor.
          *
-         * @param mixed $data    Payload.
-         * @param int   $status  HTTP status (ignored).
-         * @param array $headers Headers (ignored).
+         * @param mixed                $data    Payload.
+         * @param int                  $status  HTTP status (ignored).
+         * @param array<string, mixed> $headers Initial headers.
          */
         public function __construct( $data = null, $status = 200, $headers = array() ) {
             $this->data = $data;
+            foreach ( $headers as $key => $value ) {
+                $this->headers[ (string) $key ] = (string) $value;
+            }
         }
 
         /**
@@ -293,6 +304,26 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
          */
         public function get_data() {
             return $this->data;
+        }
+
+        /**
+         * Records one header like core's send-time setter.
+         *
+         * @param string $key   Header name.
+         * @param string $value Header value.
+         * @return void
+         */
+        public function header( $key, $value ) {
+            $this->headers[ (string) $key ] = (string) $value;
+        }
+
+        /**
+         * Recorded headers accessor.
+         *
+         * @return array<string, string>
+         */
+        public function get_headers() {
+            return $this->headers;
         }
     }
 }

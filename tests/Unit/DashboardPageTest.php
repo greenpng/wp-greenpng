@@ -40,6 +40,13 @@ final class DashboardPageTest extends TestCase {
                 );
             }
 
+            if ( false !== strpos( $sql, 'gr_sessions' ) ) {
+                return array(
+                    array( 'device_type' => 'desktop', 'sessions' => '6', 'bots' => '1' ),
+                    array( 'device_type' => 'mobile', 'sessions' => '4', 'bots' => '0' ),
+                );
+            }
+
             return array(
                 array( 'stat_date' => '2026-09-10', 'metric_type' => 'sessions', 'metric_value' => '7.0000' ),
                 array( 'stat_date' => '2026-09-10', 'metric_type' => 'visitors', 'metric_value' => '3.0000' ),
@@ -101,6 +108,13 @@ final class DashboardPageTest extends TestCase {
         }
         $this->assertStringContainsString( 'window.GreenPNGDashboard=', $inline );
         $this->assertStringContainsString( '"nonce":"gr-stub-nonce-', $inline );
+
+        // The panels config rides the same inline script, merged
+        // beside the chart config without key collisions; the URL
+        // rides in json_encode form, so compare against the same
+        // encoding instead of a hand-written literal.
+        $this->assertStringContainsString( (string) wp_json_encode( 'https://stub.example/wp-json/greenpng/v1/panels' ), $inline );
+        $this->assertStringContainsString( '"panelPollMs":30000', $inline );
     }
 
     public function testRenderCarriesEverySurfaceWithRealNumbers(): void {
@@ -130,6 +144,31 @@ final class DashboardPageTest extends TestCase {
 
         // The dense frame: every window day renders its own table row.
         $this->assertSame( 14, substr_count( $html, '<th scope="row">' ) );
+    }
+
+    public function testRenderCarriesTheLivePanelsWithServerValues(): void {
+        $GLOBALS['wpdb']->var_result = '2';
+        $html = $this->render_page();
+
+        // Every panel value renders server-side first, so the page is
+        // complete with JavaScript off; the mounts exist for refresh.
+        $this->assertStringContainsString( 'id="gr-panel-online"', $html );
+        $this->assertStringContainsString( 'id="gr-panel-sessions-today"', $html );
+        $this->assertStringContainsString( 'id="gr-panel-bots-today"', $html );
+        $this->assertStringContainsString( 'id="gr-panel-devices"', $html );
+        $this->assertStringContainsString( 'Sessions today (live)', $html );
+
+        // Online from the indexed count, the split from the canned
+        // aggregate: 6+4 sessions, 1 suspected bot.
+        $this->assertStringContainsString( '<span class="gr-kpi-value" id="gr-panel-online">2</span>', $html );
+        $this->assertStringContainsString( '<span class="gr-kpi-value" id="gr-panel-sessions-today">10</span>', $html );
+        $this->assertStringContainsString( '<span class="gr-kpi-value" id="gr-panel-bots-today">1</span>', $html );
+
+        // Device codes render through the shared label vocabulary.
+        $this->assertStringContainsString( '<td>Desktop</td>', $html );
+        $this->assertStringContainsString( '<td>Mobile</td>', $html );
+        $this->assertStringContainsString( '<td>6</td>', $html );
+        $this->assertStringContainsString( '<td>4</td>', $html );
     }
 
     public function testRenderHandlesEmptyData(): void {

@@ -1,11 +1,13 @@
 <?php
 /**
  * Dashboard page (docs/13 U3, docs/06 §1/§2.3): KPI strip, trend
- * chart, and country distribution — every number read from
- * gr_daily_stats, never from a raw table. The trend chart is a
- * progressive enhancement: the server also renders a
- * screen-reader-text table with the same data, so the page is
- * complete with JavaScript off.
+ * chart, and country distribution — every KPI and trend number read
+ * from gr_daily_stats, never from a raw table. The live panels are
+ * the deliberate exception (docs/12 G5, docs/05 §3.2): online-now
+ * and today's device split are live metrics that cannot come from a
+ * daily rollup, so they read gr_sessions per render over their
+ * bounded indexes and cache nothing. The panels render complete
+ * server-side; the script only refreshes them.
  *
  * @package GreenPNG
  */
@@ -18,7 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Rest\Gr_Panels_Controller;
 use GreenPNG\Storage\Gr_Daily_Stats_Repository;
+use GreenPNG\Storage\Gr_Session_Repository;
 
 /**
  * Renders the dashboard; no capability logic here — the menu slug's
@@ -34,6 +38,12 @@ final class Gr_Dashboard_Page {
 
     /** Chart mount id; the dashboard script binds to it. */
     public const TREND_MOUNT = 'gr-dashboard-trend';
+
+    /** Live panel value mounts; the script refreshes their text. */
+    public const ONLINE_MOUNT   = 'gr-panel-online';
+    public const SESSIONS_MOUNT = 'gr-panel-sessions-today';
+    public const BOTS_MOUNT     = 'gr-panel-bots-today';
+    public const DEVICES_MOUNT  = 'gr-panel-devices';
 
     /**
      * Page output.
@@ -55,6 +65,11 @@ final class Gr_Dashboard_Page {
             array( __( 'Conversions today', 'greenpng' ), self::num( $today['conversions'] ?? 0 ) ),
             array( __( 'Revenue today', 'greenpng' ), self::num( $today['revenue'] ?? 0, 2 ) ),
         );
+
+        $sessions_repo = new Gr_Session_Repository();
+        $online        = $sessions_repo->count_online( Gr_Panels_Controller::ONLINE_WINDOW );
+        $split         = $sessions_repo->today_device_split();
+        $device_labels = Gr_Panels_Controller::device_labels();
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__( 'Dashboard', 'greenpng' ); ?></h1>
@@ -67,6 +82,46 @@ final class Gr_Dashboard_Page {
                         <div class="inside"><span class="gr-kpi-value"><?php echo esc_html( $kpi[1] ); ?></span></div>
                     </div>
                     <?php endforeach; ?>
+            </div>
+
+            <div class="gr-kpi-grid">
+                <div class="postbox">
+                    <h2 class="hndle"><?php echo esc_html__( 'Online now', 'greenpng' ); ?></h2>
+                    <div class="inside"><span class="gr-kpi-value" id="<?php echo esc_attr( self::ONLINE_MOUNT ); ?>"><?php echo esc_html( self::num( $online ) ); ?></span></div>
+                </div>
+                <div class="postbox">
+                    <h2 class="hndle"><?php echo esc_html__( 'Sessions today (live)', 'greenpng' ); ?></h2>
+                    <div class="inside"><span class="gr-kpi-value" id="<?php echo esc_attr( self::SESSIONS_MOUNT ); ?>"><?php echo esc_html( self::num( $split['sessions'] ) ); ?></span></div>
+                </div>
+                <div class="postbox">
+                    <h2 class="hndle"><?php echo esc_html__( 'Suspected bots today', 'greenpng' ); ?></h2>
+                    <div class="inside"><span class="gr-kpi-value" id="<?php echo esc_attr( self::BOTS_MOUNT ); ?>"><?php echo esc_html( self::num( $split['bots'] ) ); ?></span></div>
+                </div>
+                <div class="postbox">
+                    <h2 class="hndle"><?php echo esc_html__( 'Devices today', 'greenpng' ); ?></h2>
+                    <div class="inside">
+                        <table class="widefat striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col"><?php echo esc_html__( 'Device', 'greenpng' ); ?></th>
+                                    <th scope="col"><?php echo esc_html__( 'Sessions', 'greenpng' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody id="<?php echo esc_attr( self::DEVICES_MOUNT ); ?>">
+                                <?php if ( array() === $split['devices'] ) : ?>
+                                    <tr><td colspan="2"><?php echo esc_html__( 'No sessions recorded yet today.', 'greenpng' ); ?></td></tr>
+                                <?php else : ?>
+                                    <?php foreach ( $split['devices'] as $device ) : ?>
+                                        <tr>
+                                            <td><?php echo esc_html( self::device_label( (string) $device['key'], $device_labels ) ); ?></td>
+                                            <td><?php echo esc_html( self::num( $device['value'] ) ); ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <h2><?php echo esc_html__( 'Sessions and page views, last 14 days', 'greenpng' ); ?></h2>
@@ -147,5 +202,18 @@ final class Gr_Dashboard_Page {
         }
 
         return $code;
+    }
+
+    /**
+     * Device code display through the panels controller's shared
+     * vocabulary; unknown codes render as themselves, never as a
+     * wrong label.
+     *
+     * @param string                $code   Device code.
+     * @param array<string, string> $labels Shared vocabulary.
+     * @return string
+     */
+    private static function device_label( string $code, array $labels ): string {
+        return $labels[ $code ] ?? $code;
     }
 }

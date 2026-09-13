@@ -164,4 +164,146 @@ final class SessionRepositoryTest extends TestCase {
         self::assertStringContainsString( 'UPDATE wp_gr_sessions SET is_bot = 1', $sql );
         self::assertStringNotContainsString( 'bot_score', $sql );
     }
+
+    public function testPagedReadsNewestActivityFirstWithBothTotals(): void {
+        global $wpdb;
+        $wpdb->var_result = '12';
+        $wpdb->results    = array(
+            array( 'visitor_id' => 'abcdef1234', 'started_at' => '2026-09-10 09:00:00' ),
+        );
+
+        $result = ( new Gr_Session_Repository() )->paged( array(), 20, 0 );
+
+        self::assertSame( 12, $result['total'] );
+        self::assertCount( 1, $result['rows'] );
+
+        // The count runs unprepared when no filter joined it, and the
+        // page read orders by newest activity.
+        $count_sql = (string) $wpdb->queries[0];
+        $page_sql  = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'SELECT COUNT(*) FROM wp_gr_sessions', $count_sql );
+        self::assertStringNotContainsString( 'WHERE', $count_sql );
+        self::assertStringContainsString( 'ORDER BY last_active DESC, session_id DESC', $page_sql );
+        self::assertStringContainsString( 'LIMIT 20 OFFSET 0', $page_sql );
+
+        // The read never selects identification columns the surface
+        // refuses to show: no IP column exists on the table, and the
+        // user-agent family stays out of the list vocabulary.
+        self::assertStringNotContainsString( 'ua_family', $page_sql );
+    }
+
+    public function testPagedBuildsTheDateRangeAndPreparesBothBounds(): void {
+        global $wpdb;
+        $wpdb->var_result = '5';
+        $wpdb->results    = array();
+
+        ( new Gr_Session_Repository() )->paged(
+            array(
+                'from' => '2026-09-01',
+                'to'   => '2026-09-30',
+                'zzz'  => 'unknown keys never join the WHERE',
+            ),
+            20,
+            0
+        );
+
+        $count_sql = (string) $wpdb->queries[0];
+        self::assertStringContainsString( "started_at >= '2026-09-01 00:00:00'", $count_sql );
+        self::assertStringContainsString( "started_at <= '2026-09-30 23:59:59'", $count_sql );
+        self::assertStringNotContainsString( 'unknown keys', $count_sql );
+    }
+
+    public function testPagedDropsMalformedDatesAndBuildsTheFourWaySearch(): void {
+        global $wpdb;
+        $wpdb->var_result = '2';
+        $wpdb->results    = array();
+
+        ( new Gr_Session_Repository() )->paged(
+            array(
+                'from' => 'not-a-date',
+                's'    => 'spring sale',
+            ),
+            20,
+            0
+        );
+
+        $count_sql = (string) $wpdb->queries[0];
+        // Malformed dates never join; the search spans the four
+        // searchable columns with the same wrapped value.
+        self::assertStringNotContainsString( 'not-a-date', $count_sql );
+        self::assertSame( 4, substr_count( $count_sql, "'%spring sale%'" ) );
+        self::assertStringContainsString( 'visitor_id LIKE', $count_sql );
+        self::assertStringContainsString( 'session_id LIKE', $count_sql );
+        self::assertStringContainsString( 'landing_path LIKE', $count_sql );
+        self::assertStringContainsString( 'utm_campaign LIKE', $count_sql );
+    }
+
+    public function testPagedSearchEscapesLikeWildcards(): void {
+        global $wpdb;
+        $wpdb->var_result = '1';
+        $wpdb->results    = array();
+
+        ( new Gr_Session_Repository() )->paged( array( 's' => '40% off' ), 20, 0 );
+
+        $count_sql = (string) $wpdb->queries[0];
+
+        // The user's percent never becomes pattern syntax: esc_like
+        // backs it with a backslash before prepare() runs.
+        self::assertStringContainsString( '40', $count_sql );
+        self::assertStringContainsString( '\%', $count_sql );
+        self::assertSame( 4, substr_count( $count_sql, 'LIKE ' ) );
+    }
+
+    public function testPagedClampsItsPaginationArguments(): void {
+        global $wpdb;
+        $wpdb->var_result = '0';
+        $wpdb->results    = array();
+
+        ( new Gr_Session_Repository() )->paged( array(), 0, -5 );
+
+        $page_sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'LIMIT 1 OFFSET 0', $page_sql );
+
+        $wpdb->queries = array();
+        ( new Gr_Session_Repository() )->paged( array(), 999999, 0 );
+        $page_sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'LIMIT 5000', $page_sql );
+    }
+
+    public function testTodayDeviceSplitAggregatesInOneBoundedRead(): void {
+        global $wpdb;
+        $wpdb->results = array(
+            array( 'device_type' => 'mobile', 'sessions' => '7', 'bots' => '2' ),
+            array( 'device_type' => 'desktop', 'sessions' => '5', 'bots' => '0' ),
+        );
+
+        $split = ( new Gr_Session_Repository() )->today_device_split();
+
+        self::assertSame(
+            array(
+                array( 'key' => 'mobile', 'value' => 7 ),
+                array( 'key' => 'desktop', 'value' => 5 ),
+            ),
+            $split['devices']
+        );
+        self::assertSame( 12, $split['sessions'] );
+        self::assertSame( 2, $split['bots'] );
+
+        $sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'GROUP BY device_type', $sql );
+        // Today's boundary rides the started index, matching the
+        // panels endpoint's bounded-read contract.
+        self::assertStringContainsString( "WHERE started_at >= '2026-09-10 00:00:00'", $sql );
+    }
+
+    public function testTodayDeviceSplitDegradesToZeroOnAFailedRead(): void {
+        global $wpdb;
+        $wpdb->results = 'not-an-array';
+
+        $split = ( new Gr_Session_Repository() )->today_device_split();
+
+        self::assertSame( array(), $split['devices'] );
+        self::assertSame( 0, $split['sessions'] );
+        self::assertSame( 0, $split['bots'] );
+    }
 }

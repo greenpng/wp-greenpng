@@ -514,19 +514,69 @@ if ( ! function_exists( 'current_time' ) ) {
      * Clock stand-in, overridable via $GLOBALS['gr_stub_now'] (string)
      * and $GLOBALS['gr_stub_ts'] (epoch) so tests can cross day
      * boundaries deterministically; the two defaults describe the
-     * same moment.
+     * same moment. Like core, the type decides the shape:
+     * 'timestamp' is epoch, 'mysql' the naive site-time string,
+     * anything else a date() format string on the same moment.
      *
-     * @param string $type Time format type ('mysql' or 'timestamp').
+     * @param string $type Time format type.
      * @return string|int
      */
     function current_time( $type ) {
+        $ts = isset( $GLOBALS['gr_stub_ts'] )
+            ? (int) $GLOBALS['gr_stub_ts']
+            : (int) strtotime( ( $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00' ) . ' UTC' );
+
         if ( 'timestamp' === $type ) {
-            return isset( $GLOBALS['gr_stub_ts'] )
-                ? (int) $GLOBALS['gr_stub_ts']
-                : (int) strtotime( '2026-09-10 00:00:00 UTC' );
+            return $ts;
         }
 
-        return $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00';
+        if ( 'mysql' === $type ) {
+            return $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00';
+        }
+
+        return gmdate( (string) $type, $ts );
+    }
+}
+
+if ( ! function_exists( 'human_time_diff' ) ) {
+    /**
+     * Human-readable difference stand-in, mirroring core's interval
+     * vocabulary over the stub clock.
+     *
+     * @param int $from Earlier timestamp.
+     * @param int $to   Later timestamp.
+     * @return string
+     */
+    function human_time_diff( $from, $to ) {
+        $diff = abs( (int) $to - (int) $from );
+
+        if ( $diff < 60 * 60 ) {
+            // translators: %s: minute count.
+            return sprintf( '%s mins', (string) (int) round( $diff / 60 ) );
+        }
+
+        if ( $diff < 24 * 60 * 60 ) {
+            // translators: %s: hour count.
+            return sprintf( '%s hours', (string) (int) round( $diff / ( 60 * 60 ) ) );
+        }
+
+        if ( $diff < 7 * 24 * 60 * 60 ) {
+            // translators: %s: day count.
+            return sprintf( '%s days', (string) (int) round( $diff / ( 24 * 60 * 60 ) ) );
+        }
+
+        if ( $diff < 30 * 24 * 60 * 60 ) {
+            // translators: %s: week count.
+            return sprintf( '%s weeks', (string) (int) round( $diff / ( 7 * 24 * 60 * 60 ) ) );
+        }
+
+        if ( $diff < 365 * 24 * 60 * 60 ) {
+            // translators: %s: month count.
+            return sprintf( '%s months', (string) (int) round( $diff / ( 30 * 24 * 60 * 60 ) ) );
+        }
+
+        // translators: %s: year count.
+        return sprintf( '%s years', (string) (int) round( $diff / ( 365 * 24 * 60 * 60 ) ) );
     }
 }
 

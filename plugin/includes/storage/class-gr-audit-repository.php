@@ -26,8 +26,8 @@ use GreenPNG\Core\Gr_Database;
  */
 final class Gr_Audit_Repository {
 
-    /** Row cap clamp for reads. */
-    private const LIMIT_CEILING = 200;
+    /** Row cap clamp for reads; the CSV export rides the same clamp. */
+    private const LIMIT_CEILING = 5000;
 
     /**
      * Writes one audit row: the diff of the two snapshots is computed
@@ -72,9 +72,11 @@ final class Gr_Audit_Repository {
      * the filter matches — pagination math needs both.
      *
      * @param array<string, mixed> $filters Whitelisted keys: user_id,
-     *        object_type, object_id, action. Absent or empty filters
-     *        stay out of the WHERE.
-     * @param int                  $limit   Page size, clamped 1..200.
+     *        object_type, object_id, action, from, to (Y-m-d, invalid
+     *        formats are ignored), s (free search over action,
+     *        object_type, object_id). Absent or empty filters stay
+     *        out of the WHERE.
+     * @param int                  $limit   Page size, clamped 1..5000.
      * @param int                  $offset  Row offset, at least 0.
      * @return array{rows: array<int, array<string, string>>, total: int}
      */
@@ -96,6 +98,22 @@ final class Gr_Audit_Repository {
                 $clauses[] = $key . ' = %s';
                 $values[]  = substr( (string) $filters[ $key ], 0, 64 );
             }
+        }
+        $from = (string) ( $filters['from'] ?? '' );
+        if ( 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $from ) ) {
+            $clauses[] = 'created_at >= %s';
+            $values[]  = $from . ' 00:00:00';
+        }
+        $to = (string) ( $filters['to'] ?? '' );
+        if ( 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $to ) ) {
+            $clauses[] = 'created_at <= %s';
+            $values[]  = $to . ' 23:59:59';
+        }
+        $search = trim( (string) ( $filters['s'] ?? '' ) );
+        if ( '' !== $search ) {
+            $clauses[] = '(action LIKE %s OR object_type LIKE %s OR object_id LIKE %s)';
+            $like      = '%' . $wpdb->esc_like( substr( $search, 0, 64 ) ) . '%';
+            $values    = array_merge( $values, array( $like, $like, $like ) );
         }
 
         $where = array() === $clauses ? '' : 'WHERE ' . implode( ' AND ', $clauses );

@@ -57,3 +57,104 @@
 		// The server-rendered table stays the accessible data source.
 	} );
 }() );
+
+/**
+ * Live panels: polls the panels endpoint and refreshes the
+ * online/sessions/bots values and the device table. The server
+ * rendered complete values first, so any failure — network,
+ * permissions, no fetch — just leaves the page as it was. Labels
+ * come from the server config; unknown device codes render as
+ * themselves.
+ */
+( function () {
+	'use strict';
+
+	var cfg = window.GreenPNGDashboard;
+
+	if ( ! cfg || ! cfg.panelsEndpoint || typeof fetch === 'undefined' ) {
+		return;
+	}
+
+	var labels = cfg.panelsLabels || {};
+	var mounts = {
+		online: document.getElementById( 'gr-panel-online' ),
+		sessions: document.getElementById( 'gr-panel-sessions-today' ),
+		bots: document.getElementById( 'gr-panel-bots-today' ),
+		devices: document.getElementById( 'gr-panel-devices' )
+	};
+
+	function deviceName( key ) {
+		var known = labels.devices || {};
+		return known[ key ] || key;
+	}
+
+	function renderDevices( devices ) {
+		var body = mounts.devices;
+
+		if ( ! body ) {
+			return;
+		}
+
+		while ( body.firstChild ) {
+			body.removeChild( body.firstChild );
+		}
+
+		if ( 0 === devices.length ) {
+			body.appendChild( emptyRow() );
+			return;
+		}
+
+		devices.forEach( function ( device ) {
+			var row   = document.createElement( 'tr' );
+			var name  = document.createElement( 'td' );
+			var count = document.createElement( 'td' );
+
+			name.textContent = deviceName( device.key );
+			count.textContent = String( device.value );
+			row.appendChild( name );
+			row.appendChild( count );
+			body.appendChild( row );
+		} );
+	}
+
+	function emptyRow() {
+		var row = document.createElement( 'tr' );
+		var cell = document.createElement( 'td' );
+
+		cell.colSpan = 2;
+		cell.textContent = labels.noneToday || '';
+		row.appendChild( cell );
+
+		return row;
+	}
+
+	function refresh() {
+		fetch( cfg.panelsEndpoint, {
+			headers: { 'X-WP-Nonce': cfg.nonce },
+			credentials: 'same-origin'
+		} ).then( function ( response ) {
+			if ( ! response.ok ) {
+				throw new Error( 'panels endpoint ' + response.status );
+			}
+			return response.json();
+		} ).then( function ( data ) {
+			if ( mounts.online ) {
+				mounts.online.textContent = String( data.online );
+			}
+			if ( mounts.sessions ) {
+				mounts.sessions.textContent = String( data.sessionsToday );
+			}
+			if ( mounts.bots ) {
+				mounts.bots.textContent = String( data.botsToday );
+			}
+			if ( Array.isArray( data.devices ) ) {
+				renderDevices( data.devices );
+			}
+		} ).catch( function () {
+			// Server-rendered values stay until the next poll.
+		} );
+	}
+
+	refresh();
+	window.setInterval( refresh, cfg.panelPollMs || 30000 );
+}() );

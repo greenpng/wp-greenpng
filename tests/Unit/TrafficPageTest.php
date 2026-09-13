@@ -1,10 +1,12 @@
 <?php
 /**
- * Traffic & Security page (docs/13 U5): the three-tab surface over
- * native components — tab bar, live stream with its server-rendered
- * degradation table, threat events with display-masked addresses
- * (the full form never reaches the markup), and the fraud audit
- * reading conclusion payloads exactly as the channel wrote them.
+ * Traffic & Security page (docs/13 U5, docs/12 G4): the four-tab
+ * surface over native components — tab bar, live stream with its
+ * server-rendered degradation table, threat events with
+ * display-masked addresses (the full form never reaches the markup),
+ * the fraud audit reading conclusion payloads exactly as the channel
+ * wrote them, and the visitor session list (operational vocabulary
+ * only, never an IP or user agent).
  *
  * @package GreenPNG\Tests
  */
@@ -112,12 +114,12 @@ final class TrafficPageTest extends TestCase {
         $this->assertSame( array( Gr_Traffic_Page::class, 'render' ), $sub['callback'] );
     }
 
-    public function testTabBarCarriesAllThreeTabsWithNativeClasses(): void {
+    public function testTabBarCarriesAllFourTabsWithNativeClasses(): void {
         $html = $this->render();
 
         $this->assertStringContainsString( 'nav-tab-wrapper', $html );
         $this->assertStringContainsString( 'nav-tab-active', $html );
-        $this->assertSame( 3, substr_count( $html, '<a class="nav-tab' ) );
+        $this->assertSame( 4, substr_count( $html, '<a class="nav-tab' ) );
 
         // Default tab is the live stream, with its grid mount and the
         // server-rendered degradation table inside.
@@ -125,6 +127,69 @@ final class TrafficPageTest extends TestCase {
         $this->assertStringContainsString( 'widefat striped', $html );
         $this->assertStringContainsString( '<td>pageview</td>', $html );
         $this->assertStringContainsString( '<td>abcdef12…</td>', $html );
+    }
+
+    /**
+     * Renders the sessions tab with one canned session row.
+     *
+     * @return string
+     */
+    private function render_sessions(): string {
+        $_GET['tab'] = 'sessions';
+
+        $GLOBALS['wpdb']->var_result = '1';
+        $GLOBALS['wpdb']->results    = static function ( string $sql ): array {
+            if ( false !== strpos( $sql, 'gr_sessions' ) ) {
+                return array(
+                    array(
+                        'visitor_id'   => 'abcdef1234567890abcdef1234567890',
+                        'session_id'   => 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+                        'channel'      => 'cpc',
+                        'utm_campaign' => 'spring-sale',
+                        'landing_path' => '/offer/',
+                        'referrer_host'=> 'google.example',
+                        'device_type'  => 'mobile',
+                        'country_code' => 'US',
+                        'is_bot'       => '0',
+                        'pageviews'    => '4',
+                        'started_at'   => '2026-09-12 09:00:00',
+                        'last_active'  => '2026-09-12 10:00:00',
+                    ),
+                );
+            }
+
+            return array();
+        };
+
+        ob_start();
+        Gr_Traffic_Page::render();
+
+        return (string) ob_get_clean();
+    }
+
+    public function testSessionsTabRendersOperationalColumnsOnly(): void {
+        $html = $this->render_sessions();
+
+        $this->assertStringContainsString( 'id="gr-filter-from"', $html );
+        $this->assertStringContainsString( 'id="gr-filter-search"', $html );
+        $this->assertStringContainsString( 'Export CSV', $html );
+        $this->assertStringContainsString( '/wp-json/greenpng/v1/export/sessions', $html );
+
+        // Operational vocabulary renders; identification never does —
+        // no IP and no user-agent column on this surface (docs/12 G4).
+        $this->assertStringContainsString( '<td class="column-visitor_id"><span title="abcdef1234567890abcdef1234567890">abcdef12…</span></td>', $html );
+        $this->assertStringContainsString( '<td class="column-landing_path">/offer/</td>', $html );
+        $this->assertStringContainsString( '<td class="column-channel">cpc<div>spring-sale</div></td>', $html );
+        $this->assertStringContainsString( '<td class="column-device_type">mobile</td>', $html );
+        $this->assertStringContainsString( '<td class="column-pageviews">4</td>', $html );
+        $this->assertStringNotContainsString( '<th scope="col">IP', $html );
+        $this->assertStringNotContainsString( 'user_agent', $html );
+        $this->assertStringNotContainsString( 'ua_family', $html );
+
+        // The newest-activity order and the count query both ran.
+        $sql = implode( ' ', $GLOBALS['wpdb']->queries );
+        $this->assertStringContainsString( 'ORDER BY last_active DESC', $sql );
+        $this->assertStringContainsString( 'SELECT COUNT(*) FROM wp_gr_sessions', $sql );
     }
 
     public function testThreatTabMasksAddressesForDisplay(): void {

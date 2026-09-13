@@ -1,12 +1,14 @@
 <?php
 /**
- * Traffic & Security page (docs/13 U5, docs/06 §1): three tabs over
+ * Traffic & Security page (docs/13 U5, docs/06 §1): four tabs over
  * native components — the live stream (server-rendered table that
  * the datagrid enhances by polling), threat events (fold rows with
- * display-masked addresses, the storage form stays complete), and
- * the fraud audit (bot conclusions as they landed on the event
- * stream). Everything is read-only; every surface is owner-gated by
- * the menu capability.
+ * display-masked addresses, the storage form stays complete), the
+ * fraud audit (bot conclusions as they landed on the event
+ * stream), and the visitor session list (operational session rows
+ * with date range, search, and the CSV export, docs/12 G4/G6 — no
+ * IP, no user agent). Everything is read-only; every surface is
+ * owner-gated by the menu capability.
  *
  * @package GreenPNG
  */
@@ -21,6 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Storage\Gr_Event_Repository;
 use GreenPNG\Storage\Gr_Security_Log_Repository;
+use GreenPNG\Storage\Gr_Session_Repository;
 
 /**
  * Tabbed read surface for the security operations data.
@@ -33,10 +36,14 @@ final class Gr_Traffic_Page {
     /** Grid mount id on the live tab. */
     public const GRID_MOUNT = 'gr-live-grid';
 
+    /** Rows per page on the sessions tab. */
+    public const SESSIONS_PER_PAGE = 20;
+
     /** Tab keys in display order. */
-    public const TAB_LIVE   = 'live';
-    public const TAB_THREAT = 'threats';
-    public const TAB_FRAUD  = 'fraud';
+    public const TAB_LIVE     = 'live';
+    public const TAB_THREAT   = 'threats';
+    public const TAB_FRAUD    = 'fraud';
+    public const TAB_SESSIONS = 'sessions';
 
     /**
      * Page output: tab bar plus the active tab's content.
@@ -46,7 +53,7 @@ final class Gr_Traffic_Page {
     public static function render(): void {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab switch on an owner-gated screen; no state changes anywhere on this page.
         $tab = isset( $_GET['tab'] ) ? sanitize_key( (string) wp_unslash( $_GET['tab'] ) ) : self::TAB_LIVE;
-        if ( ! in_array( $tab, array( self::TAB_LIVE, self::TAB_THREAT, self::TAB_FRAUD ), true ) ) {
+        if ( ! in_array( $tab, array( self::TAB_LIVE, self::TAB_THREAT, self::TAB_FRAUD, self::TAB_SESSIONS ), true ) ) {
             $tab = self::TAB_LIVE;
         }
         ?>
@@ -57,9 +64,10 @@ final class Gr_Traffic_Page {
             <nav class="nav-tab-wrapper">
                 <?php
                 $tabs = array(
-                    self::TAB_LIVE   => __( 'Live stream', 'greenpng' ),
-                    self::TAB_THREAT => __( 'Threat events', 'greenpng' ),
-                    self::TAB_FRAUD  => __( 'Fraud audit', 'greenpng' ),
+                    self::TAB_LIVE     => __( 'Live stream', 'greenpng' ),
+                    self::TAB_THREAT   => __( 'Threat events', 'greenpng' ),
+                    self::TAB_FRAUD    => __( 'Fraud audit', 'greenpng' ),
+                    self::TAB_SESSIONS => __( 'Visitor sessions', 'greenpng' ),
                 );
                 foreach ( $tabs as $key => $label ) :
                     $class = ( $key === $tab ) ? ' nav-tab-active' : '';
@@ -75,6 +83,8 @@ final class Gr_Traffic_Page {
                 <?php self::render_live(); ?>
             <?php elseif ( self::TAB_THREAT === $tab ) : ?>
                 <?php self::render_threats(); ?>
+            <?php elseif ( self::TAB_SESSIONS === $tab ) : ?>
+                <?php self::render_sessions(); ?>
             <?php else : ?>
                 <?php self::render_fraud(); ?>
             <?php endif; ?>
@@ -160,6 +170,81 @@ final class Gr_Traffic_Page {
                 </tbody>
             </table>
             <p><?php echo esc_html__( 'Addresses are masked for display; the ban tooling works on the complete stored form.', 'greenpng' ); ?></p>
+        <?php endif; ?>
+        <?php
+    }
+
+    /**
+     * Visitor sessions tab (docs/12 G4): operational session rows —
+     * newest activity first, server-side pagination, date range and
+     * search through the shared filter vocabulary, and the CSV
+     * download honoring the same filters. The column set stays on
+     * behavior, never identification: no IP, no user agent.
+     *
+     * @return void
+     */
+    private static function render_sessions(): void {
+        $filters = Gr_List_Filters::parse();
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page number on an owner-gated screen.
+        $paged = isset( $_GET['paged'] ) ? absint( (int) wp_unslash( $_GET['paged'] ) ) : 1;
+        $paged = max( 1, $paged );
+
+        $result = ( new Gr_Session_Repository() )->paged(
+            $filters,
+            self::SESSIONS_PER_PAGE,
+            ( $paged - 1 ) * self::SESSIONS_PER_PAGE
+        );
+
+        $rows  = $result['rows'];
+        $total = (int) $result['total'];
+        $pages = max( 1, (int) ceil( $total / self::SESSIONS_PER_PAGE ) );
+        ?>
+        <h2><?php echo esc_html__( 'Visitor sessions, newest activity first', 'greenpng' ); ?></h2>
+
+        <form method="get">
+            <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
+            <input type="hidden" name="tab" value="<?php echo esc_attr( self::TAB_SESSIONS ); ?>" />
+            <p>
+                <?php Gr_List_Filters::controls( $filters ); ?>
+                <?php submit_button( __( 'Filter', 'greenpng' ), 'secondary', 'filter', false ); ?>
+                <a class="button" href="<?php echo esc_attr( Gr_List_Filters::export_url( 'sessions', $filters ) ); ?>">
+                    <?php echo esc_html__( 'Export CSV', 'greenpng' ); ?>
+                </a>
+            </p>
+        </form>
+
+        <?php
+        $table = new Gr_Sessions_Table(
+            array(
+                'singular' => 'session_row',
+                'plural'   => 'session_rows',
+                'ajax'     => false,
+            ),
+            $rows
+        );
+        $table->display();
+        ?>
+
+        <?php if ( $pages > 1 ) : ?>
+            <nav class="tablenav"><div class="tablenav-pages">
+                <?php
+                // translators: %d: number of pages.
+                echo esc_html( sprintf( __( '%d pages', 'greenpng' ), $pages ) );
+                ?>
+                <?php
+                $links = paginate_links(
+                    array(
+                        'base'    => add_query_arg( 'paged', '%#%' ),
+                        'format'  => '',
+                        'current' => $paged,
+                        'total'   => $pages,
+                    )
+                );
+                if ( is_string( $links ) && '' !== $links ) {
+                    echo $links; // phpcs:ignore WordPress.Security.EscapeOutput -- paginate_links() returns core-built anchor markup from our own arguments.
+                }
+                ?>
+            </div></nav>
         <?php endif; ?>
         <?php
     }

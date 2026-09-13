@@ -44,6 +44,8 @@ final class Gr_Audit_Log_Page {
         $user_id = isset( $_GET['user_id'] ) ? absint( (int) wp_unslash( $_GET['user_id'] ) ) : 0;
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter on an owner-gated screen.
         $action = isset( $_GET['action'] ) ? sanitize_key( (string) wp_unslash( $_GET['action'] ) ) : '';
+        // Shared date-range and search vocabulary (docs/12 G6).
+        $filters = Gr_List_Filters::parse();
 
         $paged  = max( 1, $paged );
         $result = ( new Gr_Audit_Repository() )->query(
@@ -51,6 +53,9 @@ final class Gr_Audit_Log_Page {
                 'object_type' => $object_type,
                 'user_id'     => $user_id,
                 'action'      => $action,
+                'from'        => $filters['from'],
+                'to'          => $filters['to'],
+                's'           => $filters['s'],
             ),
             self::PER_PAGE,
             ( $paged - 1 ) * self::PER_PAGE
@@ -72,6 +77,7 @@ final class Gr_Audit_Log_Page {
             <form method="get">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
                 <p>
+                    <?php Gr_List_Filters::controls( $filters ); ?>
                     <label for="gr-audit-type"><?php echo esc_html__( 'Object type', 'greenpng' ); ?></label>
                     <input type="text" name="object_type" id="gr-audit-type" class="regular-text" value="<?php echo esc_attr( $object_type ); ?>" />
                     <label for="gr-audit-user"><?php echo esc_html__( 'User id', 'greenpng' ); ?></label>
@@ -79,6 +85,25 @@ final class Gr_Audit_Log_Page {
                     <label for="gr-audit-action"><?php echo esc_html__( 'Action', 'greenpng' ); ?></label>
                     <input type="text" name="action" id="gr-audit-action" class="regular-text" value="<?php echo esc_attr( $action ); ?>" />
                     <?php submit_button( __( 'Filter', 'greenpng' ), 'secondary', 'filter', false ); ?>
+                    <a class="button" href="
+                    <?php
+                    echo esc_attr(
+                        Gr_List_Filters::export_url(
+                            'audit',
+                            array_merge(
+                                $filters,
+                                array(
+                                    'object_type' => $object_type,
+                                    'user_id'     => (string) $user_id,
+                                    'action'      => $action,
+                                )
+                            )
+                        )
+                    );
+                    ?>
+                                            ">
+                        <?php echo esc_html__( 'Export CSV', 'greenpng' ); ?>
+                    </a>
                 </p>
             </form>
 

@@ -31,6 +31,9 @@ final class Gr_Session_Repository {
     /** Upper clamp for the online window. */
     private const WINDOW_CEILING = 3600;
 
+    /** Ceiling for one paged/export read; the page layer stays far below it. */
+    private const PAGED_CEILING = 5000;
+
     /**
      * All session rows for one visitor, oldest first — the WP privacy
      * export read for the marketing rail. No window: an export that
@@ -230,6 +233,161 @@ final class Gr_Session_Repository {
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sql is the prepare() output above; live 5-minute metric over an indexed range (docs/05 §3.2).
         return (int) $wpdb->get_var( $sql );
+    }
+
+    /**
+     * Filtered, newest-activity-first page of session rows plus the
+     * total the filter matches — the visitor session list and its
+     * CSV export share one read shape. The WHERE is assembled from a
+     * fixed key whitelist only, and every value reaches prepare().
+     * No IP or user-agent column is selected: the list surface
+     * (docs/12 G4) never renders either.
+     *
+     * @param array<string, mixed> $filters Whitelisted keys: from, to
+     *        (Y-m-d, invalid formats are ignored), s (free search
+     *        over visitor_id / session_id / landing_path /
+     *        utm_campaign). Absent or empty filters stay out of the
+     *        WHERE.
+     * @param int                  $per_page Page size, clamped 1..5000.
+     * @param int                  $offset   Row offset, at least 0.
+     * @return array{rows: array<int, array<string, string>>, total: int}
+     */
+    public function paged( array $filters = array(), int $per_page = 20, int $offset = 0 ): array {
+        global $wpdb;
+
+        $per_page = max( 1, min( $per_page, self::PAGED_CEILING ) );
+        $offset   = max( 0, $offset );
+        $table    = Gr_Database::table( 'sessions' );
+
+        $clauses = array();
+        $values  = array();
+
+        $from = (string) ( $filters['from'] ?? '' );
+        if ( self::is_date( $from ) ) {
+            $clauses[] = 'started_at >= %s';
+            $values[]  = $from . ' 00:00:00';
+        }
+        $to = (string) ( $filters['to'] ?? '' );
+        if ( self::is_date( $to ) ) {
+            $clauses[] = 'started_at <= %s';
+            $values[]  = $to . ' 23:59:59';
+        }
+        $search = trim( (string) ( $filters['s'] ?? '' ) );
+        if ( '' !== $search ) {
+            $clauses[] = '(visitor_id LIKE %s OR session_id LIKE %s OR landing_path LIKE %s OR utm_campaign LIKE %s)';
+            $like      = '%' . $wpdb->esc_like( substr( $search, 0, 64 ) ) . '%';
+            $values    = array_merge( $values, array( $like, $like, $like, $like ) );
+        }
+
+        $where  = array() === $clauses ? '' : 'WHERE ' . implode( ' AND ', $clauses );
+        $select = 'visitor_id, session_id, channel, utm_campaign, landing_path, referrer_host, device_type, country_code, is_bot, pageviews, started_at, last_active';
+
+        // With no filters the statement carries no placeholder, and
+        // prepare() on a placeholder-less statement is a core
+        // doing-it-wrong — so the plain count runs unprepared (no
+        // user input ever joined it).
+        if ( array() === $values ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- admin list read; the only interpolation is the DDL table name, nothing else ever entered the statement.
+            $count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} {$where}" );
+        } else {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- the clause list is built above from a fixed key whitelist, not from data; every value reaches prepare() below.
+            $count_sql = $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is a DDL-validated identifier from Gr_Database, not user input; $where carries only the whitelisted clauses above, invisible to the sniffer as literal placeholders.
+                "SELECT COUNT(*) FROM {$table} {$where}",
+                $values
+            );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- prepared above from the same fixed whitelist.
+            $count = (int) $wpdb->get_var( $count_sql );
+        }
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- the clause list and the pagination pair join through one spread array, which the sniffer counts as a single replacement; the whitelist above already vetted every clause.
+        $page_sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+            "SELECT {$select} FROM {$table} {$where} ORDER BY last_active DESC, session_id DESC LIMIT %d OFFSET %d",
+            ...array_merge( $values, array( $per_page, $offset ) )
+        );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- prepared above; admin list page read over the last_active index.
+        $rows = $wpdb->get_results( $page_sql, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            $rows = array();
+        }
+
+        return array(
+            'rows'  => array_values( array_filter( $rows, 'is_array' ) ),
+            'total' => $count,
+        );
+    }
+
+    /**
+     * Today's device split with the bot totals riding the same
+     * aggregate — the dashboard live panel's single bounded read
+     * (started_at >= today-midnight, the started index). Live
+     * metric, so like count_online() it computes per call and caches
+     * nothing (docs/05 §3.2).
+     *
+     * @return array{devices: array<int, array{key: string, value: int}>, sessions: int, bots: int}
+     */
+    public function today_device_split(): array {
+        global $wpdb;
+
+        $table = Gr_Database::table( 'sessions' );
+        // Today's midnight from the mysql form, the same derivation
+        // the aggregator and the collect controller use for day keys —
+        // the format-typed current_time() forms are less reliable
+        // under a runtime timezone change.
+        $cutoff = substr( (string) current_time( 'mysql' ), 0, 10 ) . ' 00:00:00';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared below; admin live panel aggregate bounded to today's rows over the started index, never a front-end request.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT device_type, COUNT(*) AS sessions, SUM(is_bot) AS bots FROM {$table} WHERE started_at >= %s GROUP BY device_type ORDER BY sessions DESC, device_type ASC",
+                $cutoff
+            ),
+            ARRAY_A
+        );
+
+        if ( ! is_array( $rows ) ) {
+            return array(
+                'devices'  => array(),
+                'sessions' => 0,
+                'bots'     => 0,
+            );
+        }
+
+        $devices  = array();
+        $sessions = 0;
+        $bots     = 0;
+        foreach ( $rows as $row ) {
+            if ( ! is_array( $row ) ) {
+                continue;
+            }
+            $count     = (int) ( $row['sessions'] ?? 0 );
+            $devices[] = array(
+                'key'   => (string) ( $row['device_type'] ?? '' ),
+                'value' => $count,
+            );
+            $sessions += $count;
+            $bots     += (int) ( $row['bots'] ?? 0 );
+        }
+
+        return array(
+            'devices'  => $devices,
+            'sessions' => $sessions,
+            'bots'     => $bots,
+        );
+    }
+
+    /**
+     * Y-m-d shape check for the range filters; anything else is
+     * dropped rather than trusted into the WHERE.
+     *
+     * @param string $date Candidate.
+     * @return bool
+     */
+    private static function is_date( string $date ): bool {
+        return 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date );
     }
 
     /**

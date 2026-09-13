@@ -221,6 +221,12 @@ final class Gr_Access_Rules_Page {
                 <?php submit_button( __( 'Delete selected', 'greenpng' ), 'delete' ); ?>
             </form>
 
+            <p>
+                <a class="button" href="<?php echo esc_attr( Gr_List_Filters::export_url( 'access_rules', array( 'rule_type' => $type ) ) ); ?>">
+                    <?php echo esc_html__( 'Export CSV', 'greenpng' ); ?>
+                </a>
+            </p>
+
             <h2><?php echo esc_html__( 'Add a rule', 'greenpng' ); ?></h2>
             <form method="post">
                 <?php wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD ); ?>

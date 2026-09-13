@@ -222,7 +222,42 @@ final class AuditLogTest extends TestCase {
 
         // The count ran unprepared (no filters), the page read behind it.
         $this->assertStringContainsString( 'SELECT COUNT(*) FROM wp_gr_audit_logs', $GLOBALS['wpdb']->queries[0] );
-        $this->assertStringContainsString( 'LIMIT 200 OFFSET 0', $GLOBALS['wpdb']->queries[1] );
+        $this->assertStringContainsString( 'LIMIT 5000 OFFSET 0', $GLOBALS['wpdb']->queries[1] );
+    }
+
+    public function testQueryBuildsTheDateRangeOnCreatedAt(): void {
+        $GLOBALS['wpdb']->var_result = '3';
+
+        ( new Gr_Audit_Repository() )->query(
+            array(
+                'from' => '2026-09-01',
+                'to'   => '2026-09-30',
+            )
+        );
+
+        $count_sql = $GLOBALS['wpdb']->queries[0];
+        $this->assertStringContainsString( "created_at >= '2026-09-01 00:00:00'", $count_sql );
+        $this->assertStringContainsString( "created_at <= '2026-09-30 23:59:59'", $count_sql );
+
+        // Malformed dates stay out of the WHERE entirely.
+        $GLOBALS['wpdb']->queries = array();
+        ( new Gr_Audit_Repository() )->query( array( 'from' => 'yesterday', 'to' => '' ) );
+        $this->assertStringNotContainsString( 'created_at >=', $GLOBALS['wpdb']->queries[0] );
+    }
+
+    public function testQuerySearchesTheActionableObjectColumns(): void {
+        $GLOBALS['wpdb']->var_result = '1';
+
+        ( new Gr_Audit_Repository() )->query( array( 's' => 'rule' ) );
+
+        $count_sql = $GLOBALS['wpdb']->queries[0];
+        $this->assertStringContainsString( 'action LIKE', $count_sql );
+        $this->assertStringContainsString( 'object_type LIKE', $count_sql );
+        $this->assertStringContainsString( 'object_id LIKE', $count_sql );
+        $this->assertSame( 3, substr_count( $count_sql, "'%rule%'" ) );
+
+        // The stored diff never enters the search vocabulary.
+        $this->assertStringNotContainsString( 'diff_json LIKE', $count_sql );
     }
 
     public function testQueryFacadeMatchesTheRepository(): void {
@@ -299,6 +334,15 @@ final class AuditLogTest extends TestCase {
         $this->assertStringContainsString( 'value="access_rule"', $html );
         $this->assertStringContainsString( 'value="7"', $html );
         $this->assertStringContainsString( 'value="toggle"', $html );
+
+        // The shared date-range and search controls joined the form,
+        // and the CSV export mirrors every active filter.
+        $this->assertStringContainsString( 'id="gr-filter-from"', $html );
+        $this->assertStringContainsString( 'id="gr-filter-search"', $html );
+        $this->assertStringContainsString( 'Export CSV', $html );
+        $this->assertStringContainsString( '/wp-json/greenpng/v1/export/audit', $html );
+        $this->assertStringContainsString( 'object_type=access_rule', $html );
+        $this->assertStringContainsString( 'action=toggle', $html );
     }
 
     public function testRenderExpandsTheStoredDiffIntoLines(): void {

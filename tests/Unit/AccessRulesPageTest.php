@@ -207,6 +207,11 @@ final class AccessRulesPageTest extends TestCase {
         // checkbox column values.
         $this->assertSame( 2, substr_count( $html, 'name="_gr_access_nonce"' ) );
         $this->assertStringContainsString( 'name="rule[]" value="3"', $html );
+
+        // The CSV export honors the active tab.
+        $this->assertStringContainsString( 'Export CSV', $html );
+        $this->assertStringContainsString( '/wp-json/greenpng/v1/export/access_rules', $html );
+        $this->assertStringContainsString( 'rule_type=ban', $html );
     }
 
     public function testAllowTabRendersItsOwnList(): void {

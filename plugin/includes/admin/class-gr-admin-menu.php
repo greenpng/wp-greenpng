@@ -14,6 +14,7 @@ namespace GreenPNG\Admin;
 
 use GreenPNG\Rest\Gr_Dashboard_Controller;
 use GreenPNG\Rest\Gr_Live_Controller;
+use GreenPNG\Rest\Gr_Panels_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -244,7 +245,12 @@ final class Gr_Admin_Menu {
 
             wp_add_inline_script(
                 'gr-dashboard',
-                'window.GreenPNGDashboard=' . (string) wp_json_encode( Gr_Dashboard_Controller::script_data() ) . ';',
+                'window.GreenPNGDashboard=' . (string) wp_json_encode(
+                    array_merge(
+                        Gr_Dashboard_Controller::script_data(),
+                        Gr_Panels_Controller::script_data()
+                    )
+                ) . ';',
                 'before'
             );
 
