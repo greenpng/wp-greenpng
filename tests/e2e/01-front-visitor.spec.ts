@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { COOKIES, login, resetConsentFallback } from './helpers';
+import { COOKIES, login, probePresent, resetConsentFallback } from './helpers';
 
 test( 'a first-time visitor sees the probe but sets no marketing cookies without consent', async ( { page, browser } ) => {
 	// Precondition: the shipped privacy default (marketing consent
@@ -12,10 +12,12 @@ test( 'a first-time visitor sees the probe but sets no marketing cookies without
 	const vpage = await visitor.newPage();
 	const response = await vpage.goto( '/' );
 
-	await expect(
-		vpage.locator( 'script', { hasText: 'GreenPNGProbe' } ),
+	// The window state proves the inline bootstrap ran; element-text
+	// filters cannot see script bodies at all.
+	expect(
+		await probePresent( vpage ),
 		`front page served status=${ response?.status() ?? 'n/a' } url=${ vpage.url() }`
-	).toHaveCount( 1 );
+	).toBe( true );
 
 	const names = ( await visitor.cookies() ).map( ( c ) => c.name );
 	expect( names ).not.toContain( COOKIES.attr );

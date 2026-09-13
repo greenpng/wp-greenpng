@@ -20,9 +20,12 @@ test( 'an owner adds and deletes access rules', async ( { page } ) => {
 	await page.getByRole( 'button', { name: 'Add rule' } ).click();
 	await expect( page.locator( 'tbody', { hasText: '203.0.113.0/24' } ) ).toBeVisible();
 
-	// Bulk delete returns the ban list to empty.
+	// Bulk delete returns the ban list to empty. The scoping matters:
+	// the add-form's table carries its own tbody, so a bare tbody
+	// locator resolves to both and breaks strict mode now that the
+	// rules table actually renders its rows.
 	await page.goto( adminPage( slug.access ) );
-	await page.locator( 'tbody input[type=checkbox]' ).first().check();
+	await page.locator( '.wp-list-table tbody input[type=checkbox]' ).first().check();
 	await page.getByRole( 'button', { name: 'Delete selected' } ).click();
-	await expect( page.locator( 'tbody' ) ).not.toContainText( '198.51.100.7' );
+	await expect( page.locator( '.wp-list-table tbody' ) ).not.toContainText( '198.51.100.7' );
 } );

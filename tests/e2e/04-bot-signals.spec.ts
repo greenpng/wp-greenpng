@@ -10,10 +10,10 @@ test( 'a crawler user-agent lands in Bot & Device Signals', async ( { page, brow
 	await cpage.waitForTimeout( 1500 ); // The claim is queued server-side on the request.
 	await crawler.close();
 
-	// The verification job is queued through the local queue (wp-cron
-	// in this environment); CI runners never idle long enough for cron
-	// to fire on its own, so the due event runs on demand.
-	wpcli( 'wp cron event run gr_crawler_verify' );
+	// The verification job rides the async queue: WooCommerce provides
+	// Action Scheduler here, so wp-cron holds nothing and the queue's
+	// group runs through AS's own executor.
+	wpcli( 'wp action-scheduler run --group=greenpng' );
 
 	await login( page );
 	await page.goto( adminPage( slug.bot ) );

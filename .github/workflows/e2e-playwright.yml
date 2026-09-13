@@ -42,6 +42,9 @@ jobs:
           rm -rf .wp-env-plugins
           mkdir -p .wp-env-plugins
           cp -a plugin .wp-env-plugins/greenpng
+          # Seed helpers ride the staged plugin's mount so `wp eval-file`
+          # can reach them with a space-free in-container path.
+          cp tests/e2e/ci-seed.php .wp-env-plugins/greenpng/ci-seed.php
 
       - name: Write the wp-env config
         run: |
@@ -58,7 +61,16 @@ jobs:
           JSON
 
       - name: Start wp-env
-        run: npx wp-env start
+        run: |
+          # Transient docker-compose failures (image pull contention)
+          # get two retries; a clean stop precedes each attempt.
+          for attempt in 1 2 3; do
+            if npx wp-env start; then exit 0; fi
+            echo "wp-env start failed (attempt ${attempt})"
+            npx wp-env stop || true
+            sleep 20
+          done
+          exit 1
 
       - name: Wait for WordPress
         run: curl --silent --output /dev/null --retry 60 --retry-delay 3 --retry-connrefused http://localhost:8888

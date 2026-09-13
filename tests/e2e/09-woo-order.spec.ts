@@ -3,17 +3,14 @@ import { dbCount, login, resetConsentFallback, saveSettings, wpcli } from './hel
 
 test( 'a customer buys a product and the paid order is attributed', async ( { page, browser } ) => {
 	// Cash on delivery gives the Store API a payment method that needs
-	// no external processor. Merge the enabled flag over whatever the
-	// gateway's settings row holds: WooCommerce may not have seeded it
-	// on a fresh install, so a targeted patch would fail.
-	wpcli(
-		`wp eval "update_option( 'woocommerce_cod_settings', array_merge( (array) get_option( 'woocommerce_cod_settings', array() ), array( 'enabled' => 'yes' ) ) );"`
-	);
-	const productId = parseInt(
-		wpcli( 'wp wc product create --name="E2E Cap" --regular_price=9.99 --type=simple --user=1 --porcelain' ),
-		10
-	);
-	expect( productId ).toBeGreaterThan( 0 );
+	// no external processor. Both the gateway flag and the product ride
+	// the eval-file seed helpers: their payloads stay PHP literals
+	// instead of crossing the wp-env argument layer, and the wc CLI
+	// commands are not a dependency at all.
+	wpcli( 'wp eval-file wp-content/plugins/greenpng/ci-seed.php enable-cod' );
+	const productOut = wpcli( 'wp eval-file wp-content/plugins/greenpng/ci-seed.php make-product' );
+	const productId = parseInt( productOut, 10 );
+	expect( productId, `make-product output: ${ productOut.slice( 0, 120 ) }` ).toBeGreaterThan( 0 );
 
 	await login( page );
 	await saveSettings( page, 'general', { marketing_consent_fallback: true } );
@@ -65,7 +62,7 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 
 		// Payment completes out-of-band (cash collected): the status
 		// move fires the payment hook the adapter listens to.
-		wpcli( `wp wc order update ${ orderId } --status=completed --user=1` );
+		wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php complete-order ${ orderId }` );
 
 		expect( dbCount( 'wp_gr_conversions' ) ).toBeGreaterThanOrEqual( 1 );
 		const source = wpcli( 'wp db query "SELECT source_type FROM wp_gr_conversions ORDER BY id DESC LIMIT 1"' );

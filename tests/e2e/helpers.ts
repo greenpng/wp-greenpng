@@ -1,6 +1,13 @@
 import { execSync } from 'node:child_process';
 import type { Page } from '@playwright/test';
 
+/** The probe's inline bootstrap, as the front page defines it. */
+declare global {
+	interface Window {
+		GreenPNGProbe?: { url: string; token: string };
+	}
+}
+
 /** wp-env default administrator (ephemeral CI site, not a secret). */
 export const ADMIN = {
 	username: 'admin',
@@ -72,6 +79,22 @@ export async function probeData( page: Page ): Promise< { url: string; token: st
 		throw new Error( 'Probe data not embedded on the front page.' );
 	}
 	return JSON.parse( match[ 1 ] ) as { url: string; token: string };
+}
+
+/**
+ * Whether the probe is live on the page: the inline bootstrap ran and
+ * carries both endpoint and token. Element-text filtering cannot see
+ * script content (Playwright's text engine yields nothing for script
+ * bodies), so the window state is the observable truth.
+ */
+export async function probePresent( page: Page ): Promise< boolean > {
+	return page.evaluate(
+		() =>
+			typeof window.GreenPNGProbe === 'object' &&
+			window.GreenPNGProbe !== null &&
+			Boolean( window.GreenPNGProbe.url ) &&
+			Boolean( window.GreenPNGProbe.token )
+	);
 }
 
 /** Runs one wp-cli command inside the wp-env containers. */
