@@ -109,7 +109,7 @@ CREATE TABLE {$wpdb->prefix}gr_sessions (
 - 在线访客数 = `SELECT COUNT(*) WHERE last_active > NOW() - 300`，走 `last_active` 索引范围扫描（iss-02 指出原设计缺该索引，正确，已补），**不写共享 transient**。
 
 > 落地形态（2026-09-10，C5 实装）：会话载体为 `gr_session` cookie（UUID、30 分钟滑窗，命名遵循 docs/04 §1 `gr_<用途>`）；回退轨身份 = `sha256(wp_salt | 当日 | 域分隔符 | 匿名化IP | UA)`；无 Consent API 宿主的营销同意回落 `marketing_consent_fallback` 设置开关（默认关，ADR-0005 §1）；在线数 cutoff 以显式 UTC `DateTime` 计算（对运行时时区变化免疫），实测 EXPLAIN type=range key=last_active。
-- `bot_score`/`is_bot`：探针安全结论（仅分值档位与布尔，无指纹明细）。
+- `bot_score`/`is_bot`：探针安全结论（仅分值档位与布尔，无指纹明细）。写入语义（2026-09-14，ADR-0009 D2 落地，修复 C1/C2 断链）：**两挂载互不覆写**——① REST collect 的 `signal` 事件经 `apply_probe_score()` 独立 UPDATE 落地（`bot_score = GREATEST(bot_score, %d)` 只升不降；`is_bot` 粘滞——未过阈值的信号永不清除既有定罪；阈值 `bot_verdict_threshold` 默认 70 = 双信号佐证）；② 检测侧高置信结论（扫描器 UA / 载荷 / 陷阱）经结论通道在请求结束的 PHP shutdown 标记 `mark_session_bot()`（只写 `is_bot`，不动探针分值）。`touch()` 的 upsert 两列保持默认值不动——会话行由 touch 落地、结论由两挂载写入；登录/注册/陷阱等从未建会话行的路径如实标记零行（无可定罪之行）。
 
 ### 3.3 `gr_conversions`（转化与归因绑定）
 

@@ -1,7 +1,7 @@
 # 13. v1.0 实施清单 (v1.0 Implementation Plan)
 
 > 本文把 `12-roadmap-free-v1.md`（2026-09-09 四支柱修订版）的 v1.0 范围拆解为**可独立验收的任务序列**，是 v1.0 开发期的工作真源：任务只做清单内的事，验收只认清单内的标准。
-> **修订记录**：2026-09-09 依据 ADR-0007 重构——新增客户端探针（C13）、A/B 引擎（C14–C15）、出网支柱（I1–I5）、独立 Settings 页（U13）、UA 引擎升级（W2）等；任务 61 → 85 项；§8 开放问题全部收口。2026-09-10 §2–§7 任务表补齐状态列（落实 §9 状态列纪律）。2026-09-10 开发顺序调整（站长授权代理排序）：S9 提前使 §3.3 #2–#4 即时生效；S3 顺延至 S4–S7 之后统一接线服务。
+> **修订记录**：2026-09-09 依据 ADR-0007 重构——新增客户端探针（C13）、A/B 引擎（C14–C15）、出网支柱（I1–I5）、独立 Settings 页（U13）、UA 引擎升级（W2）等；任务 61 → 85 项；§8 开放问题全部收口。2026-09-10 §2–§7 任务表补齐状态列（落实 §9 状态列纪律）。2026-09-10 开发顺序调整（站长授权代理排序）：S9 提前使 §3.3 #2–#4 即时生效；S3 顺延至 S4–S7 之后统一接线服务。2026-09-14 新增 §10 Phase 7（v1.0.1 热修复 H1–H7：ISS-09 深度审计经 `15` 逐条核验后落地，决策记录 `adr/0009`；85 → 92 项）。
 > 状态图例：⬜ 未开始 · 🔧 进行中 · ✅ 已验收（AGENTS.md §3.3 四项检查通过 **且** 验收标准实测达标；S1–S8 期间工具链未建（S9 交付），以检查 #1 与任务自身验收标准为准，#2–#4 自 S9 起强制补跑）。
 > 更新纪律：每完成一个任务，本表状态列随该任务的代码提交一并更新；禁止提前打勾；验收数字必须实测可复现（`AGENTS.md` §3.4）。
 
@@ -18,8 +18,9 @@
 | Phase 4 | 汇总与后台 14 页 | U1–U17 | Phase 2、3、5 |
 | Phase 5 | 出网支柱 + 隐私合规 | I1–I5、V1–V5 | Phase 1（I2–I4 依赖 C10 转化链路） |
 | Phase 6 | 测试收口与发布准备 | T1–T10 | 全部 |
+| Phase 7 | v1.0.1 热修复（ISS-09 评审落地） | H1–H7 | Phase 6（依据 `15` + `adr/0009`） |
 
-共 85 项。Phase 1 先行；Phase 2 / 3 / 5 三线可并行（互不依赖）；Phase 4 依赖前三者的读接口。
+共 92 项。Phase 1 先行；Phase 2 / 3 / 5 三线可并行（互不依赖）；Phase 4 依赖前三者的读接口。
 
 ## 1. Phase 0 — 环境准备
 
@@ -164,3 +165,17 @@ v1.0 页面：Dashboard、Traffic & Security（3 标签）、Access Rules、Logi
 - 一任务一提交，提交信息 `feat|fix|docs: <摘要>`；不提交 `vendor/`（运行时）与构建产物（AGENTS §7）。
 - 每提交前跑 AGENTS §3.3 四项检查；验收标准一栏的数字必须来自实测并写入提交说明。
 - 本清单的状态列是唯一进度真源；与其他记录冲突时以本表为准。
+
+## 10. Phase 7 — v1.0.1 热修复（ISS-09 评审落地）
+
+> 依据链：`iss/ISS-09` 同事深度审计（C1~C5）→ `15` 逐条事实核验（C1/C2/C3 实锤、C4 收窄为生即 paid 订单、C5 线索留存收 v1.1 而"默示同意"驳回）→ `adr/0009` 决策记录 D1~D5 → 本表。G1（ISS-08 遗留 P1 缺口）随 H1 一并闭环；退款冲销与表单线索留存归 v1.1（`12`/`15` §4）。
+
+| ID | 任务 | 状态 | 交付物 | 验收标准（实测） | 依据 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| H1 | G1 五控件 + D5 架构不变式 | ✅ | `Gr_Settings_Page` Security 标签新增 5 控件（`bot_verdict_threshold` / `login_fail_threshold` / `login_lockout_base` / `honeypot_enabled` / `blackhole_enabled`）；`save_security()` 钳制写入（阈值 1..100、失败阈值 2..100、锁定基数 60..86400；**缺省字段落默认值，不落 0**）；snapshot 扩至 16 键随审计 diff；`Gr_Settings::defaults()` 增 `bot_verdict_threshold=70`（D1 双信号佐证）。**不变式测试**：`Gr_Settings::defaults()` 标量键 ⊆ Settings 页可写键集（Retention/Analytics 两页所属键为记录在案的豁免）——G1 的产生机制被测试堵死 | 实测 2026-09-14：phpunit SettingsPageTest 11→15 例全绿（渲染含 5 控件与默认值 70/5/300；`1`/`999999`/`250` 越界钳至 2/86400/100 且审计 diff 含 `bot_verdict_threshold`；缺省 dial 回落 5/300/70；不变式零缺失键）；:8091 Security 标签实存五控件 | `15` §2、`adr/0009` D1/D5 |
+| H2 | 会话仓两挂载 | ✅ | `Gr_Session_Repository::apply_probe_score()`（独立 UPDATE：`bot_score = GREATEST(bot_score, %d)` 只升不降 + `is_bot = IF(判定=1, 1, is_bot)` 粘滞；输入钳 0..100）与 `mark_session_bot()`（只写 `is_bot` 不动探针分值）；`touch()` SQL 字节不动（前台预算形状保持，`09` §1.1；ISS-09 补丁 1 的 touch 改法据此驳回） | 实测 2026-09-14：phpunit SessionRepositoryTest 4→8 例全绿（GREATEST/IF 形状与 WHERE 双键、阈值下永不清除、250→100 钳制、mark 不含 bot_score）；:8091 实弹——`signal(bot_score=87)` 后会话行 `is_bot=1, bot_score=87` | `adr/0009` D2 |
+| H3 | 采集端判定接线 | ✅ | `Gr_Collect_Controller::handle()` signal 分支接 `apply_probe_score()`；`verdict_threshold()` 读 `bot_verdict_threshold`（钳 1..100）——服务端定罪、客户端只报分值（ISS-09 补丁 2 的硬编码 80 据此改设置键默认 70） | 实测 2026-09-14：phpunit CollectControllerTest 18→22 例全绿（87≥70 写双列 / 40<70 只写分值 / pageview 两列零触碰 / 阈值改 90 后 80 不定罪） | `adr/0009` D1/D2 |
+| H4 | 结论通道 shutdown 标记 | ✅ | `Gr_Security_Conclusions`：high 档结论布防一次性 PHP shutdown 标记（`arm_marker()` 幂等——多规则一请求仍一次；`mark_current_session()` Throwable 隔离；`register_shutdown_function('shutdown_action_hook')` 实核，wp_die 后亦执行，故陷阱路径的结论也有机会落行）；medium/人类结论不布防；登录/注册/陷阱等无会话行路径如实零行（ISS-09 补丁 3 的 init 挂载点据此后移） | 实测 2026-09-14：phpunit SecurityConclusionsTest 10→13 例全绿（high 布防 shutdown 回调 / medium+空+record 均不布防 / 双 high 规则恰一次布防 + mark 只写 is_bot） | `adr/0009` D2 |
+| H5 | 检查器前门执法 | ✅ | `Gr_Access_Rules::is_static_banned()`（仅手写封禁臂、不含临时锁——两臂分立谓词，允许列表优先）；`Gr_Request_Inspector::run()` 挂 `front_door()`：静态封禁无条件 403（`action_taken='blocked'`，W12 同款形状）、临时锁仅 block 档、URL 允许只免检测、Throwable fail-open 报 `gr_inspector_error`；拒绝直写 `Gr_Security_Log_Repository` **不入结论通道** | 实测 2026-09-14：phpunit RequestInspectorTest 8→12 例（403 先于检测器 + `ip_ban`/`blocked` 折叠行 + 结论通道零喂入；log 档过 / block 档拒；URL 豁免免检测不免封禁；前门故障 fail-open）+ AccessRulesTest 8→10 例（静态臂忽略临时锁、允许列表胜静态臂）全绿；:8091 实弹——封禁 127.0.0.1 后前台与 REST 双 403 + `ip_ban` 折叠行，删规则后 200 复原 | `adr/0009` D3 |
+| H6 | Woo 状态钩子 | ✅ | `woocommerce_order_status_processing` / `woocommerce_order_status_completed` 复用 `complete_payment()`（ADR-0008 round 14 实证：Store API 线下网关订单生即 processing，`payment_complete` 结构性不可达——C4 真实洞=生而 paid 订单）；幂等双防线（meta 锁 + `gr_conversions` UNIQUE）折叠双发 | 实测 2026-09-14：phpunit WooCommerceAdapterTest 11→12 例全绿（挂载 3→5 钩断言；born-paid 新例——processing 触发即绑定、`payment_complete`+`completed` 双重放后绑定查询数不变）；:8091 实弹——订单 43（带 visitor/consent meta）pending→processing 即绑（`woocommerce/43/42.50/USD`），completed 重放 `attributed=1` 仍恰 1 行 | `adr/0009` D4、ADR-0008 round 14 |
+| H7 | e2e 09 自然 COD 路径 + 05 表盘 | 🔧 | 09 规格：Store API COD 结账**即**断言绑定（生即 paid 路径不再依赖 stand-in 完成步）+ `conversion-count` 重放坍缩断言；ci-seed 增 `conversion-count` 任务；05 规格：Security 表盘控件保存往返断言（90 落盘、PRG 回显、复位 70） | 本地四检查 + phpstan 全绿（phpunit 679 tests 3,977 assertions，本相位净增 22 例）；E2E 运行需 CI wp-env 栈——**验收以 E2E 工作流实跑为准，推送后回填本行** | `15` §4 |
