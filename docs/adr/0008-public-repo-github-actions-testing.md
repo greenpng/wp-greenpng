@@ -53,3 +53,12 @@ E2E 剩余三红的取证收敛为两处真实插件缺陷与一处定位歧义�
 - **第五处真实缺陷（带外支付完成丢归因）**：09 全链通过（checkout、订单、完成、转化表均有行）但 Woo 绑定被跳过——同意状态是请求作用域，`complete_payment` 所在的 CLI 进程（网关 webhook 同理）不携带任何同意，绑定永远缺席；真实卡网关回调同受影响。修复：checkout 捕获时与 visitor 一并快照同意选择（`_gr_marketing_consent`），`bind_order` 接受「快照为同意 OR 当前请求允许」；快照为拒绝时带外完成仍不绑定（结账时的选择治理带外完成）。仅 cookie 轨可持久化的语义（ADR-0005）不变。
 - 定位歧义（10）：插件名 `greenpng` 的子串匹配在区块展开后同时命中 WP 自带 "Copy suggested policy text" 按钮触发 strict mode violation，改 `exact: true`。
 - 环境事实沉淀：Woo Store API checkout 信封键为 `order_id`（非 `id`）；09 终断言改按 `source_type='woocommerce'` 过滤（CF7 转化可由并行 worker 晚于本规格落库）；CF7 6.1.7 的表单模板存于 `_form` post meta（post_content 永不承载），`_additional_settings` 置 demo_mode 使提交免邮件成功；WP 7.1 的隐私指南在 `privacy-policy-guide.php`（`options-privacy.php` 在未选政策页前只呈现选择器）；08 的断言收敛为转化本身（v1.0 无 CRM 写入，docs/13 V2 明记「诚实空」，规格越界即改规格）。
+
+## 勘误与修正记录（2026-09-13，第十四轮实测后）
+
+第十四轮 E2E 证据推翻第十三轮的两处推断，修正如下：
+
+- **AS 拒绝的真实形态是抛出而非零值**：AS 3.x 的 `ActionScheduler_DBStore::save_action` 在 INSERT 失败（表未建）时抛 `RuntimeException`——「返回零值」的推断不成立，返回值守卫从未获得执行机会：异常直接击穿了 enqueue 所在的前台请求（安全日志行与 pending transient 在异常前已写库，故上轮证据看似「发现已触发、队列空转」）。修复：enqueue 以 try/catch 包住 AS 调用，抛出与零值一律落 wp-cron；子进程测试新增 throw 模式。另记一处险情：命名空间内 `catch ( Throwable $e )` 解析为不存在的 `GreenPNG\Core\Throwable`、什么都捕不住——必须写 `\Throwable`（仓库既有约定如此，此番违例在本地子进程测试下当场现形，未及上线）。
+- **09 的完成步从未触发过插件钩子**：Woo 仅从未支付状态（on-hold/pending/failed/cancelled）触发 `woocommerce_payment_complete`（Woo 11.1 `WC_Order::payment_complete` 源码实读）；Store API 的 COD 订单创建即 'processing'，`update_status('completed')` 与 `payment_complete()` 都走 else 分支（另一条 `..._order_status_processing` 钩子）。「CLI 进程无同意故绑定跳过」的推断因此不成立——钩子根本没响。修正：ci-seed 的 complete-order 改为先置 pending 再 `payment_complete()`，诚实模拟卡网关 webhook（结账留 pending、带外回调完成支付、回调不携带任何会话状态）；新增 latest-conversion 任务经 $wpdb 按订单过滤读转化行，摆脱 db query 参数层与并行 worker 竞态。dev 站（同 WP 7.1 + Woo 11.1 栈）全链复跑实证：带外（CLI 无 cookie 无同意）绑定落地，`_gr_attributed='1'`、转化行 `woocommerce|41|9.99|USD`——第五缺陷的同意快照修复在真实栈上被证实有效。
+- 04 的根因同第一条（enqueue 异常击穿致派发两头落空）；04 的双执行器（AS 失败退出即转 `wp cron event run --due-now`）无需再改。10 已在本轮转绿（exact:true 足矣）。
+- 环境事实沉淀：本机 wp-cli 的 `db query` 对含多列/表达式/DATETIME 的输出行存在吞字怪癖，取证一律改走 `wp eval` + `$wpdb`；curl cookie 罐中 HttpOnly 行带 `#HttpOnly_` 前缀，`grep -v '^#'` 会将其误滤——dev 站诊断两度被自身取证工具误导，记录在案。

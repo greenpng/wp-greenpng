@@ -79,6 +79,18 @@ final class QueueTest extends TestCase {
         self::assertStringContainsString( 'cron_args=["127.0.0.1","Googlebot"]', $report );
     }
 
+    public function testEnqueueFallsBackToWpCronWhenActionSchedulerThrows(): void {
+        // AS 3.x's DB store answers a failed insert by throwing
+        // RuntimeException, not by returning: the same refusal in a
+        // different shape, and equally not allowed to kill the
+        // queueing request or lose the dispatch.
+        $report = $this->enqueue_child( 'throw' );
+
+        self::assertStringContainsString( 'backend=action-scheduler', $report );
+        self::assertStringContainsString( 'cron_events=1', $report );
+        self::assertStringContainsString( 'cron_hook=gr_crawler_verify', $report );
+    }
+
     public function testEnqueueStaysOnActionSchedulerWhenItAccepts(): void {
         // An id came back: the dispatch stays on AS and no wp-cron
         // event is written behind its back.

@@ -103,8 +103,39 @@ switch ( $task ) {
 			fwrite( STDERR, 'order not found: ' . $order_id );
 			exit( 1 );
 		}
-		$order->update_status( 'completed' );
+		// WooCommerce fires woocommerce_payment_complete only from
+		// an unpaid status (on-hold/pending/failed/cancelled): a
+		// Store API COD order is created 'processing', so a bare
+		// status move never triggers it. This task models the
+		// card-gateway reality instead: checkout leaves the order
+		// pending, and the gateway's webhook completes the payment
+		// out-of-band from a request carrying no session state.
+		if ( $order->get_status() !== 'pending' ) {
+			$order->set_status( 'pending' );
+			$order->save();
+		}
+		$order->payment_complete();
 		echo 'completed ' . $order_id;
+		break;
+
+	case 'latest-conversion':
+		// Read through $wpdb instead of `wp db query`: this file
+		// already exists to keep payloads off the argument layer.
+		// The row is scoped to one order: a parallel worker's CF7
+		// conversion can own the table's latest id.
+		$order_id = isset( $args[1] ) ? (int) $args[1] : 0;
+		if ( ! $order_id ) {
+			fwrite( STDERR, 'order id required' );
+			exit( 1 );
+		}
+		global $wpdb;
+		$table = $wpdb->prefix . 'gr_conversions';
+		$row = $wpdb->get_row( "SELECT source_type, source_id, amount FROM {$table} WHERE source_type = 'woocommerce' AND source_id = {$order_id} ORDER BY id DESC LIMIT 1" );
+		if ( ! $row ) {
+			echo 'none';
+			break;
+		}
+		echo $row->source_type . ' ' . $row->source_id . ' ' . $row->amount;
 		break;
 
 	default:

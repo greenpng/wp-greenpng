@@ -67,16 +67,17 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 			throw new Error( `checkout returned no order id (status ${ order.status() }): ${ orderBody.slice( 0, 400 ) }` );
 		}
 
-		// Payment completes out-of-band (cash collected): the status
-		// move fires the payment hook the adapter listens to.
+		// Payment completes out-of-band: the gateway's webhook (here
+		// the seed's CLI stand-in) fires the payment hook from a
+		// request carrying no session state at all.
 		wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php complete-order ${ orderId }` );
 
 		expect( dbCount( 'wp_gr_conversions' ) ).toBeGreaterThanOrEqual( 1 );
-		// Filtered, not "latest": the CF7 spec's conversion can land
-		// from a parallel worker after this one, and a bare ORDER BY
-		// id DESC would then read its row instead of the order's.
-		const source = wpcli( 'wp db query "SELECT source_type FROM wp_gr_conversions WHERE source_type=\'woocommerce\' ORDER BY id DESC LIMIT 1"' );
-		expect( source ).toContain( 'woocommerce' );
+		// Read through the seed task, not `wp db query`: the row is
+		// this order's, immune to the argument layer and to a
+		// parallel worker's CF7 conversion owning the latest id.
+		const conversion = wpcli( `wp eval-file wp-content/plugins/greenpng/ci-seed.php latest-conversion ${ orderId }` );
+		expect( conversion ).toContain( `woocommerce ${ orderId }` );
 
 		await visitor.close();
 	} finally {

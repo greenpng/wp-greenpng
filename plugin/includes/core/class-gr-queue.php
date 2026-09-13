@@ -79,16 +79,27 @@ final class Gr_Queue {
         $when = time() + max( 0, $delay );
 
         if ( self::uses_action_scheduler() ) {
-            $scheduled = as_schedule_single_action( $when, $hook, $args, self::AS_GROUP );
+            $scheduled = 0;
+            try {
+                $scheduled = as_schedule_single_action( $when, $hook, $args, self::AS_GROUP );
+            } catch ( \Throwable $e ) {
+                // AS 3.x's DB store answers a failed insert (its
+                // tables not created yet — a fresh WooCommerce before
+                // the installer ran) by throwing RuntimeException
+                // instead of returning: a refusal in disguise, not a
+                // crash, and the queueing request must never die
+                // for it.
+                $scheduled = 0;
+            }
+
             if ( is_numeric( $scheduled ) && (int) $scheduled > 0 ) {
                 return;
             }
 
-            // AS refused the dispatch — a host whose scheduler tables
-            // are not created yet (a fresh WooCommerce before its
-            // installer ran) reports exactly that as a zero id — so
-            // the work rides wp-cron instead of being dropped: the
-            // queue never silently loses a dispatch.
+            // AS refused the dispatch — zero id, WP_Error, or a
+            // thrown refusal — so the work rides wp-cron instead of
+            // being dropped: the queue never silently loses a
+            // dispatch.
         }
 
         wp_schedule_single_event( $when, $hook, $args );

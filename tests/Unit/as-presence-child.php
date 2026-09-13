@@ -33,14 +33,21 @@ if ( ! function_exists( 'as_schedule_single_action' ) ) {
 	 * @return int Action id; 0 models the zero-id refusal a fresh
 	 *                WooCommerce host reports before its installer
 	 *                creates the scheduler tables.
+	 * @throws RuntimeException When the throw mode is armed: AS 3.x's
+	 *                           DB store answers a failed insert by
+	 *                           throwing, not by returning.
 	 */
 	function as_schedule_single_action( $timestamp, $hook, $args = array(), $group = '' ) {
+		if ( ! empty( $GLOBALS['gr_stub_as_throw'] ) ) {
+			throw new RuntimeException( 'Error saving action: wp_actionscheduler_actions does not exist' );
+		}
 		return (int) ( $GLOBALS['gr_stub_as_return'] ?? 0 );
 	}
 }
 
-$mode = ( isset( $argv[1] ) && 'accept' === $argv[1] ) ? 'accept' : 'refuse';
+$mode = ( isset( $argv[1] ) ) ? (string) $argv[1] : 'refuse';
 $GLOBALS['gr_stub_as_return'] = ( 'accept' === $mode ) ? 41 : 0;
+$GLOBALS['gr_stub_as_throw']  = ( 'throw' === $mode );
 
 \GreenPNG\Core\Gr_Queue::enqueue( 'gr_crawler_verify', array( '127.0.0.1', 'Googlebot' ) );
 
