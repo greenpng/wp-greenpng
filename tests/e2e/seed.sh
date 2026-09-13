@@ -10,6 +10,13 @@ cli() { npx wp-env run cli "$@" 2>/dev/null; }
 echo "== Activating plugins"
 cli wp plugin activate greenpng woocommerce contact-form-7
 
+echo "== Take the store out of coming-soon mode"
+# A fresh WooCommerce parks the front end behind a "Store coming soon"
+# placeholder that replaces the real site for logged-out visitors,
+# which is every simulated customer in this suite.
+cli wp option update woocommerce_coming_soon no >/dev/null 2>&1 || true
+cli wp option update woocommerce_store_pages_only no >/dev/null 2>&1 || true
+
 echo "== Pretty permalinks"
 cli wp rewrite structure '/%postname%/' --hard >/dev/null
 cli wp rewrite flush >/dev/null

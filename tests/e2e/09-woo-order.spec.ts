@@ -34,7 +34,8 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 			headers: { Nonce: nonce },
 			data: { id: productId, quantity: 1 },
 		} );
-		expect( added.status() ).toBe( 200 );
+		// The Store API answers 201 Created on a successful add.
+		expect( [ 200, 201 ] ).toContain( added.status() );
 
 		const address = {
 			first_name: 'CI',

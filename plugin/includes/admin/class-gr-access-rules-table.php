@@ -35,6 +35,17 @@ final class Gr_Access_Rules_Table extends \WP_List_Table {
     public function __construct( $args = array(), array $rows = array() ) {
         parent::__construct( $args );
         $this->items = $rows;
+
+        // Core resolves headers from the registered list screen when
+        // they are not declared; this page registers none, so without
+        // the explicit tuple the table renders empty headers and zero
+        // rows on a working screen.
+        $this->_column_headers = array(
+            $this->get_columns(),
+            array(),
+            array(),
+            'match_value',
+        );
     }
 
     /**

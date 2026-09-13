@@ -2,9 +2,12 @@
 /**
  * WP_List_Table stand-in: the real class lives in wp-admin and needs
  * a screen object; this one carries just the mechanics our subclass
- * rides on — column headers, items, and a display() that assembles
- * markup from the overridden pieces, so list rendering is assertable
- * outside a WP admin request.
+ * rides on — the explicit header list, items, and a display() that
+ * assembles markup from the overridden pieces. get_column_info()
+ * mirrors core's contract: without explicitly declared headers the
+ * table consults the current screen, and our pages register no list
+ * screen, so the render is empty — the stand-in refuses to hide that
+ * failure mode.
  *
  * @package GreenPNG\Tests
  */
@@ -12,7 +15,7 @@
 if ( ! class_exists( 'WP_List_Table' ) ) {
 
 	/**
-	 * Minimal parent for Gr_Access_Rules_Table.
+	 * Minimal parent for Gr_Access_Rules_Table and Gr_Audit_Log_Table.
 	 */
 	class WP_List_Table {
 
@@ -24,11 +27,13 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 		public $items = array();
 
 		/**
-		 * Column header list from the subclass.
+		 * Explicit header tuple set by the subclass: columns, hidden,
+		 * sortable, primary. Core resolves this from the registered
+		 * screen when it is empty, which on our pages yields nothing.
 		 *
-		 * @var array<int, string>
+		 * @var array<int, mixed>
 		 */
-		protected $column_headers = array();
+		protected $_column_headers = array();
 
 		/**
 		 * Constructor accepting core's args shape.
@@ -40,32 +45,29 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 		}
 
 		/**
-		 * Header setter core's prepare_items flow uses.
+		 * Core's header resolution: the explicit tuple, or the
+		 * screen-less empty state a real admin request outside a list
+		 * screen produces.
 		 *
-		 * @param array<int, string> $headers Column keys.
-		 * @return void
+		 * @return array<int, mixed>
 		 */
-		protected function _column_headers( $headers ) {
-			$this->column_headers = $headers;
+		public function get_column_info() {
+			if ( empty( $this->_column_headers ) ) {
+				return array( array(), array(), array(), null );
+			}
+
+			return $this->_column_headers;
 		}
 
 		/**
-		 * Column header list accessor.
-		 *
-		 * @return array<int, string>
-		 */
-		public function get_column_headers(): array {
-			return $this->column_headers;
-		}
-
-		/**
-		 * Renders the table: header row from get_columns(), body rows
-		 * through column_cb()/column_default() on the subclass.
+		 * Renders the table from the resolved header list, like core:
+		 * no headers means an empty table, never a lucky fallback to
+		 * get_columns().
 		 *
 		 * @return void
 		 */
 		public function display() {
-			$columns = $this->get_columns();
+			$columns = $this->get_column_info()[0];
 
 			echo '<table class="wp-list-table widefat striped">';
 			echo '<thead><tr>';
@@ -88,16 +90,19 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 		}
 
 		/**
-		 * One body row: each column through the subclass hooks, in
-		 * core's order — the checkbox column, then a column_{$key}
-		 * method when the subclass defines one, then column_default().
+		 * One body row: each resolved column through the subclass
+		 * hooks, in core's order — the checkbox column, then a
+		 * column_{$key} method when the subclass defines one, then
+		 * column_default().
 		 *
 		 * @param array<string, mixed> $item Row data.
 		 * @return void
 		 */
 		protected function single_row( $item ) {
+			$columns = $this->get_column_info()[0];
+
 			echo '<tr>';
-			foreach ( $this->get_columns() as $key => $label ) {
+			foreach ( $columns as $key => $label ) {
 				echo '<td class="column-' . esc_attr( (string) $key ) . '">';
 				if ( 'cb' === $key ) {
 					$this->column_cb( $item );

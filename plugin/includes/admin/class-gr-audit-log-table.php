@@ -34,6 +34,15 @@ final class Gr_Audit_Log_Table extends \WP_List_Table {
     public function __construct( $args = array(), array $rows = array() ) {
         parent::__construct( $args );
         $this->items = $rows;
+
+        // Explicit header tuple: no list screen is registered for this
+        // page, so core's screen-based resolution would render nothing.
+        $this->_column_headers = array(
+            $this->get_columns(),
+            array(),
+            array(),
+            'created_at',
+        );
     }
 
     /**
