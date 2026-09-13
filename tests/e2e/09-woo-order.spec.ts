@@ -3,8 +3,12 @@ import { dbCount, login, resetConsentFallback, saveSettings, wpcli } from './hel
 
 test( 'a customer buys a product and the paid order is attributed', async ( { page, browser } ) => {
 	// Cash on delivery gives the Store API a payment method that needs
-	// no external processor.
-	wpcli( "wp option patch update woocommerce_cod_settings enabled 'yes'" );
+	// no external processor. Merge the enabled flag over whatever the
+	// gateway's settings row holds: WooCommerce may not have seeded it
+	// on a fresh install, so a targeted patch would fail.
+	wpcli(
+		`wp eval "update_option( 'woocommerce_cod_settings', array_merge( (array) get_option( 'woocommerce_cod_settings', array() ), array( 'enabled' => 'yes' ) ) );"`
+	);
 	const productId = parseInt(
 		wpcli( 'wp wc product create --name="E2E Cap" --regular_price=9.99 --type=simple --user=1 --porcelain' ),
 		10

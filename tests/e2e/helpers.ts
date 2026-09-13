@@ -2,7 +2,10 @@ import { execSync } from 'node:child_process';
 import type { Page } from '@playwright/test';
 
 /** wp-env default administrator (ephemeral CI site, not a secret). */
-export const ADMIN = { username: 'admin', password: 'admin' };
+export const ADMIN = {
+	username: 'admin',
+	password: process.env.E2E_ADMIN_PASS ?? 'password',
+};
 
 /** Admin page slugs (Gr_*_Page::SLUG constants, read from the source). */
 export const slug = {

@@ -36,7 +36,15 @@ check_ge() {
     if [ "$3" -ge "$2" ] 2>/dev/null; then pass "$1"; else fail "$1 (expected >= $2, got [$3])"; fi
 }
 
-cli() { npx wp-env run cli "$@" 2>/dev/null; }
+cli() {
+    # CLI_PREFIX lets non-wp-env environments (the docker-compose MySQL
+    # 5.7 floor cell) reuse these arms unchanged.
+    if [ -n "${CLI_PREFIX:-}" ]; then
+        ${CLI_PREFIX} "$@" 2>/dev/null
+    else
+        npx wp-env run cli "$@" 2>/dev/null
+    fi
+}
 q() { cli wp db query "$1" 2>/dev/null; }
 first_int() { grep -oE '[0-9]+' | head -1; }
 
@@ -51,6 +59,20 @@ gr_options() {
 }
 cron_gr() {
     cli wp cron event list --fields=hook --format=csv | grep -cE '^(gr_|greenpng)'
+}
+# Forensic variant: on mismatch, print the surviving hooks so a CI log
+# carries the evidence instead of a bare count.
+cron_dump() {
+    cli wp cron event list --fields=hook --format=csv | grep -E '^(gr_|greenpng)' | sed 's/^/     remaining: /' || true
+}
+check_cron() {
+    ACTUAL="$(cron_gr)"
+    if [ "$2" = "$ACTUAL" ]; then
+        pass "$1"
+    else
+        fail "$1 (expected [$2], got [$ACTUAL])"
+        cron_dump
+    fi
 }
 schema_digest() {
     # SHOW CREATE TABLE text with the volatile AUTO_INCREMENT counter
@@ -120,7 +142,7 @@ check_ge "plugin work scheduled while active" 1 "$(cron_gr)"
 cli wp plugin deactivate greenpng >/dev/null
 check "plugin inactive" "inactive" "$(cli wp plugin list --name=greenpng --field=status)"
 check_ge "tables survive deactivation" 15 "$(table_count)"
-check "scheduled work cleared on deactivation" 0 "$(cron_gr)"
+check_cron "scheduled work cleared on deactivation" 0
 check "settings byte-identical across deactivation" "$SETTINGS_BEFORE" "$(cli wp option get gr_settings --format=json | md5sum | cut -d' ' -f1)"
 cli wp plugin activate greenpng >/dev/null
 check_ge "schedule restored on reactivation" 1 "$(cron_gr)"
@@ -145,7 +167,7 @@ cli wp plugin deactivate greenpng >/dev/null
 cli wp eval 'require_once ABSPATH . "wp-admin/includes/plugin.php"; uninstall_plugin( "greenpng/greenpng.php" );' >/dev/null
 check "all tables dropped by delete-mode uninstall" 0 "$(table_count)"
 check "all gr_ options removed" 0 "$(gr_options)"
-check "no scheduled work lingers" 0 "$(cron_gr)"
+check_cron "no scheduled work lingers" 0
 cli wp plugin delete greenpng >/dev/null 2>&1
 check "plugin gone from the list" "" "$(cli wp plugin list --name=greenpng --field=status)"
 restore_plugin

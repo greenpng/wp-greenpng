@@ -1,0 +1,51 @@
+# MySQL 5.7 floor cell (ADR-0008 amendment): wp-env's configuration
+# schema exposes no database version knob ("services" is rejected),
+# so the floor proof runs on a plain compose stack with the official
+# WordPress and CLI images instead. Same slug-staged plugin mount and
+# the same port as the wp-env cells, so tests/integration/run.sh works
+# unchanged through CLI_PREFIX.
+name: greenpng-floor
+
+services:
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:6.0-php7.4
+    depends_on:
+      - db
+    ports:
+      - "8888:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - www:/var/www/html
+      - ./.wp-env-plugins/greenpng:/var/www/html/wp-content/plugins/greenpng
+
+  cli:
+    image: wordpress:cli-php7.4
+    depends_on:
+      - db
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - www:/var/www/html
+      - ./.wp-env-plugins/greenpng:/var/www/html/wp-content/plugins/greenpng
+
+volumes:
+  db_data:
+  www:

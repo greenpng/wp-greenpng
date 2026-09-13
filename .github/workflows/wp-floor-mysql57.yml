@@ -1,0 +1,61 @@
+name: WP floor · MySQL 5.7
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: wp-floor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  floor:
+    name: PHP 7.4 · WP 6.0 · MySQL 5.7 (compose stack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SITE_URL: http://localhost:8888
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same slug staging as the wp-env workflows: run.sh's restore
+      # step swaps this copy's contents between the uninstall arms.
+      - name: Stage the plugin under its slug directory
+        run: |
+          rm -rf .wp-env-plugins
+          mkdir -p .wp-env-plugins
+          cp -a plugin .wp-env-plugins/greenpng
+
+      - name: Start the compose stack
+        run: docker compose -f tests/integration/docker-compose.floor.yml --project-directory . up -d
+
+      - name: Install WordPress and wait for it
+        run: |
+          set -e
+          COMPOSE="docker compose -f tests/integration/docker-compose.floor.yml --project-directory ."
+          for i in $(seq 1 60); do
+            $COMPOSE exec -T db mysqladmin ping --user=root --password=root >/dev/null 2>&1 && break
+            sleep 3
+          done
+          for i in $(seq 1 30); do
+            $COMPOSE run --rm cli wp core install \
+              --url=http://localhost:8888 --title=CI \
+              --admin_user=admin --admin_password=admin \
+              --admin_email=ci@example.test --skip-email >/dev/null 2>&1 && break
+            sleep 5
+          done
+          $COMPOSE run --rm cli wp core is-installed
+          curl --silent --output /dev/null --retry 30 --retry-delay 3 --retry-connrefused "$SITE_URL"
+
+      - name: Integration arms
+        run: bash tests/integration/run.sh
+        env:
+          SITE_URL: ${{ env.SITE_URL }}
+          CLI_PREFIX: docker compose -f tests/integration/docker-compose.floor.yml --project-directory . run --rm cli
+
+      - name: Tear the stack down
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.floor.yml --project-directory . down -v

@@ -30,3 +30,9 @@ GitHub 免费额度事实：公共仓库标准 Linux runner 分钟数免费且�
 - 正面：PHP 7.4 与 WP 6.0 下界首次获得**运行时**证据（此前仅静态保证，ADR-0006 明记的缺口闭合）；卸载两模式在真实 `wp plugin delete` 下闭环（T2/T6 遗留臂）；安全扫描（gitleaks）随每次推送持续复查公开面；E2E 顾客模拟覆盖「同意/拒绝、爬虫、下单、填表、后台操作」五类真人行为。
 - 代价：wp-env 矩阵每格拉取 Docker 镜像约 3–5 分钟（免费但慢）；MySQL 5.7 override 依赖 wp-env 的 override 机制，如上游格式变动需跟进；E2E 对 WooCommerce store API 的依赖意味着 Woo 大版本重构可能需改剧本；公开仓库使 docs/ 中文文档对公众可见（内容本为项目自身文档，无凭据，已扫描确认）。
 - 复审触发点：GitHub 免费政策变更（公共仓库 runner 收费或并发上限下调）；PHP 8.5 工具链成熟后转正实验位；wp-env 弃用时。
+
+## 勘误与修正记录（2026-09-13，首轮实测后）
+
+wp-env 的配置模式**不接受 `services` 键**（`.wp-env.override.json` 报 "services is not a configuration option"），即 wp-env 没有数据库版本旋钮——原第 2 条「下界格用 override 换 mysql:5.7」不可行。修正：MySQL 5.7 地板证明移入独立工作流 `wp-floor-mysql57.yml`，脱离 wp-env，直接用官方 `wordpress:6.0-php7.4` + `mysql:5.7` + `wordpress:cli-php7.4` 镜像的 compose 栈（`tests/integration/docker-compose.floor.yml`）；`tests/integration/run.sh` 经 `CLI_PREFIX` 参数化后两种环境共用全部断言臂。集成矩阵随之改为 5 格（PHP 7.4/8.1/8.3 × WP 7.1 + 8.1/8.3 × WP 6.0，MySQL 8 由 wp-env 默认携带），峰值并发 7+3+5+1+1 = 17，仍在 20 以内。
+
+首轮实测同时揪出两处真实生命周期缺陷（停用与删除式卸载均遗留 gr_ 命名空间的待执行 wp-cron 单次事件，违反两类各自文档声明的「不留工作/干净重来」承诺），修复入 `Gr_Queue::clear_plugin_cron()`（停用清扫 + 卸载清扫共用）——CI 的价值即在此：dev 主站因 WooCommerce 携带 Action Scheduler，单次事件从不落入 wp-cron，该缺陷在本地环境不可复现。
