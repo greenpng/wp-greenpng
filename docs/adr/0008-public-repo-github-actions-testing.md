@@ -62,3 +62,7 @@ E2E 剩余三红的取证收敛为两处真实插件缺陷与一处定位歧义�
 - **09 的完成步从未触发过插件钩子**：Woo 仅从未支付状态（on-hold/pending/failed/cancelled）触发 `woocommerce_payment_complete`（Woo 11.1 `WC_Order::payment_complete` 源码实读）；Store API 的 COD 订单创建即 'processing'，`update_status('completed')` 与 `payment_complete()` 都走 else 分支（另一条 `..._order_status_processing` 钩子）。「CLI 进程无同意故绑定跳过」的推断因此不成立——钩子根本没响。修正：ci-seed 的 complete-order 改为先置 pending 再 `payment_complete()`，诚实模拟卡网关 webhook（结账留 pending、带外回调完成支付、回调不携带任何会话状态）；新增 latest-conversion 任务经 $wpdb 按订单过滤读转化行，摆脱 db query 参数层与并行 worker 竞态。dev 站（同 WP 7.1 + Woo 11.1 栈）全链复跑实证：带外（CLI 无 cookie 无同意）绑定落地，`_gr_attributed='1'`、转化行 `woocommerce|41|9.99|USD`——第五缺陷的同意快照修复在真实栈上被证实有效。
 - 04 的根因同第一条（enqueue 异常击穿致派发两头落空）；04 的双执行器（AS 失败退出即转 `wp cron event run --due-now`）无需再改。10 已在本轮转绿（exact:true 足矣）。
 - 环境事实沉淀：本机 wp-cli 的 `db query` 对含多列/表达式/DATETIME 的输出行存在吞字怪癖，取证一律改走 `wp eval` + `$wpdb`；curl cookie 罐中 HttpOnly 行带 `#HttpOnly_` 前缀，`grep -v '^#'` 会将其误滤——dev 站诊断两度被自身取证工具误导，记录在案。
+
+## 勘误与修正记录（2026-09-13，第十五轮实测后）
+
+第九至十四轮的累积修复在本轮兑现：09（Woo 带外归因全链）与 10（隐私指南手风琴）双双转绿；01/02×2/03/05/06/07/08 连续三轮全绿。仅剩 04，且证据表明其业务链路已全通——安全日志 scanner_ua 行在前、fcrdns 行在后、裁决 transient 落库、`wp cron event run --due-now` 消费了单次事件（故执行后的 cron 列表不再含 gr_ 钩子）。红的只是页面断言：主张表按地址合并（设计行为，打点与重访计数），而本栈所有流量共享同一 docker 桥地址——工作流自身用 runner curl（UA `curl/8.5.0`）探活站点，后走同一地址，把「Claimed agent」列顶替为最新声明者。修正在规格侧：断言主张行的裁决列（verified/unverified 皆为「出了结论」）与步数，改由「Scanner-UA engine」表（按代理分行、不受地址合并影响）承载 Googlebot 可见性断言。环境事实：UBuntu 24.04 runner 的 curl 8.5.0 与 wp-env 端口转发的桥地址 172.18.0.* 共同构成本栈的共享地址噪声。

@@ -48,5 +48,23 @@ test( 'a crawler user-agent lands in Bot & Device Signals', async ( { page, brow
 
 	await login( page );
 	await page.goto( adminPage( slug.bot ) );
-	await expect( page.locator( 'table' ).first(), evidence() ).toContainText( 'Googlebot' );
+
+	// The FCrDNS table merges claims per address, and every request in
+	// this stack shares one docker-bridge IP: the runner's own curl
+	// probes walk that address after the crawler, so the claimed-agent
+	// column shows the latest claimant, not the crawler. What the
+	// scenario promises is the conclusion — a claim row with a
+	// forward-confirmed verdict either way (columns: address, agent,
+	// PTR, verdict, walks, last seen).
+	const claimRow = page.locator( 'table' ).first().locator( 'tbody tr' ).first();
+	const cells = claimRow.locator( 'td' );
+	await expect( cells.nth( 3 ), evidence() ).toHaveText( /^(verified|unverified)$/ );
+	expect( parseInt( await cells.nth( 4 ).innerText(), 10 ) ).toBeGreaterThanOrEqual( 1 );
+
+	// The crawler's own walk stays separately visible: the
+	// scanner-UA engine table lists one row per agent, immune to the
+	// shared-address merge.
+	await expect(
+		page.locator( 'h2', { hasText: 'Scanner-UA engine' } ).locator( 'xpath=following-sibling::table[1]' )
+	).toContainText( 'Googlebot' );
 } );
