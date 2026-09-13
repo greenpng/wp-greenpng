@@ -1,0 +1,47 @@
+name: Unit · PHP matrix
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: unit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    # 8.4/8.5 are experimental seats: upstream toolchains lag behind the
+    # newest PHP releases, so these cannot gate merges yet (ADR-0008).
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '7.4', experimental: false }
+          - { php: '8.0', experimental: false }
+          - { php: '8.1', experimental: false }
+          - { php: '8.2', experimental: false }
+          - { php: '8.3', experimental: false }
+          - { php: '8.4', experimental: true }
+          - { php: '8.5', experimental: true }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v6
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, curl
+          coverage: none
+
+      - name: Composer dependencies (locked)
+        uses: ramsey/composer-install@v3
+        with:
+          dependency-versions: locked
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit

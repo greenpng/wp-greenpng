@@ -1,0 +1,74 @@
+name: E2E · Playwright
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  customers:
+    name: Simulated customers (WP 7.1 · PHP 8.1 · Woo · CF7)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Write the wp-env config
+        run: |
+          cat > .wp-env.json <<'JSON'
+          {
+            "core": "https://wordpress.org/wordpress-7.1.zip",
+            "phpVersion": "8.1",
+            "plugins": [
+              "./plugin",
+              "https://downloads.wordpress.org/plugin/woocommerce.zip",
+              "https://downloads.wordpress.org/plugin/contact-form-7.zip"
+            ]
+          }
+          JSON
+
+      - name: Start wp-env
+        run: npx wp-env start
+
+      - name: Wait for WordPress
+        run: curl --silent --output /dev/null --retry 60 --retry-delay 3 --retry-connrefused http://localhost:8888
+
+      - name: Seed the site (plugins, permalinks, form page)
+        run: bash tests/e2e/seed.sh
+
+      - name: Playwright
+        run: npx playwright test
+
+      - name: Stop wp-env
+        if: always()
+        run: npx wp-env stop
+
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/
+          if-no-files-found: ignore

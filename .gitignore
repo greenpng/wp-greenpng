@@ -13,3 +13,14 @@ composer.phar
 
 # PHPStan result cache (tools/phpstan-run.sh).
 /.phpstan-tmp/
+
+# Node dev tooling (ADR-0008): installed by npm ci, never committed.
+/node_modules/
+
+# wp-env runtime configs are generated per CI job (ADR-0008).
+/.wp-env.json
+/.wp-env.override.json
+
+# Playwright output (ADR-0008).
+/test-results/
+/playwright-report/

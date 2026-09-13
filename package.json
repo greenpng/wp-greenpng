@@ -1,0 +1,11 @@
+{
+    "name": "greenpng-dev-tooling",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Dev tooling for the greenpng WordPress plugin: wp-env environments for the CI matrix and Playwright E2E customer scenarios (ADR-0008). The plugin itself ships with zero runtime node or Composer dependencies (ADR-0003).",
+    "license": "GPL-2.0-or-later",
+    "devDependencies": {
+        "@playwright/test": "^1.49.0",
+        "@wordpress/env": "^10.6.0"
+    }
+}
