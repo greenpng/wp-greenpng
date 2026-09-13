@@ -41,6 +41,7 @@
 | [`ISS-07-FREE-ONLY-EXCELLENCE-AND-ROADMAP-RECTIFICATION.md`](./ISS-07-FREE-ONLY-EXCELLENCE-AND-ROADMAP-RECTIFICATION.md) | **P1 严重** | **纯免费版极致体验与路线图重构落地方案**：摒弃商业化纠结，专注打造 WordPress.org 顶流免费插件，重构 v1.0（立足闭环）→ v1.1（增长赋能）→ v1.2（开放互通）演进时间表。 |
 | [`ISS-08-POST-V1-0-ACTUAL-UI-AND-FUNCTION-GAP-ANALYSIS.md`](./ISS-08-POST-V1-0-ACTUAL-UI-AND-FUNCTION-GAP-ANALYSIS.md) | **P1 严重** | **v1.0 交付后实际 UI 与功能对照差距分析**：对标 40 页静态原型与 226 个同行插件，锁定 8 大真实缺口（4个设置键零UI控件、IP质量层未排期、A/B测试无创建入口、访客会话无列表、在线人数/设备未上屏等）。 |
 | [`ISS-09-POST-V1-0-DEEP-GAP-AUDIT-AND-ISS-08-EVALUATION.md`](./ISS-09-POST-V1-0-DEEP-GAP-AUDIT-AND-ISS-08-EVALUATION.md) | **P0 致命** | **v1.0 交付后深度代码审计与深层断链缺陷增补**：全面核验 ISS-08（证实其 95% 准确），并首次揭发其漏掉的 5 大深层运行时逻辑死结（`is_bot` 在运行时永不置 1 致 Meta CAPI 防刷网关完全失效、探针 `bot_score` 不存入会话、后台 IP 封禁规则未挂载拦截等），提供 v1.0.1 紧急修补集与 v1.1 闭环架构。 |
+| [`ISS-10-POST-V1-0-1-HOTFIX-CODE-AUDIT-AND-CLOSURE-VERIFICATION.md`](./ISS-10-POST-V1-0-1-HOTFIX-CODE-AUDIT-AND-CLOSURE-VERIFICATION.md) | **A+ 卓越闭环** | **v1.0.1 热修代码深度审计与闭环核验**：全面审查同事完成的 Phase 7（H1~H7）热修代码。核验证实 C1/C2（探针与检测器双向标记 is_bot）、C3（检查器前门静态封禁与 URL 豁免）、C4 前半（Store API 线下单归因）、G1（Security 标签 5 控件+架构不变式测试）已全线高质量闭环，退款冲销与表单客户线索稳健收敛至 v1.1 路线图。 |
 
 ---
 

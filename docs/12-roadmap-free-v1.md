@@ -28,7 +28,9 @@
 | :--- | :--- |
 | 行为洞察 | gr-probe.js 行为模块（停留/滚动/怒点/死点），同意门控，落 `gr_events` |
 | CRM | 联系人列表/档案/标签、线索评分（**消费 v1.0 安全结论通道**：疑似机器人→评分清零 + `sys:suspected_bot` 标签；原始信号永不入画像）、RFM 分层；**表单线索留存**——语义提取的 email/name/phone 在同意门控下落 `gr_contacts`（ISS-09 C5 裁定，`15` §4；"表单提交=默示同意"已驳回，ADR-0005） |
-| 漏斗 | 漏斗定义（表单式，非画布）+ 步骤流失 + **纯 CSS/SVG 阶梯流失图** + 转化目标页 |
+| 漏斗 | 漏斗定义（表单式，非画布）+ 步骤流失 + **纯 CSS/SVG 阶梯流失图** + 转化目标页；**A/B 实验创建表单**（ISS-08 G3：Funnels 页原生表单式创建入口，补 v1.0 只能 WP-CLI/代码创建实验的缺口） |
+| 运营面板 | **访客会话列表**（Traffic 页新增标签：`gr_sessions` 明细分页，ISS-08 G4）+ **Dashboard 在线人数与设备分布上屏**（读既有 `count_online()`/`bot_score_distribution()` 聚合，零新表，ISS-08 G5） |
+| 表格增强 | WP 原生 List Table 通用增强：**日期范围筛选、搜索、CSV 导出**（ISS-08 G6；datagrid 组件复用，`11` §3） |
 | 弃购挽回 | 失焦邮箱捕获（默认关 + 同意勾选）+ 15 分钟调度（自适应队列）+ 令牌核销 + 防重复发信互斥 |
 | 归因冲销 | 退款/取消冲销（Woo `refunded`/`cancelled` 监听；`gr_conversions` UNIQUE source 键下须 UPDATE/软标而非第二行；日聚合 7 天重算窗与跨窗退款口径待定——三项开放问题的 ADR 启动时立，ISS-09 C4 后半 / `15` §4） |
 | 出网 | 通用 Webhook（HMAC-SHA256 签名 + 验签文档） |

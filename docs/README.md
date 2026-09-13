@@ -31,8 +31,10 @@
 | 10 | [安全工程](10-security-engineering.md) | IP 解析、拦截成熟度、密钥存储、nonce/能力模型 | ✅ |
 | 11 | [测试策略](11-testing-strategy.md) | 测试金字塔、工具链、常用插件共存矩阵 | ✅ |
 | 12 | [免费版路线图](12-roadmap-free-v1.md) | v1.0（四支柱首发）→ v1.3 分期交付计划 | ✅ |
-| 13 | [v1.0 实施清单](13-v1-0-implementation-plan.md) | 85 项任务分解、验收标准、进度真源、决议记录 | 🔧 |
+| 13 | [v1.0 实施清单](13-v1-0-implementation-plan.md) | 92 项任务分解（v1.0 六阶段 + Phase 7 热修）、验收标准、进度真源、决议记录 | 🔧 |
 | 14 | [iss/ 评审结论](14-iss-review-verdicts.md) | 同事审计报告的核验记录与逐份裁定（引用 iss/ 以此为准） | ✅ |
+| 15 | [ISS-09 评审结论](15-iss09-review-verdicts.md) | ISS-09 深度审计（C1~C5）逐条核验、修复方案采编、v1.0.1/v1.1 任务映射 | ✅ |
+| 16 | [ISS-10 评审结论](16-iss10-review-verdicts.md) | ISS-10 闭环核验报告核验、v1.1/v1.2 排期建议采编、闭环收尾记录 | ✅ |
 | ADR | [adr/](adr/) | 架构决策记录（编号递增，只增不改） | 持续 |
 
 ## ADR 索引
@@ -46,6 +48,8 @@
 | 0005 | [营销轨追踪须同意门控，默认匿名化](adr/0005-consent-gated-tracking.md) | 已接受（安全轨见 0007 双轨） |
 | 0006 | [本地开发与验证环境：MariaDB 主验证站](adr/0006-local-test-environment.md) | 已接受（SQLite 兼容目标被 0007 废止） |
 | 0007 | [通用化集成、四支柱首发、隐私双轨与 MySQL-only](adr/0007-generic-integration-four-pillar-v1-dual-track-mysql.md) | 已接受 |
+| 0008 | [公共仓库 GitHub Actions 测试体系](adr/0008-public-repo-github-actions-testing.md) | 已接受（wp-greenpng 五工作流） |
+| 0009 | [机器人判定入会话、封禁前门执法与线下单归因挂载](adr/0009-bot-verdict-wiring-ban-enforcement-and-offline-order-attribution.md) | 已接受（v1.0.1 热修） |
 
 ## 规范速查（违反即评审驳回）
 
