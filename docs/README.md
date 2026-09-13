@@ -12,7 +12,7 @@
 2. `01-wp-plug-analysis-and-assessment.md` —— **立项依据**：参考项目审计结论（先读这个，理解为什么规范是现在这样）
 3. `02-architecture-blueprint.md` —— 三层架构、模块划分、数据流
 4. `04-naming-and-coding-standards.md` —— 命名、编码与双向兼容规范（写代码前必读）
-5. 按任务查阅对应专项文档；v1.0 开发以 `13` 为任务真源
+5. 按任务查阅对应专项文档；v1.0 开发以 `13` 为任务真源，v1.1 开发以 `17` 为任务真源
 
 ## 文档索引
 
@@ -35,6 +35,7 @@
 | 14 | [iss/ 评审结论](14-iss-review-verdicts.md) | 同事审计报告的核验记录与逐份裁定（引用 iss/ 以此为准） | ✅ |
 | 15 | [ISS-09 评审结论](15-iss09-review-verdicts.md) | ISS-09 深度审计（C1~C5）逐条核验、修复方案采编、v1.0.1/v1.1 任务映射 | ✅ |
 | 16 | [ISS-10 评审结论](16-iss10-review-verdicts.md) | ISS-10 闭环核验报告核验、v1.1/v1.2 排期建议采编、闭环收尾记录 | ✅ |
+| 17 | [v1.1 实施清单](17-v1-1-implementation-plan.md) | v1.1 任务真源：九阶段 35 任务、悬置项裁定收口（G2/C5/G4/D8 等）、风险登记 | 🔧 |
 | ADR | [adr/](adr/) | 架构决策记录（编号递增，只增不改） | 持续 |
 
 ## ADR 索引
@@ -50,6 +51,13 @@
 | 0007 | [通用化集成、四支柱首发、隐私双轨与 MySQL-only](adr/0007-generic-integration-four-pillar-v1-dual-track-mysql.md) | 已接受 |
 | 0008 | [公共仓库 GitHub Actions 测试体系](adr/0008-public-repo-github-actions-testing.md) | 已接受（wp-greenpng 五工作流） |
 | 0009 | [机器人判定入会话、封禁前门执法与线下单归因挂载](adr/0009-bot-verdict-wiring-ban-enforcement-and-offline-order-attribution.md) | 已接受（v1.0.1 热修） |
+| 0010 | [退款/取消冲销与日聚合净额口径](adr/0010-refund-reversal-and-net-revenue-semantics.md) | 已接受（v1.1） |
+| 0011 | [离线 IP 质量层：机房段采纳、Tor 拒绝](adr/0011-offline-ip-quality-layer.md) | 已接受（v1.1，G2 裁定） |
+| 0012 | [行为洞察模块：双端同意门控](adr/0012-behavior-insight-module.md) | 已接受（v1.1） |
+| 0013 | [CRM 联系人、线索评分与 RFM 分层](adr/0013-crm-contacts-lead-scoring-rfm.md) | 已接受（v1.1，C5 后半收口） |
+| 0014 | [漏斗定义、步骤推进与 A/B 实验创建表单](adr/0014-funnel-definition-progression-and-ab-creation-form.md) | 已接受（v1.1，G3 收口） |
+| 0015 | [弃购挽回：失焦捕获 + 延迟单事件 + 令牌核销](adr/0015-cart-abandonment-recovery.md) | 已接受（v1.1） |
+| 0016 | [通用出网 Webhook：HMAC 签名 + 队列异步](adr/0016-generic-outbound-webhook.md) | 已接受（v1.1） |
 
 ## 规范速查（违反即评审驳回）
 
