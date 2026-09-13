@@ -44,6 +44,14 @@ final class Gr_Security_Conclusions {
     private const HIGH_RULES = array( 'scanner_ua', 'sqli_union', 'lfi_traversal', 'honeypot', 'blackhole' );
 
     /**
+     * Whether the request-end session marker is already armed; one
+     * request convicting through several rules still marks once.
+     *
+     * @var bool
+     */
+    private static bool $marker_armed = false;
+
+    /**
      * Hook wiring: the frame's findings are the per-request surface.
      * Honeypot and blackhole conclusions are fed directly where those
      * modules judge, on paths that never reach the frame.
@@ -69,6 +77,8 @@ final class Gr_Security_Conclusions {
         }
 
         gr_dispatch_event( self::EVENT_NAME, $conclusion );
+
+        self::arm_marker( $conclusion );
     }
 
     /**
@@ -91,7 +101,61 @@ final class Gr_Security_Conclusions {
         $conclusion = self::conclude( $findings );
         if ( null !== $conclusion ) {
             gr_dispatch_event( self::EVENT_NAME, $conclusion );
+            self::arm_marker( $conclusion );
         }
+    }
+
+    /**
+     * Arms the request-end session marker for a high-tier conclusion
+     * (ADR-0009 D2). Findings fire at init, but the session row is
+     * written by the attribution listener at template_redirect, which
+     * runs later — the mark has to land after both. WP reaches the
+     * shutdown action through a PHP shutdown function, which also runs
+     * after wp_die, so the trap's own verdict still gets its chance
+     * to stick.
+     *
+     * @param array{suspected_bot: bool, bot_tier: string} $conclusion Dispatched conclusion.
+     * @return void
+     */
+    private static function arm_marker( array $conclusion ): void {
+        if ( self::$marker_armed || self::TIER_HIGH !== $conclusion['bot_tier'] ) {
+            return;
+        }
+
+        self::$marker_armed = true;
+        add_action( 'shutdown', array( self::class, 'mark_current_session' ), 10, 0 );
+    }
+
+    /**
+     * Request-end marker: flags the current dual-track identity's
+     * session as a known bot so the outbound quality gate and the bot
+     * reports read a real verdict instead of the column default.
+     * Detector paths that never created a session row — login and
+     * registration posts, the trap's wp_die — mark nothing, which is
+     * the honest outcome: there was no visit row to convict
+     * (ADR-0009 D2).
+     *
+     * @return void
+     */
+    public static function mark_current_session(): void {
+        try {
+            $identity = gr()->identity();
+            gr()->sessions()->mark_session_bot(
+                (string) $identity->visitor_id(),
+                (string) $identity->session_id()
+            );
+        } catch ( \Throwable $error ) {
+            do_action( Gr_Request_Inspector::ERROR_HOOK, 'conclusions_marker', $error );
+        }
+    }
+
+    /**
+     * Test seam: forget the armed marker.
+     *
+     * @return void
+     */
+    public static function reset_for_tests(): void {
+        self::$marker_armed = false;
     }
 
     /**

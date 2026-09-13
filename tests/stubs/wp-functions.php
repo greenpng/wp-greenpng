@@ -364,6 +364,9 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         if ( class_exists( 'GreenPNG\Security\Gr_Security_Gate' ) ) {
             GreenPNG\Security\Gr_Security_Gate::reset_for_tests();
         }
+        if ( class_exists( 'GreenPNG\Security\Gr_Security_Conclusions' ) ) {
+            GreenPNG\Security\Gr_Security_Conclusions::reset_for_tests();
+        }
         if ( class_exists( 'GreenPNG\Admin\Gr_Admin_Menu' ) ) {
             GreenPNG\Admin\Gr_Admin_Menu::reset_for_tests();
         }

@@ -212,4 +212,65 @@ final class SecurityConclusionsTest extends TestCase {
         }
         $this->assertTrue( $found );
     }
+
+    public function testHighTierConclusionsArmTheRequestEndSessionMarker(): void {
+        Gr_Security_Conclusions::handle_findings(
+            array( array( 'rule_id' => 'scanner_ua', 'reason' => 'ua:sqlmap' ) )
+        );
+
+        $armed = false;
+        foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
+            if ( 'shutdown' === (string) $registration['hook']
+                && array( Gr_Security_Conclusions::class, 'mark_current_session' ) === $registration['callback'] ) {
+                $armed = true;
+            }
+        }
+        $this->assertTrue( $armed );
+    }
+
+    public function testMediumAndHumanConclusionsNeverArmTheMarker(): void {
+        Gr_Security_Conclusions::handle_findings(
+            array( array( 'rule_id' => 'future_detector', 'reason' => 'x' ) )
+        );
+        Gr_Security_Conclusions::handle_findings( array() );
+        Gr_Security_Conclusions::record();
+
+        $hooks = array();
+        foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
+            $hooks[] = (string) $registration['hook'];
+        }
+        $this->assertNotContains( 'shutdown', $hooks );
+    }
+
+    public function testTheMarkerArmsOnceAndMarksOnlyTheVerdictColumn(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+
+        // One request convicting through several rules: the marker
+        // arms once, not once per rule.
+        Gr_Security_Conclusions::handle_findings(
+            array(
+                array( 'rule_id' => 'scanner_ua', 'reason' => 'x' ),
+                array( 'rule_id' => 'sqli_union', 'reason' => 'y' ),
+            )
+        );
+        Gr_Security_Conclusions::handle_findings(
+            array( array( 'rule_id' => 'blackhole', 'reason' => 'z' ) )
+        );
+
+        $armed = 0;
+        foreach ( $GLOBALS['gr_stub_actions'] as $registration ) {
+            if ( 'shutdown' === (string) $registration['hook'] ) {
+                $armed++;
+            }
+        }
+        $this->assertSame( 1, $armed );
+
+        Gr_Security_Conclusions::mark_current_session();
+
+        $sql = (string) end( $wpdb->queries );
+        $this->assertStringContainsString( 'UPDATE wp_gr_sessions SET is_bot = 1', $sql );
+        // The detector mark leaves the probe's measured score alone.
+        $this->assertStringNotContainsString( 'bot_score', $sql );
+    }
 }
