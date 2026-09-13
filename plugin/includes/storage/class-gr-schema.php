@@ -24,8 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Gr_Schema {
 
-    /** Bump once per schema change; migrations step one version at a time. */
-    public const DB_VERSION = 1;
+    /** Bump once per schema change; migrations step one version at a time. v2 adds the refund-reversal, contact-linkage and IP-quality columns (ADR-0010/0011/0013). */
+    public const DB_VERSION = 2;
 
     /** Option key holding the installed schema version (autoload=no). */
     public const VERSION_OPTION = 'gr_db_version';
@@ -192,6 +192,7 @@ final class Gr_Schema {
                     'device_type VARCHAR(16) NOT NULL DEFAULT \'desktop\'',
                     'ua_family VARCHAR(64) NOT NULL DEFAULT \'\'',
                     'country_code CHAR(2) NOT NULL DEFAULT \'\'',
+                    'ip_quality VARCHAR(16) NOT NULL DEFAULT \'\'',
                     'is_bot TINYINT(1) NOT NULL DEFAULT 0',
                     'bot_score TINYINT(3) UNSIGNED NOT NULL DEFAULT 0',
                     'pageviews INT(10) UNSIGNED NOT NULL DEFAULT 1',
@@ -266,6 +267,8 @@ final class Gr_Schema {
                     'first_touch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0',
                     'last_touch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0',
                     'model_weights TEXT NULL',
+                    'status VARCHAR(16) NOT NULL DEFAULT \'active\'',
+                    'reversed_at DATETIME NULL',
                     'created_at DATETIME NOT NULL',
                     'PRIMARY KEY  (id)',
                     'UNIQUE KEY source_unique (source_type, source_id)',
@@ -343,6 +346,7 @@ final class Gr_Schema {
                     'first_name VARCHAR(191) NOT NULL DEFAULT \'\'',
                     'last_name VARCHAR(191) NOT NULL DEFAULT \'\'',
                     'user_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0',
+                    'visitor_id CHAR(64) NOT NULL DEFAULT \'\'',
                     'lead_score INT(10) UNSIGNED NOT NULL DEFAULT 0',
                     'ltv DECIMAL(12,2) NOT NULL DEFAULT 0.00',
                     'rfm_segment VARCHAR(16) NOT NULL DEFAULT \'\'',
@@ -351,6 +355,7 @@ final class Gr_Schema {
                     'PRIMARY KEY  (id)',
                     'UNIQUE KEY email_hash (email_hash)',
                     'KEY user_id_lookup (user_id)',
+                    'KEY visitor (visitor_id)',
                     'KEY lead_score_idx (lead_score)',
                 )
             ),

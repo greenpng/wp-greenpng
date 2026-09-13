@@ -295,6 +295,12 @@ final class Gr_Campaigns_Page {
         $totals   = array();
         $direct   = 0;
         foreach ( $conversions as $conversion ) {
+            if ( 'reversed' === (string) ( $conversion['status'] ?? 'active' ) ) {
+                // Refunded or cancelled orders kept no revenue: their
+                // snapshot splits stay in the table for the trail but
+                // leave the comparison (ADR-0010 D3 net semantics).
+                continue;
+            }
             $split    = self::decode_split( (string) ( $conversion['model_weights'] ?? '' ) );
             $currency = (string) ( $conversion['currency'] ?? '' );
             $touched  = false;

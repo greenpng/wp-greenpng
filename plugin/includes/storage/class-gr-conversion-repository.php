@@ -137,7 +137,7 @@ final class Gr_Conversion_Repository {
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
-                "SELECT id, source_type, source_id, visitor_id, amount, currency, model_weights, created_at FROM {$table}
+                "SELECT id, source_type, source_id, visitor_id, amount, currency, model_weights, status, reversed_at, created_at FROM {$table}
                 WHERE created_at >= %s
                 ORDER BY created_at DESC, id DESC
                 LIMIT %d",
@@ -177,7 +177,7 @@ final class Gr_Conversion_Repository {
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
-                "SELECT id, source_type, source_id, session_id, amount, currency, model_weights, created_at FROM {$table}
+                "SELECT id, source_type, source_id, session_id, amount, currency, model_weights, status, reversed_at, created_at FROM {$table}
                 WHERE visitor_id = %s
                 ORDER BY created_at ASC, id ASC",
                 $visitor_id
@@ -213,5 +213,102 @@ final class Gr_Conversion_Repository {
                 $visitor_id
             )
         );
+    }
+
+    /**
+     * The bound row's reversal-relevant state, or null when the source
+     * has no binding. The refund paths read first and decide after, so
+     * a no-op refund never enqueues a recompute.
+     *
+     * @param string $source_type Source type.
+     * @param int    $source_id   Source id.
+     * @return array{id: int, status: string, amount: string, created_at: string}|null
+     */
+    public function reversal_state_for_source( string $source_type, int $source_id ): ?array {
+        global $wpdb;
+
+        $table = Gr_Database::table( 'conversions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- point lookup on the UNIQUE source key; refund paths run in the queue, never a front-end request.
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT id, status, amount, created_at FROM {$table} WHERE source_type = %s AND source_id = %d",
+                array( substr( $source_type, 0, 16 ), $source_id )
+            ),
+            ARRAY_A
+        );
+
+        if ( ! is_array( $row ) ) {
+            return null;
+        }
+
+        return array(
+            'id'         => (int) $row['id'],
+            'status'     => (string) $row['status'],
+            'amount'     => (string) $row['amount'],
+            'created_at' => (string) $row['created_at'],
+        );
+    }
+
+    /**
+     * Soft-marks the bound row reversed (ADR-0010 D1): a guarded UPDATE
+     * that only an active row can pass, so replayed hooks and a second
+     * refund on the same order are both no-ops. The amount is never
+     * touched — gross truth stays queryable.
+     *
+     * @param string $source_type Source type.
+     * @param int    $source_id   Source id.
+     * @return bool True when this call performed the reversal.
+     */
+    public function reverse_for_source( string $source_type, int $source_id ): bool {
+        global $wpdb;
+
+        $table = Gr_Database::table( 'conversions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- queue-context guarded update; the status guard is the send/idempotency boundary (ADR-0010 D1).
+        $changed = (int) $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "UPDATE {$table} SET status = 'reversed', reversed_at = %s WHERE source_type = %s AND source_id = %d AND status = 'active'",
+                array( current_time( 'mysql' ), substr( $source_type, 0, 16 ), $source_id )
+            )
+        );
+
+        return 1 === $changed;
+    }
+
+    /**
+     * Converges the stored amount to the order's current remaining
+     * total (ADR-0010 D2): every partial-refund event writes the same
+     * terminal value, so replayed hooks cannot compound the deduction
+     * — idempotent by construction. A remaining total of zero flips
+     * the row to reversed in the same statement, merging with the
+     * full-refund path.
+     *
+     * @param string $source_type Source type.
+     * @param int    $source_id   Source id.
+     * @param float  $remaining   Order's remaining total, >= 0.
+     * @return bool True when the stored amount changed.
+     */
+    public function converge_amount_for_source( string $source_type, int $source_id, float $remaining ): bool {
+        global $wpdb;
+
+        $remaining = max( 0.0, $remaining );
+        $target    = number_format( round( $remaining, 2 ), 2, '.', '' );
+        $reversed  = ( 0.0 === $remaining ) ? ", status = 'reversed', reversed_at = '" . current_time( 'mysql' ) . "'" : '';
+
+        $table = Gr_Database::table( 'conversions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- queue-context convergence write; identical values are not counted as changed by MySQL, which is exactly the no-op signal.
+        $changed = (int) $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is a DDL-validated identifier and $reversed a class-built fragment; neither carries user input, and both sit on this first string line on purpose.
+                "UPDATE {$table} SET amount = %s{$reversed} WHERE source_type = %s AND source_id = %d AND status = 'active'",
+                array( $target, substr( $source_type, 0, 16 ), $source_id )
+            )
+        );
+
+        return $changed > 0;
     }
 }

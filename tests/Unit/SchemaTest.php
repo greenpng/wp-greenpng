@@ -155,8 +155,25 @@ final class SchemaTest extends TestCase {
     }
 
     public function testVersionConstants(): void {
-        self::assertSame( 1, Gr_Schema::DB_VERSION );
+        self::assertSame( 2, Gr_Schema::DB_VERSION );
         self::assertSame( 'gr_db_version', Gr_Schema::VERSION_OPTION );
+    }
+
+    /**
+     * DB_VERSION 2 adds exactly the three v1.1 column groups and the
+     * contact-linkage index (ADR-0010/0011/0013); additive only, no
+     * table-count change.
+     */
+    public function testVersionTwoColumnsAreRegistered(): void {
+        $by_table = $this->statements_by_table();
+
+        self::assertStringContainsString( "status VARCHAR(16) NOT NULL DEFAULT 'active'", $by_table['gr_conversions'] );
+        self::assertStringContainsString( 'reversed_at DATETIME NULL', $by_table['gr_conversions'] );
+
+        self::assertStringContainsString( "visitor_id CHAR(64) NOT NULL DEFAULT ''", $by_table['gr_contacts'] );
+        self::assertStringContainsString( 'KEY visitor (visitor_id)', $by_table['gr_contacts'] );
+
+        self::assertStringContainsString( "ip_quality VARCHAR(16) NOT NULL DEFAULT ''", $by_table['gr_sessions'] );
     }
 
     public function testStoreVersionCreatesAutoloadNoAndUpdatesInPlace(): void {

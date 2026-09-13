@@ -32,11 +32,11 @@
 
 | # | 短名 | 状态 | 交付物 | 实测 | 规范 |
 | :--- | :--- | :---: | :--- | :--- | :--- |
-| V1 | Schema v2 迁移 | ⬜ | DB_VERSION 1→2：gr_conversions +status/reversed_at；gr_contacts +visitor_id+KEY；gr_sessions +ip_quality；maybe_upgrade 单批 dbDelta；docs/05 §2/§3.2/§3.3 登记；Schema 单测列断言更新 | — | ADR-0010/0011/0013，docs/05 §4 |
-| V2 | 冲销仓储 | ⬜ | Gr_Conversion_Repository::reversal_state_for_source()（先读后判）+ reverse_for_source()（守卫 UPDATE 幂等）+ converge_amount_for_source()（剩余额收敛）；单测（全额/部分/重放/未绑定零效） | — | ADR-0010 D1/D2 |
-| V3 | Woo 冲销钩 | ⬜ | refunded/cancelled/partially_refunded 三钩 + reverse_payment()/partial_refund() + Throwable 隔离（gr_adapter_error）；单测（含在途单不触发） | — | ADR-0010 D2，铁律 6 |
-| V4 | 净额聚合 | ⬜ | aggregator revenue 口径 WHERE status='active'；冲销经 enqueue 定向重算 created_at 日期 conversions/revenue（旧日期安全：源表永久保留）；单测（跨窗退款重算、7 天窗不动） | — | ADR-0010 D3 |
-| V5 | 冲销消费面 | ⬜ | Campaigns 模型比对净额语义；gr_audit_logs 冲销审计；转化明细 status 徽章（随 V18 档案时间线）；:8091 真退款路径实测 | — | ADR-0010 D4 |
+| V1 | Schema v2 迁移 | ✅ | DB_VERSION 1→2：gr_conversions +status/reversed_at；gr_contacts +visitor_id+KEY；gr_sessions +ip_quality；maybe_upgrade 单批 dbDelta；docs/05 §2/§3.2/§3.3 登记；Schema 单测列断言更新 | :8091 `wp eval-file`——`db_version=2`、DESCRIBE 三表新列全在；phpunit SchemaTest +1 例（v2 列登记）全绿 | ADR-0010/0011/0013，docs/05 §4 |
+| V2 | 冲销仓储 | ✅ | Gr_Conversion_Repository::reversal_state_for_source()（先读后判，no-op 不入队）+ reverse_for_source()（守卫 UPDATE `status='active'` 幂等）+ converge_amount_for_source()（剩余额收敛、0 值同语句翻 reversed）；recent()/rows_for_visitor() SELECT 增 status/reversed_at | RefundReversalTest 6 例——守卫形状/重放 no-op/收敛 '42.50'/零额翻 reversed/状态读/未绑定 null | ADR-0010 D1/D2 |
+| V3 | Woo 冲销钩 | ✅ | refunded/cancelled/partially_refunded 三钩 + reverse_payment()/partial_refund() + Throwable 隔离；**坑位实录：`WC_Order::get_remaining_refund_total()` 在 :8091 WC 11.1 不存在（真栈 fatal 实证）——改用 `get_total() − get_total_refunded()` 长稳公开对**（ADR 已同步勘正）；Woo 桩增 get_total_refunded() | WooCommerceAdapterTest +3 例——refunded 软标+审计+入队、cancelled 未绑定零写、partial 收敛 '60.00'；挂载断言 5→8 | ADR-0010 D2，铁律 6 |
+| V4 | 净额聚合 | ✅ | aggregator revenue 口径 `SUM(CASE WHEN status='active' THEN amount ELSE 0 END)`；`recompute_conversions_for_date()` 定向重算（**只触 conversions/revenue 两指标**——旧日期其余指标族读的是已瘦身表，绝不重算）；`gr_recompute_conversion_date` 队列钩注册 | RefundReversalTest +3 例——净额 CASE 形状与 upsert 值、定向重算零触碰 sessions/events/security_logs、坏日期 0 行拒绝；:8091 实弹见 V5 | ADR-0010 D3 |
+| V5 | 冲销消费面 | ✅ | Campaigns 模型比对跳过 reversed 行（净额语义）；gr_audit_logs 冲销审计（conversion_reversed / conversion_partial_refund）；转化明细 status 徽章随 V18 档案时间线交付 | :8091 全链实弹（WC 11.1 真栈）：绑定后 revenue 239.98 → **refunded 后 119.98（reversed 120 离场）→ conversions 计数 4 不动** → partial 40 退款后 79.98、行 amount '100.00'→'60.00' status 保持 active、订单剩余额 60 一致；audit_reversal_rows=1；queued_as=1（AS 宿主后端可见）；清理后 conversions/audit=0、revenue 回落基线 19.98、debug.log 探针残留 20 行剔除（备份 debug.log.bak-p1）；四检查 + PHPStan L6 全绿（679→696 tests / 3,978→4,071 assertions） | ADR-0010 D4 |
 
 ### Phase 2 · 运营面板与表格增强（G4/G5/G6）
 

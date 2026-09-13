@@ -47,6 +47,7 @@ final class Gr_Daily_Aggregator {
      */
     public static function register(): void {
         add_action( Gr_Queue::DAILY_HOOK, array( self::class, 'run' ), 5, 0 );
+        add_action( 'gr_recompute_conversion_date', array( self::class, 'recompute_conversions_for_date' ), 10, 1 );
     }
 
     /**
@@ -233,7 +234,32 @@ final class Gr_Daily_Aggregator {
     }
 
     /**
-     * Conversion count and revenue for the day.
+     * Targeted recompute for one date's conversion metrics only
+     * (ADR-0010 D3): a refund can land years after the purchase, and
+     * the other metric families of that old date would read already
+     * slimmed raw tables — so this path deliberately recomputes just
+     * conversions/revenue, whose source table keeps rows permanently.
+     * The full aggregate_date() stays window-bound for that reason.
+     *
+     * @param string $date Day to recompute, 'Y-m-d'.
+     * @return int Rows written.
+     */
+    public static function recompute_conversions_for_date( string $date ): int {
+        if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+            return 0;
+        }
+
+        $start = $date . ' 00:00:00';
+        $end   = gmdate( 'Y-m-d H:i:s', (int) strtotime( $date . ' +1 day' ) );
+
+        return self::upsert( self::conversion_metrics( $start, $end, $date ) );
+    }
+
+    /**
+     * Conversion count and net revenue for the day. Counting stays
+     * over all bound rows — the conversion happened, so the rate must
+     * not move on a refund — while revenue sums only active rows
+     * (ADR-0010 D3): the money actually kept.
      *
      * @param string $start Day start.
      * @param string $end   Next day start.
@@ -249,7 +275,7 @@ final class Gr_Daily_Aggregator {
         $totals = $wpdb->get_row(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from the DDL registry, not user input.
-                "SELECT COUNT(*) AS conversions, COALESCE(SUM(amount), 0) AS revenue FROM {$conversions} WHERE created_at >= %s AND created_at < %s",
+                "SELECT COUNT(*) AS conversions, COALESCE(SUM(CASE WHEN status = 'active' THEN amount ELSE 0 END), 0) AS revenue FROM {$conversions} WHERE created_at >= %s AND created_at < %s",
                 $start,
                 $end
             ),

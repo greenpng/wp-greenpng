@@ -1,10 +1,11 @@
 <?php
 /**
- * WooCommerce adapter (docs/13 C10): captures attribution state at
- * checkout through both order-creation paths — classic checkout and
- * the Store API (Blocks) — and binds the conversion when payment
- * completes or an order settles into a paid status (offline gateways,
- * ADR-0009 D4). Every callback is Throwable-isolated: a failure inside
+ * WooCommerce adapter: captures attribution state at checkout through
+ * both order-creation paths — classic checkout and the Store API
+ * (Blocks) — binds the conversion when payment completes or an order
+ * settles into a paid status (offline gateways, ADR-0009 D4), and
+ * reverses the binding when the order is refunded or cancelled
+ * (ADR-0010). Every callback is Throwable-isolated: a failure inside
  * the adapter must never break checkout or payment (docs/02 §2.7
  * fail-open).
  *
@@ -30,7 +31,7 @@ use GreenPNG\Privacy\Gr_Consent;
 use WC_Order;
 
 /**
- * Three-hook WooCommerce integration.
+ * Checkout capture, payment binding, and refund reversal mounts.
  */
 final class Gr_Woocommerce_Adapter implements Adapter_Interface {
 
@@ -100,7 +101,11 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
      * offline gateways are born directly in a paid status, so
      * payment_complete never fires for them — the status hooks are
      * the path that does. The lock and the conversions UNIQUE key
-     * collapse the double fire on orders that hit both.
+     * collapse the double fire on orders that hit both. The three
+     * refund mounts reverse the binding (ADR-0010): a full refund or
+     * cancellation soft-marks the row reversed, a partial refund
+     * converges the stored amount to the order's remaining total;
+     * both are idempotent against replayed hooks.
      *
      * @return void
      */
@@ -114,6 +119,9 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         add_action( 'woocommerce_payment_complete', array( $this, 'complete_payment' ), 10, 1 );
         add_action( 'woocommerce_order_status_processing', array( $this, 'complete_payment' ), 10, 1 );
         add_action( 'woocommerce_order_status_completed', array( $this, 'complete_payment' ), 10, 1 );
+        add_action( 'woocommerce_order_status_refunded', array( $this, 'reverse_payment' ), 10, 1 );
+        add_action( 'woocommerce_order_status_cancelled', array( $this, 'reverse_payment' ), 10, 1 );
+        add_action( 'woocommerce_order_partially_refunded', array( $this, 'partial_refund' ), 10, 2 );
     }
 
     /**
@@ -162,6 +170,56 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         $this->guarded(
             function () use ( $id ): void {
                 $this->bind_order( $id );
+            }
+        );
+    }
+
+    /**
+     * Full refund or cancellation: the binding's reversal moment. An
+     * order cancelled before payment was never bound, so the service
+     * no-ops on it — reversal only ever touches bound rows.
+     *
+     * @param int|string $order_id Order id.
+     * @return void
+     */
+    public function reverse_payment( $order_id ): void {
+        $id = is_numeric( $order_id ) ? (int) $order_id : 0;
+
+        $this->guarded(
+            function () use ( $id ): void {
+                $this->attribution->reverse_source( self::get_id(), $id );
+            }
+        );
+    }
+
+    /**
+     * Partial refund: converge the stored amount to the order's
+     * remaining total (ADR-0010 D2). The refund object itself is not
+     * needed — the order is the single source of truth for what
+     * remains, which is what makes replayed hooks harmless.
+     *
+     * @param int|string $order_id  Order id.
+     * @param int|string $refund_id Refund object id (unused).
+     * @return void
+     */
+    public function partial_refund( $order_id, $refund_id = 0 ): void {
+        $id = is_numeric( $order_id ) ? (int) $order_id : 0;
+
+        $this->guarded(
+            function () use ( $id ): void {
+                $order = wc_get_order( $id );
+                if ( ! $order instanceof WC_Order ) {
+                    return;
+                }
+
+                // Total minus already-refunded is the long-stable
+                // public CRUD pair; a dedicated remaining-total getter
+                // only exists on recent Woo builds and fatalled on the
+                // live stack, so the computed form is the compatible
+                // one (:8091, WC 11.1, measured).
+                $remaining = (float) $order->get_total() - (float) $order->get_total_refunded();
+
+                $this->attribution->apply_partial_refund( self::get_id(), $id, $remaining );
             }
         );
     }

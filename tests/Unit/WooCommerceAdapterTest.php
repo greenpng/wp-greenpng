@@ -95,7 +95,7 @@ final class WooCommerceAdapterTest extends TestCase {
         }
     }
 
-    public function testPresentTargetRegistersAllFiveHooks(): void {
+    public function testPresentTargetRegistersAllEightMounts(): void {
         if ( ! class_exists( 'WooCommerce', false ) ) {
             eval( 'final class WooCommerce {}' );
         }
@@ -119,6 +119,11 @@ final class WooCommerceAdapterTest extends TestCase {
         // transitions are the binding path that does.
         self::assertContains( 'woocommerce_order_status_processing', $hooks );
         self::assertContains( 'woocommerce_order_status_completed', $hooks );
+        // Refund reversal (ADR-0010): full refund and cancellation
+        // soft-mark the bound row, partial refunds converge the amount.
+        self::assertContains( 'woocommerce_order_status_refunded', $hooks );
+        self::assertContains( 'woocommerce_order_status_cancelled', $hooks );
+        self::assertContains( 'woocommerce_order_partially_refunded', $hooks );
     }
 
     public function testPresentTargetAlsoRegistersTheCapiPaymentForwarder(): void {
@@ -323,6 +328,129 @@ final class WooCommerceAdapterTest extends TestCase {
             }
         }
         self::assertTrue( $reported );
+    }
+
+    public function testRefundedOrderSoftMarksTheBindingReversed(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $GLOBALS['gr_adapter']->register_hooks();
+
+        $wpdb->results = array(
+            array(
+                'id'         => '31',
+                'status'     => 'active',
+                'amount'     => '120.00',
+                'created_at' => '2026-08-01 10:00:00',
+            ),
+        );
+        $wpdb->query_result = 1;
+
+        do_action( 'woocommerce_order_status_refunded', 509 );
+
+        $updates = array_filter(
+            $wpdb->queries,
+            static function ( $sql ): bool {
+                return is_string( $sql ) && 0 === strpos( $sql, 'UPDATE wp_gr_conversions' );
+            }
+        );
+        self::assertNotSame( array(), $updates );
+        self::assertStringContainsString( "status = 'reversed'", implode( ' ', $updates ) );
+
+        // The adapter wired the service's recompute queue for the
+        // conversion's own date (ADR-0010 D3).
+        $queued = false;
+        foreach ( $GLOBALS['gr_stub_cron'] as $event ) {
+            if ( 'gr_recompute_conversion_date' === $event['hook'] ) {
+                self::assertSame( array( '2026-08-01' ), $event['args'] );
+                $queued = true;
+            }
+        }
+        self::assertTrue( $queued );
+
+        // A replayed refund hook is a no-op at the business layer: it
+        // issued its guarded UPDATE, matched nothing (the stub returns
+        // 0 affected rows), and the service treated that as the no-op
+        // it is — no second audit row, no second recompute.
+        $wpdb->query_result = 0;
+        do_action( 'woocommerce_order_status_refunded', 509 );
+
+        $audit_rows = 0;
+        foreach ( $wpdb->inserts as $insert ) {
+            if ( 'wp_gr_audit_logs' === $insert['table'] && 'conversion_reversed' === $insert['data']['action'] ) {
+                ++$audit_rows;
+            }
+        }
+        $recompute_events = 0;
+        foreach ( $GLOBALS['gr_stub_cron'] as $event ) {
+            if ( 'gr_recompute_conversion_date' === $event['hook'] ) {
+                ++$recompute_events;
+            }
+        }
+        self::assertSame( 1, $audit_rows );
+        self::assertSame( 1, $recompute_events );
+    }
+
+    public function testCancelledOrderNeverBoundLeavesNothingToReverse(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $GLOBALS['gr_adapter']->register_hooks();
+
+        // No binding row: an order cancelled before payment was never
+        // attributed (ADR-0010 D2's in-flight exclusion).
+        $wpdb->results = array();
+
+        do_action( 'woocommerce_order_status_cancelled', 510 );
+
+        foreach ( $wpdb->queries as $query ) {
+            self::assertStringNotContainsString( 'UPDATE wp_gr_conversions', (string) $query );
+        }
+    }
+
+    public function testPartialRefundConvergesToTheOrderRemainingTotal(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $GLOBALS['gr_adapter']->register_hooks();
+
+        $order = $this->order( 511 );
+        $order->total           = 120.0;
+        $order->total_refunded  = 60.0;
+
+        $wpdb->results = array(
+            array(
+                'id'         => '32',
+                'status'     => 'active',
+                'amount'     => '120.00',
+                'created_at' => '2026-08-02 10:00:00',
+            ),
+        );
+        $wpdb->query_result = 1;
+
+        do_action( 'woocommerce_order_partially_refunded', 511, 9001 );
+
+        $updates = array_filter(
+            $wpdb->queries,
+            static function ( $sql ): bool {
+                return is_string( $sql ) && 0 === strpos( $sql, 'UPDATE wp_gr_conversions' );
+            }
+        );
+        self::assertNotSame( array(), $updates );
+        $sql = implode( ' ', $updates );
+        // The order is the single source of truth: replayed refund
+        // hooks converge on the same terminal value (ADR-0010 D2).
+        self::assertStringContainsString( "amount = '60.00'", $sql );
+        self::assertStringNotContainsString( "status = 'reversed'", $sql );
     }
 
     public function testBornPaidStatusTransitionsBindAndStayIdempotent(): void {

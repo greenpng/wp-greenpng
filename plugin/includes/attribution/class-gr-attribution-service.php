@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Core\Gr_Queue;
+use GreenPNG\Storage\Gr_Audit_Repository;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
@@ -82,6 +84,100 @@ final class Gr_Attribution_Service {
             $first,
             $last,
             (string) wp_json_encode( $models )
+        );
+    }
+
+    /**
+     * Reverses a bound conversion (ADR-0010): soft-mark only, the
+     * amount stays as bound. When this call performed the reversal,
+     * the conversion date's aggregate rows are queued for a targeted
+     * recompute — old dates are safe because gr_conversions keeps its
+     * rows permanently while the recompute itself only touches the
+     * conversions/revenue metrics.
+     *
+     * @param string $source_type Source type.
+     * @param int    $source_id   Source id.
+     * @return bool True when this call reversed the row.
+     */
+    public function reverse_source( string $source_type, int $source_id ): bool {
+        $state = $this->conversions->reversal_state_for_source( $source_type, $source_id );
+
+        if ( null === $state || 'reversed' === $state['status'] ) {
+            return false;
+        }
+
+        if ( ! $this->conversions->reverse_for_source( $source_type, $source_id ) ) {
+            return false;
+        }
+
+        $this->after_reversal_change( $source_type, $source_id, $state, 'reversed' );
+
+        return true;
+    }
+
+    /**
+     * Converges a partially refunded order's stored amount to the
+     * order's remaining total (ADR-0010 D2). Convergence means a
+     * replayed refund hook can never compound; only a real change
+     * triggers the recompute and audit trail.
+     *
+     * @param string $source_type Source type.
+     * @param int    $source_id   Source id.
+     * @param float  $remaining   Order's remaining total, >= 0.
+     * @return bool True when the stored amount changed.
+     */
+    public function apply_partial_refund( string $source_type, int $source_id, float $remaining ): bool {
+        $state = $this->conversions->reversal_state_for_source( $source_type, $source_id );
+
+        if ( null === $state || 'reversed' === $state['status'] ) {
+            return false;
+        }
+
+        if ( ! $this->conversions->converge_amount_for_source( $source_type, $source_id, $remaining ) ) {
+            return false;
+        }
+
+        $this->after_reversal_change( $source_type, $source_id, $state, 0.0 === $remaining ? 'reversed' : 'partial' );
+
+        return true;
+    }
+
+    /**
+     * Shared post-change work: queue the targeted date recompute and
+     * leave the audit trail. The date comes from the pre-change state
+     * read, so a later re-read cannot drift under a concurrent write.
+     *
+     * @param string                                                             $source_type Source type.
+     * @param int                                                                $source_id   Source id.
+     * @param array{id: int, status: string, amount: string, created_at: string} $before Pre-change state.
+     * @param string                                                             $kind        'reversed' or 'partial'.
+     * @return void
+     */
+    private function after_reversal_change( string $source_type, int $source_id, array $before, string $kind ): void {
+        Gr_Queue::enqueue( 'gr_recompute_conversion_date', array( substr( $before['created_at'], 0, 10 ) ) );
+
+        $after = array(
+            'status' => 'reversed' === $kind ? 'reversed' : $before['status'],
+            'amount' => 'reversed' === $kind ? $before['amount'] : null,
+        );
+
+        ( new Gr_Audit_Repository() )->log(
+            'reversed' === $kind ? 'conversion_reversed' : 'conversion_partial_refund',
+            'conversion',
+            (string) $before['id'],
+            array(
+                'source_type' => $source_type,
+                'source_id'   => $source_id,
+                'status'      => $before['status'],
+                'amount'      => $before['amount'],
+            ),
+            array(
+                'source_type' => $source_type,
+                'source_id'   => $source_id,
+                'status'      => $after['status'],
+                'amount'      => null === $after['amount'] ? '(converged to remaining)' : $after['amount'],
+            ),
+            get_current_user_id()
         );
     }
 }

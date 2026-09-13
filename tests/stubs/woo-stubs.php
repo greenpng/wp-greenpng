@@ -41,6 +41,13 @@ if ( ! class_exists( 'WC_Order' ) ) {
         public float $total = 0.0;
 
         /**
+         * Already-refunded total feeding the remaining computation.
+         *
+         * @var float
+         */
+        public float $total_refunded = 0.0;
+
+        /**
          * Order currency.
          *
          * @var string
@@ -146,6 +153,20 @@ if ( ! class_exists( 'WC_Order' ) ) {
          */
         public function get_total(): float {
             return $this->total;
+        }
+
+        /**
+         * Refunded-so-far accessor: one half of the remaining-total
+         * pair the partial-refund convergence reads (ADR-0010 D2).
+         *
+         * @return float
+         */
+        public function get_total_refunded(): float {
+            if ( $this->explode ) {
+                throw new RuntimeException( 'order store unavailable' );
+            }
+
+            return $this->total_refunded;
         }
 
         /**

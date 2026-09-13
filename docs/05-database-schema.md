@@ -2,7 +2,7 @@
 
 > **唯一真源**：greenpng 的全部数据表以本文件为准。参考项目的 5/13/14/15 张表互相矛盾（见 `01` §5.1），本文件终结这种不一致。
 > **硬约束**：建表/改表只允许在激活与版本升级例程中通过 `dbDelta()` 执行；索引字符串列 ≤191 字符；一律 `$wpdb->get_charset_collate()`；运行时零 DDL。
-> **修订记录**：2026-09-09 依据 ADR-0007——安全日志完整 IP；身份双轨（visitor_id 主 + 每日盐回退）；补三处索引；明确 MySQL-only 方言。2026-09-10 S5 实测——整数列补显示宽度、字段行逗号分隔（dbDelta 幂等纪律，见 §3 引注）。
+> **修订记录**：2026-09-09 依据 ADR-0007——安全日志完整 IP；身份双轨（visitor_id 主 + 每日盐回退）；补三处索引；明确 MySQL-only 方言。2026-09-10 S5 实测——整数列补显示宽度、字段行逗号分隔（dbDelta 幂等纪律，见 §3 引注）。2026-09-13 DB_VERSION 2（ADR-0010/0011/0013）——`gr_conversions` 增 `status`/`reversed_at`（冲销软标）；`gr_contacts` 增 `visitor_id`+KEY（cookie 轨联结）；`gr_sessions` 增 `ip_quality`（机房段类别词）；零新表。
 
 ---
 
@@ -89,6 +89,7 @@ CREATE TABLE {$wpdb->prefix}gr_sessions (
   device_type VARCHAR(16) NOT NULL DEFAULT 'desktop',
   ua_family VARCHAR(64) NOT NULL DEFAULT '',
   country_code CHAR(2) NOT NULL DEFAULT '',
+  ip_quality VARCHAR(16) NOT NULL DEFAULT '',
   is_bot TINYINT(1) NOT NULL DEFAULT 0,
   bot_score TINYINT(3) UNSIGNED NOT NULL DEFAULT 0,
   pageviews INT(10) UNSIGNED NOT NULL DEFAULT 1,
@@ -110,6 +111,7 @@ CREATE TABLE {$wpdb->prefix}gr_sessions (
 
 > 落地形态（2026-09-10，C5 实装）：会话载体为 `gr_session` cookie（UUID、30 分钟滑窗，命名遵循 docs/04 §1 `gr_<用途>`）；回退轨身份 = `sha256(wp_salt | 当日 | 域分隔符 | 匿名化IP | UA)`；无 Consent API 宿主的营销同意回落 `marketing_consent_fallback` 设置开关（默认关，ADR-0005 §1）；在线数 cutoff 以显式 UTC `DateTime` 计算（对运行时时区变化免疫），实测 EXPLAIN type=range key=last_active。
 - `bot_score`/`is_bot`：探针安全结论（仅分值档位与布尔，无指纹明细）。写入语义（2026-09-13，ADR-0009 D2 落地，修复 C1/C2 断链）：**两挂载互不覆写**——① REST collect 的 `signal` 事件经 `apply_probe_score()` 独立 UPDATE 落地（`bot_score = GREATEST(bot_score, %d)` 只升不降；`is_bot` 粘滞——未过阈值的信号永不清除既有定罪；阈值 `bot_verdict_threshold` 默认 70 = 双信号佐证）；② 检测侧高置信结论（扫描器 UA / 载荷 / 陷阱）经结论通道在请求结束的 PHP shutdown 标记 `mark_session_bot()`（只写 `is_bot`，不动探针分值）。`touch()` 的 upsert 两列保持默认值不动——会话行由 touch 落地、结论由两挂载写入；登录/注册/陷阱等从未建会话行的路径如实标记零行（无可定罪之行）。
+- `ip_quality`（2026-09-13，DB_VERSION 2，ADR-0011 D4）：机房段类别词 `'hosting'` 或 `''`（未知/住宅）——归因监听器首触写入、重复 touch 不覆写（与 channel 同款落地纪律）；匹配在内存完成（随包 packed CIDR + `Gr_Ip_Matcher`），原始 IP **永不落营销轨表**（类别词与 `country_code` 同级，非标识符）。**仅展示与报表，绝不自动定罪**（bot 判定权仍属探针/检测结论通道）。
 
 ### 3.3 `gr_conversions`（转化与归因绑定）
 
@@ -125,6 +127,8 @@ CREATE TABLE {$wpdb->prefix}gr_conversions (
   first_touch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
   last_touch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
   model_weights TEXT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'active',
+  reversed_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY source_unique (source_type, source_id),
@@ -133,6 +137,7 @@ CREATE TABLE {$wpdb->prefix}gr_conversions (
 ```
 
 - `UNIQUE KEY source_unique (source_type, source_id)` 保证同一订单/表单提交重放不产生重复归因（HPOS 安全的 meta 幂等锁之外的第二道防线）。
+- `status`/`reversed_at`（2026-09-13，DB_VERSION 2，ADR-0010）：退款/取消冲销 = 守卫 UPDATE 软标（`status: active→reversed` + `reversed_at`），**金额永不改动**（总额真相留存，毛/净两口径可复算）；部分退款按订单剩余额收敛 `amount`（以订单态为唯一真源 ⇒ 天然幂等）；在途单（pending/on-hold）不属冲销面。`revenue` 日聚合口径 = **净额**（`SUM(amount) WHERE status='active'`，见 §3.4 词表注）；`conversions` 口径计全部绑定行（转化率不因退款波动）。
 
 > 落地形态（2026-09-10，C9 实装）：写入 = `Gr_Conversion_Repository::bind()` 的 `INSERT IGNORE` + insert_id>0 直返、否则按 (source_type, source_id) 回查既存 id（重放恒返同 id；被吞的插入仍消耗自增值，非缺陷）。组合 = `Gr_Attribution_Service`（30 天回看触点 → 五模型 `model_weights` JSON + first/last_touch_id 随行；直连访客 0/0 + 空模型）。实测：同一 order 双绑定 conversion_rows=1 且两次同 id。meta 锁（`_gr_attributed`）由 C10 适配器持有，与本表防线互补。
 - `model_weights` 存 5 模型分配结果 JSON，由 `gr_calculate_attribution()` 产出。
@@ -145,12 +150,13 @@ CREATE TABLE {$wpdb->prefix}gr_conversions (
 | `gr_contact_tags` | `KEY (tag_id, contact_id)` | 反向查询（按标签拉联系人），iss-04 指出缺失，正确 |
 | `gr_daily_stats` | `UNIQUE (stat_date, metric_type, metric_key)` | 聚合幂等（重复执行不翻倍），iss-04 指出缺失，正确 |
 | `gr_sessions` | `KEY (last_active)` | 在线访客 COUNT 走索引范围扫描（见 §3.2） |
+| `gr_contacts` | `KEY (visitor_id)` | 联系人↔访客联结（cookie 轨专属、最新优先，ADR-0013 D1）——行为评分/会话钻取/RFM 频次的共同基础，DB_VERSION 2 |
 
 **`gr_daily_stats` 指标词表（2026-09-12 U1 实装登记）**：聚合任务 `Gr_Daily_Aggregator` 每日经 `Gr_Queue::DAILY_HOOK` 优先级 5 先于瘦身骑手运行；重算窗口 = 今日回看 7 天（**必须小于最小默认保留期 30 天**，否则重算会读到已瘦身数据），窗口外日期永不重访（报表稳定性即由此保证）。upsert 为替换语义（`ON DUPLICATE KEY UPDATE metric_value = VALUES(metric_value)`），重跑不翻倍。词表（`metric_type` / `metric_key`）：
 
 | metric_type | metric_key | 来源 | 值 |
 | :--- | :--- | :--- | :--- |
-| `sessions` / `visitors` / `pageviews` / `conversions` / `revenue` | `''` | `gr_sessions`(started_at) / `gr_events`(name='pageview') / `gr_conversions` | COUNT / DISTINCT COUNT / SUM(amount)；**静默日也写 0 行**（趋势图稠密） |
+| `sessions` / `visitors` / `pageviews` / `conversions` / `revenue` | `''` | `gr_sessions`(started_at) / `gr_events`(name='pageview') / `gr_conversions` | COUNT / DISTINCT COUNT / SUM(amount)；**静默日也写 0 行**（趋势图稠密）。`revenue` 自 DB_VERSION 2 起为**净额口径**（`SUM(amount) WHERE status='active'`，ADR-0010 D3）；`conversions` 计全部绑定行；冲销经队列触发该转化 `created_at` 日期的 conversions/revenue **定向重算**（`gr_conversions` 永久保留 ⇒ 任意账龄安全；7 天回看窗规则与其"不读已瘦身数据"的存在理由两不相伤） |
 | `sessions_by_country` | 国家码（`''`=未知） | `gr_sessions` GROUP BY country_code | COUNT |
 | `sessions_by_channel` | 渠道名 | `gr_sessions` GROUP BY channel | COUNT |
 | `sessions_by_device` | 设备类型 | `gr_sessions` GROUP BY device_type | COUNT |
