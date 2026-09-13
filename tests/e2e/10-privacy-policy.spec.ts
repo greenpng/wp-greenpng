@@ -9,8 +9,10 @@ test( 'the privacy policy guide includes the greenpng section', async ( { page }
 	// and answers with an access-denied die.
 	await page.goto( '/wp-admin/options-privacy.php' );
 
-	// Each contributed section is an accordion; opening ours makes its
-	// text observable, and the click itself proves the section exists.
-	await page.getByRole( 'button', { name: /greenpng analytics/i } ).click();
+	// Each contributed section is an accordion titled with the plugin
+	// name passed to wp_add_privacy_policy_content; ours is "greenpng".
+	// Opening it makes the section text observable, and the click
+	// itself proves the section exists.
+	await page.getByRole( 'button', { name: 'greenpng' } ).click();
 	await expect( page.locator( '.privacy-settings-accordion-panel' ) ).toContainText( 'anonymized IP addresses' );
 } );

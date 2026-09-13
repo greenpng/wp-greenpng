@@ -57,8 +57,11 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 		if ( order.status() >= 400 ) {
 			throw new Error( `Store checkout failed (${ order.status() }): ${ ( await order.text() ).slice( 0, 400 ) }` );
 		}
+		const orderBody = await order.text();
 		const orderId = ( await order.json() ).id as number;
-		expect( orderId ).toBeGreaterThan( 0 );
+		// The response body rides the failure message: the Store API's
+		// error envelopes arrive with status codes below 400.
+		expect( orderId, `checkout body: ${ orderBody.slice( 0, 300 ) }` ).toBeGreaterThan( 0 );
 
 		// Payment completes out-of-band (cash collected): the status
 		// move fires the payment hook the adapter listens to.

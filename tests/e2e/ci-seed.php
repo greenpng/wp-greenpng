@@ -32,16 +32,21 @@ switch ( $task ) {
 
 		$form_id = wp_insert_post(
 			array(
-				'post_type'    => 'wpcf7_contact_form',
-				'post_status'  => 'publish',
-				'post_title'   => 'Contact',
-				'post_content' => '[text* your-name] [email* your-email] [submit "Send"]',
+				'post_type'   => 'wpcf7_contact_form',
+				'post_status' => 'publish',
+				'post_title'  => 'Contact',
 			)
 		);
 		if ( ! is_int( $form_id ) || $form_id < 1 ) {
 			fwrite( STDERR, 'form insert failed' );
 			exit( 1 );
 		}
+
+		// CF7 6.x reads the template from the _form post meta (the
+		// post body never carries it), and demo_mode keeps the
+		// submission a success without a mail transport.
+		update_post_meta( $form_id, '_form', '[text* your-name] [email* your-email] [submit "Send"]' );
+		update_post_meta( $form_id, '_additional_settings', "demo_mode: on" );
 
 		$page_id = wp_insert_post(
 			array(
