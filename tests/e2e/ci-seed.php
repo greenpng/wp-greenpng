@@ -138,6 +138,16 @@ switch ( $task ) {
 		echo $row->source_type . ' ' . $row->source_id . ' ' . $row->amount;
 		break;
 
+	case 'scanner-hits':
+		// Sum of folded scanner-UA hits, off the argument layer. The
+		// fold writer keys rows by address+rule+hour window, so a hit
+		// from any agent folds into the window's row: the count is
+		// the only per-walk signal a shared address cannot erase.
+		global $wpdb;
+		$table2 = $wpdb->prefix . 'gr_security_logs';
+		echo (string) (int) $wpdb->get_var( "SELECT SUM(hit_count) FROM {$table2} WHERE rule_id = 'scanner_ua'" );
+		break;
+
 	default:
 		fwrite( STDERR, 'unknown task: ' . $task );
 		exit( 1 );

@@ -66,3 +66,11 @@ E2E 剩余三红的取证收敛为两处真实插件缺陷与一处定位歧义�
 ## 勘误与修正记录（2026-09-13，第十五轮实测后）
 
 第九至十四轮的累积修复在本轮兑现：09（Woo 带外归因全链）与 10（隐私指南手风琴）双双转绿；01/02×2/03/05/06/07/08 连续三轮全绿。仅剩 04，且证据表明其业务链路已全通——安全日志 scanner_ua 行在前、fcrdns 行在后、裁决 transient 落库、`wp cron event run --due-now` 消费了单次事件（故执行后的 cron 列表不再含 gr_ 钩子）。红的只是页面断言：主张表按地址合并（设计行为，打点与重访计数），而本栈所有流量共享同一 docker 桥地址——工作流自身用 runner curl（UA `curl/8.5.0`）探活站点，后走同一地址，把「Claimed agent」列顶替为最新声明者。修正在规格侧：断言主张行的裁决列（verified/unverified 皆为「出了结论」）与步数，改由「Scanner-UA engine」表（按代理分行、不受地址合并影响）承载 Googlebot 可见性断言。环境事实：UBuntu 24.04 runner 的 curl 8.5.0 与 wp-env 端口转发的桥地址 172.18.0.* 共同构成本栈的共享地址噪声。
+
+## 勘误与修正记录（2026-09-13，第十六轮实测后）
+
+第十六轮把 04 的最后谜底揭开，规格随之第三次收敛：
+
+- **折叠键不含 UA**：`Gr_Security_Log_Repository::log()` 的折叠键为 `md5(ip|rule_id|小时窗)`——同一地址同一规则同一小时窗只留一行，行的 UA 归**首个写入者**，后到者仅增 hit_count。本栈所有流量共享 docker 桥地址，而 wp-env 的 compose 健康检查（runner curl/8.5.0，约 30 秒一次）自站点启动起持续打该地址——窗口永远由 curl 首占，爬虫的 Googlebot 命中永远折叠进 curl 行。故「Googlebot 可见于任何按代理/按地址的页面或 DB 断言」在本环境是抽签，第十六轮的 UA 引擎表断言（按 user_agent 分组）必然只见 curl。dev 站逐层取证证实：引擎判定 `gr_is_scanner_ua(Googlebot)=1`、服务端 init 进程内判定一致、请求数据完好——仅折叠归属不可见。设计层面（浪涌折叠的有界行数、代表性 UA、CGNAT 共享地址的同病）记为观察项，不在本轮改设计。
+- **确定性证明改为计数增量**：新增 ci-seed 任务 `scanner-hits`（SUM(hit_count)，eval-file 免疫参数层）；规格在爬虫落地前后各读一次，`after > before` 即爬虫的命中确已折入——这是共享地址环境下爬虫步行唯一确定性的证据。页面断言收敛为：主张行裁决列 ∈ {verified, unverified}（出结论）、步数 ≥ 2、UA 引擎表非空（引擎路径活着）。
+- dev 诊断过程两记：wp-cli `db query` 的多列/DATETIME 吞字怪癖已绕过（一律 `wp eval` + `$wpdb`）；HttpOnly cookie 在 curl 罐中带 `#HttpOnly_` 前缀、`grep -v '^#'` 会误滤——取证工具两次误导了自己，均已记入上文。
