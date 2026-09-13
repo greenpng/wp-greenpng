@@ -58,10 +58,13 @@ test( 'a customer buys a product and the paid order is attributed', async ( { pa
 			throw new Error( `Store checkout failed (${ order.status() }): ${ ( await order.text() ).slice( 0, 400 ) }` );
 		}
 		const orderBody = await order.text();
-		const orderId = ( await order.json() ).id as number;
-		// The response body rides the failure message: the Store API's
-		// error envelopes arrive with status codes below 400.
-		expect( orderId, `checkout body: ${ orderBody.slice( 0, 300 ) }` ).toBeGreaterThan( 0 );
+		const orderId = ( await order.json() ).id as number | undefined;
+		// A thrown error prints its message in full, unlike an expect
+		// message riding a matcher error — the checkout's response
+		// body is the only way to see why no order id came back.
+		if ( ! orderId || orderId < 1 ) {
+			throw new Error( `checkout returned no order id (status ${ order.status() }): ${ orderBody.slice( 0, 400 ) }` );
+		}
 
 		// Payment completes out-of-band (cash collected): the status
 		// move fires the payment hook the adapter listens to.

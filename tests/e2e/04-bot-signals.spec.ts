@@ -15,11 +15,18 @@ test( 'a crawler user-agent lands in Bot & Device Signals', async ( { page, brow
 	// loaded, wp-cron otherwise. Both executors run here — whichever
 	// holds the job, it fires; a backend that holds nothing just
 	// errors and is absorbed.
-	try {
-		wpcli( 'wp action-scheduler run --group=greenpng' );
-	} catch {
-		wpcli( 'wp cron event run' );
-	}
+	const runQueue = (): void => {
+		try {
+			wpcli( 'wp action-scheduler run --group=greenpng' );
+		} catch {
+			try {
+				wpcli( 'wp cron event run --due-now' );
+			} catch {
+				// The assertion's evidence block reports the queues.
+			}
+		}
+	};
+	runQueue();
 
 	const evidence = (): string => {
 		try {

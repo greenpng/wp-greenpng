@@ -20,8 +20,10 @@ test( 'a customer submits the contact form and becomes a conversion', async ( { 
 
 		await visitor.close();
 
+		// The conversion is the v1.0 contract: the CRM contact row has
+		// no writer yet (docs/13 V2 — the privacy exporter honestly
+		// returns empty for contacts until CRM lands).
 		expect( dbCount( 'wp_gr_conversions' ) ).toBeGreaterThanOrEqual( 1 );
-		expect( dbCount( 'wp_gr_contacts' ) ).toBeGreaterThanOrEqual( 1 );
 	} finally {
 		await resetConsentFallback( page );
 	}
