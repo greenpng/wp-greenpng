@@ -151,6 +151,11 @@ final class Gr_Settings_Page {
             'trust_proxy_headers',
             'trusted_proxies',
             'probe_enabled',
+            'bot_verdict_threshold',
+            'login_fail_threshold',
+            'login_lockout_base',
+            'honeypot_enabled',
+            'blackhole_enabled',
             'attribution_enabled',
             'attribution_cookie_days',
             'attribution_default_model',
@@ -223,6 +228,25 @@ final class Gr_Settings_Page {
         $raw  = isset( $_POST['trusted_proxies'] ) ? (string) wp_unslash( $_POST['trusted_proxies'] ) : '';
         $list = array_filter( array_map( 'trim', explode( ',', $raw ) ) );
         $settings->set( 'trusted_proxies', array_slice( $list, 0, 20 ) );
+
+        // Engine dials that were settings keys with no writer until
+        // v1.0.1 (ADR-0009 D5); every number clamps to the same range
+        // its engine enforces on read.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); absint coerces before the clamp.
+        $fail_threshold = isset( $_POST['login_fail_threshold'] ) ? absint( (int) wp_unslash( $_POST['login_fail_threshold'] ) ) : 5;
+        $settings->set( 'login_fail_threshold', max( 2, min( 100, $fail_threshold ) ) );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); absint coerces before the clamp.
+        $lockout_base = isset( $_POST['login_lockout_base'] ) ? absint( (int) wp_unslash( $_POST['login_lockout_base'] ) ) : 300;
+        $settings->set( 'login_lockout_base', max( 60, min( 86400, $lockout_base ) ) );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write(); checkbox() enforces the strict '1'.
+        $settings->set( 'honeypot_enabled', self::checkbox( 'honeypot_enabled' ) );
+        $settings->set( 'blackhole_enabled', self::checkbox( 'blackhole_enabled' ) );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); absint coerces before the clamp.
+        $verdict_threshold = isset( $_POST['bot_verdict_threshold'] ) ? absint( (int) wp_unslash( $_POST['bot_verdict_threshold'] ) ) : 70;
+        $settings->set( 'bot_verdict_threshold', max( 1, min( 100, $verdict_threshold ) ) );
     }
 
     /**
@@ -375,6 +399,48 @@ final class Gr_Settings_Page {
                                 <label>
                                     <input type="checkbox" name="probe_enabled" value="1" <?php checked( 1, (int) $settings->get( 'probe_enabled' ) ); ?> />
                                     <?php echo esc_html__( 'Collect client safety signals (on by default; disclosed in the readme).', 'greenpng' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="gr-verdict-threshold"><?php echo esc_html__( 'Bot verdict threshold', 'greenpng' ); ?></label></th>
+                            <td>
+                                <input type="number" name="bot_verdict_threshold" id="gr-verdict-threshold" class="small-text" min="1" max="100"
+                                    value="<?php echo esc_attr( (string) (int) $settings->get( 'bot_verdict_threshold' ) ); ?>" />
+                                <?php echo esc_html__( 'probe score (1 to 100, default 70: two corroborating signals). At or above it a session is treated as a bot and its conversions are not forwarded to analytics.', 'greenpng' ); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="gr-fail-threshold"><?php echo esc_html__( 'Login failure threshold', 'greenpng' ); ?></label></th>
+                            <td>
+                                <input type="number" name="login_fail_threshold" id="gr-fail-threshold" class="small-text" min="2" max="100"
+                                    value="<?php echo esc_attr( (string) (int) $settings->get( 'login_fail_threshold' ) ); ?>" />
+                                <?php echo esc_html__( 'failed sign-ins before the address locks out (2 to 100, default 5).', 'greenpng' ); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="gr-lockout-base"><?php echo esc_html__( 'Lockout base duration', 'greenpng' ); ?></label></th>
+                            <td>
+                                <input type="number" name="login_lockout_base" id="gr-lockout-base" class="small-text" min="60" max="86400"
+                                    value="<?php echo esc_attr( (string) (int) $settings->get( 'login_lockout_base' ) ); ?>" />
+                                <?php echo esc_html__( 'seconds; each round doubles, capped at 24 hours (default 300).', 'greenpng' ); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'Honeypot traps', 'greenpng' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="honeypot_enabled" value="1" <?php checked( 1, (int) $settings->get( 'honeypot_enabled' ) ); ?> />
+                                    <?php echo esc_html__( 'Add hidden trap fields to the login and registration forms (off by default).', 'greenpng' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'Blackhole trap', 'greenpng' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="blackhole_enabled" value="1" <?php checked( 1, (int) $settings->get( 'blackhole_enabled' ) ); ?> />
+                                    <?php echo esc_html__( 'Declare a disallowed trap path in robots.txt and answer crawls of it (off by default).', 'greenpng' ); ?>
                                 </label>
                             </td>
                         </tr>

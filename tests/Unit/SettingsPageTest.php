@@ -233,4 +233,99 @@ final class SettingsPageTest extends TestCase {
         }
         $this->assertContains( 'admin_init', $hooks );
     }
+
+    public function testSecurityTabRendersTheEngineDials(): void {
+        $_GET = array( 'tab' => 'security' );
+
+        ob_start();
+        Gr_Settings_Page::render();
+        $html = (string) ob_get_clean();
+
+        // The five keys that were settings with no writer until
+        // v1.0.1 (the G1 gap, ADR-0009 D5).
+        foreach ( array( 'bot_verdict_threshold', 'login_fail_threshold', 'login_lockout_base', 'honeypot_enabled', 'blackhole_enabled' ) as $field ) {
+            $this->assertStringContainsString( 'name="' . $field . '"', $html );
+        }
+
+        // The defaults are visible as values, not mysteries.
+        $this->assertStringContainsString( 'value="70"', $html );
+        $this->assertStringContainsString( 'value="5"', $html );
+        $this->assertStringContainsString( 'value="300"', $html );
+    }
+
+    public function testSecuritySaveClampsTheEngineDialsAndFlipsTheTraps(): void {
+        $this->post( 'security' );
+        $_POST['security_enabled']      = '1';
+        $_POST['login_fail_threshold']  = '1';
+        $_POST['login_lockout_base']    = '999999';
+        $_POST['bot_verdict_threshold'] = '250';
+        $_POST['honeypot_enabled']      = '1';
+        $_POST['blackhole_enabled']     = '1';
+
+        Gr_Settings_Page::handle_actions();
+
+        $settings = new Gr_Settings();
+        $this->assertSame( 2, (int) $settings->get( 'login_fail_threshold' ) );
+        $this->assertSame( 86400, (int) $settings->get( 'login_lockout_base' ) );
+        $this->assertSame( 100, (int) $settings->get( 'bot_verdict_threshold' ) );
+        $this->assertSame( 1, (int) $settings->get( 'honeypot_enabled' ) );
+        $this->assertSame( 1, (int) $settings->get( 'blackhole_enabled' ) );
+
+        // The audit diff carries the dial moves like any other save.
+        $rows = $this->audit_rows();
+        $this->assertCount( 1, $rows );
+        $decoded = json_decode( (string) $rows[0]['data']['diff_json'], true );
+        $this->assertArrayHasKey( 'bot_verdict_threshold', $decoded['modified'] );
+    }
+
+    public function testAbsentDialsFallBackToTheirDefaults(): void {
+        // Dials first set away from default, so the fallback is
+        // distinguishable from "nothing happened".
+        ( new Gr_Settings() )->set( 'login_fail_threshold', 9 );
+
+        $this->post( 'security' );
+        $_POST['security_enabled'] = '1';
+
+        Gr_Settings_Page::handle_actions();
+
+        // A foreign POST shape without the dial fields lands on the
+        // recorded defaults, never on a zero.
+        $settings = new Gr_Settings();
+        $this->assertSame( 5, (int) $settings->get( 'login_fail_threshold' ) );
+        $this->assertSame( 300, (int) $settings->get( 'login_lockout_base' ) );
+        $this->assertSame( 70, (int) $settings->get( 'bot_verdict_threshold' ) );
+        $this->assertSame( 0, (int) $settings->get( 'honeypot_enabled' ) );
+    }
+
+    public function testEveryScalarSettingKeyHasAnAdminWriter(): void {
+        // The G1 invariant (ADR-0009 D5): a settings key no admin page
+        // can write is a dial the owner cannot turn. Keys owned by
+        // other pages are the documented exceptions.
+        $owned_elsewhere = array( 'retention_days', 'retention_rows', 'capi_meta_enabled', 'capi_ga4_enabled' );
+
+        $method   = new \ReflectionMethod( Gr_Settings_Page::class, 'snapshot' );
+        if ( PHP_VERSION_ID < 80100 ) {
+            // No effect (and no complaint) from 8.1 on; still required
+            // to invoke a private method on the PHP 7.4 floor.
+            $method->setAccessible( true );
+        }
+        $snapshot = $method->invoke( null );
+        $snapshot = is_array( $snapshot ) ? $snapshot : array();
+
+        $missing = array();
+        foreach ( Gr_Settings::defaults() as $key => $value ) {
+            if ( is_array( $value ) || in_array( $key, $owned_elsewhere, true ) ) {
+                continue;
+            }
+            if ( ! array_key_exists( $key, $snapshot ) ) {
+                $missing[] = (string) $key;
+            }
+        }
+
+        $this->assertSame(
+            array(),
+            $missing,
+            'settings keys with no admin writer: ' . implode( ', ', $missing )
+        );
+    }
 }
