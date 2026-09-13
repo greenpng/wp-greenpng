@@ -1569,3 +1569,20 @@ if ( ! function_exists( 'dbDelta' ) ) {
         return array();
     }
 }
+
+if ( ! function_exists( 'str_starts_with' ) ) {
+    /**
+     * Native on PHP 8.0+, polyfilled by WordPress core since 5.9
+     * (wp-includes/compat.php), so the WP 6.0 floor guarantees it
+     * everywhere the plugin runs. Stubbed because phpstan honors the
+     * composer platform.php pin (7.4) and would otherwise treat the
+     * call as a missing function on the floor runtime.
+     *
+     * @param string $haystack Subject string.
+     * @param string $needle   Prefix to test.
+     * @return bool
+     */
+    function str_starts_with( string $haystack, string $needle ): bool {
+        return '' === $needle || 0 === strpos( $haystack, $needle );
+    }
+}
