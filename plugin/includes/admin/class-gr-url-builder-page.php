@@ -25,9 +25,6 @@ final class Gr_Url_Builder_Page {
     /** Menu slug under the top-level greenpng menu. */
     public const SLUG = 'greenpng-url';
 
-    /** Optional-field flag for the form vocabulary. */
-    private const OPTIONAL = 'utm_term';
-
     /**
      * Composes the campaign URL from plain strings; pure — no
      * superglobals, no storage, no network. The landing URL must be

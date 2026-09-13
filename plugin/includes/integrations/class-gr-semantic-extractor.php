@@ -91,7 +91,7 @@ final class Gr_Semantic_Extractor {
         }
 
         foreach ( $node as $raw_key => $value ) {
-            $key  = is_scalar( $raw_key ) ? strtolower( trim( (string) $raw_key ) ) : '';
+            $key  = strtolower( trim( (string) $raw_key ) );
             $next = ( '' === $path ) ? $key : $path . '.' . $key;
 
             if ( is_array( $value ) || is_object( $value ) ) {

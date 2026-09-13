@@ -207,7 +207,14 @@ final class Gr_Security_Log_Repository {
     public function recent_by_rules( array $rule_ids, int $limit = 30 ): array {
         global $wpdb;
 
-        $rule_ids = array_values( array_filter( array_map( 'strval', $rule_ids ), 'strlen' ) );
+        $rule_ids = array_values(
+            array_filter(
+                array_map( 'strval', $rule_ids ),
+                static function ( string $id ): bool {
+                    return '' !== $id;
+                }
+            )
+        );
         if ( array() === $rule_ids ) {
             return array();
         }
@@ -433,9 +440,9 @@ final class Gr_Security_Log_Repository {
 
         $binary = (string) inet_pton( $ip );
         if ( 4 === strlen( $binary ) ) {
-            return inet_ntop( substr( $binary, 0, 3 ) . "\x00" );
+            return inet_ntop( substr( $binary, 0, (int) ( self::ANON_V4_PREFIX / 8 ) ) . "\x00" );
         }
 
-        return (string) inet_ntop( substr( $binary, 0, 6 ) . str_repeat( "\x00", 10 ) );
+        return (string) inet_ntop( substr( $binary, 0, (int) ( self::ANON_V6_PREFIX / 8 ) ) . str_repeat( "\x00", 10 ) );
     }
 }

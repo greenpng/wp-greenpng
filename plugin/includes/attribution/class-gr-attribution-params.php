@@ -36,11 +36,6 @@ final class Gr_Attribution_Params {
     private const SOCIAL_CLICK_IDS = array( 'fbclid', 'ttclid' );
 
     /**
-     * Channel column width (docs/05 gr_touchpoints).
-     */
-    private const CHANNEL_WIDTH = 32;
-
-    /**
      * Parses raw query params into touchpoint columns. Values are
      * trimmed and lowercased (attribution vocabulary is case-insensitive
      * by convention); one click id survives, in the order above.

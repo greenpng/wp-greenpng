@@ -87,7 +87,7 @@ final class Gr_Daily_Stats_Repository {
      * @param string $type  Dimension metric type (e.g. sessions_by_country).
      * @param int    $days  Window ending today, clamped to [1, 90].
      * @param int    $limit Row ceiling, clamped to [1, 50].
-     * @return array<int, array<string, int|string>> ['key' =>, 'value' =>] rows.
+     * @return array<int, array{key: string, value: float}> Dimension rows, highest total first.
      */
     public function dimension( string $type, int $days = 30, int $limit = 10 ): array {
         global $wpdb;

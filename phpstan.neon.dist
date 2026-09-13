@@ -1,0 +1,40 @@
+
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    # This FrankenPHP php build mangles argv for child processes: both
+    # the TurboProcessRestarter and the parallel worker spawns re-exec
+    # with the PHPRC ini path in place of the phar path and die
+    # ("Command /private/tmp/gr-php.ini is not defined"). The restart
+    # loop is neutralized by phpstan.restarted=1 inside the PHPRC ini
+    # (see tools/phpstan-run.sh); analysis must run single-process via
+    # --debug, which is also why parallel tuning cannot help here.
+    paths:
+        - plugin
+    excludePaths:
+        - plugin/assets
+    # WordPress core and ecosystem symbols come from the test stubs:
+    # the plugin targets WP 6.0+ (whose source is not statically
+    # discoverable here), and the stubs are the in-repo description of
+    # that API surface (ADR-0007: core-layer mechanisms first).
+    scanFiles:
+        - tests/stubs/wp-functions.php
+        - tests/stubs/constants-stubs.php
+        - tests/stubs/wpdb-stub.php
+        - tests/stubs/rest-stubs.php
+        - tests/stubs/woo-stubs.php
+        - tests/stubs/wp-list-table-stub.php
+        - tests/stubs/wpcli-stub.php
+        - tests/stubs/action-scheduler-stubs.php
+    tmpDir: .phpstan-tmp
+
+    # The baseline holds the defensive-posture findings (docs/04
+    # §3.11): is_array/isset guards on superglobals, wpdb and
+    # dns_get_record returns that the stubs type narrower than runtime
+    # reality, hook-argument shape guards, and the WP_CLI constant
+    # check the wpcli stub freezes to true. These guards are
+    # deliberate — removing them would trade real-world robustness
+    # for analyzer silence. Everything else must stay at zero: the
+    # baseline shrinks as stubs grow more honest, never grows.

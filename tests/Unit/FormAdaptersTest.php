@@ -539,7 +539,7 @@ final class FormAdaptersTest extends TestCase {
              * @param array<int, mixed> $args Hook arguments.
              * @return array{source: int, payload: array<string, mixed>>}|null
              */
-            protected function translate_main( array $args ) {
+            protected function translate_main( array $args ): ?array {
                 throw new \RuntimeException( 'boom' );
             }
 
@@ -549,7 +549,7 @@ final class FormAdaptersTest extends TestCase {
              * @param array<int, mixed> $args Hook arguments.
              * @return array{source: int, payload: array<string, mixed>>}|null
              */
-            protected function translate_fallback( array $args ) {
+            protected function translate_fallback( array $args ): ?array {
                 throw new \RuntimeException( 'boom' );
             }
         };

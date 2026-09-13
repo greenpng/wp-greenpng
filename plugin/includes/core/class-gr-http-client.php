@@ -79,7 +79,7 @@ final class Gr_Http_Client {
      * @param string               $service Service key constant.
      * @param string               $url     Absolute https URL.
      * @param array<string, mixed> $args Extra wp_safe_remote_get arguments.
-     * @return array{code: int, body: string}|WP_Error Success shape, or
+     * @return array{code: int, body: string}|\WP_Error Success shape, or
      *         a coded error whose data may carry retry_after.
      */
     public static function get( string $service, string $url, array $args = array() ) {
@@ -92,7 +92,7 @@ final class Gr_Http_Client {
      * @param string               $service Service key constant.
      * @param string               $url     Absolute https URL.
      * @param array<string, mixed> $payload JSON body.
-     * @return array{code: int, body: string}|WP_Error
+     * @return array{code: int, body: string}|\WP_Error
      */
     public static function post( string $service, string $url, array $payload = array() ) {
         $args = array(
@@ -142,7 +142,7 @@ final class Gr_Http_Client {
      * @param string               $method  'GET' or 'POST'.
      * @param string               $url     Absolute https URL.
      * @param array<string, mixed> $args Prepared wp_safe_remote_* arguments.
-     * @return array{code: int, body: string}|WP_Error
+     * @return array{code: int, body: string}|\WP_Error
      */
     private static function request( string $service, string $method, string $url, array $args ) {
         if ( ! self::configured( $service ) ) {
@@ -214,7 +214,7 @@ final class Gr_Http_Client {
      * @param string $message Wire-level reason, for logs only.
      * @param int    $retry_after Server-sent Retry-After, 0 when absent.
      * @param bool   $rate_limited Whether this failure was a 429.
-     * @return WP_Error The error the caller should act on.
+     * @return \WP_Error The error the caller should act on.
      */
     private static function record_failure( string $service, string $message, int $retry_after = 0, bool $rate_limited = false ) {
         $state = self::read_state( $service );

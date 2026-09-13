@@ -10,3 +10,6 @@ composer.phar
 
 # OS noise.
 .DS_Store
+
+# PHPStan result cache (tools/phpstan-run.sh).
+/.phpstan-tmp/

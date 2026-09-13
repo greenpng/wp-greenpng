@@ -83,9 +83,9 @@ final class Gr_Fluentforms_Adapter extends Gr_Form_Adapter_Base {
      * Both hooks share one shape: entry id, processed form data array.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    protected function translate_main( array $args ) {
+    protected function translate_main( array $args ): ?array {
         return $this->translate( $args );
     }
 
@@ -93,9 +93,9 @@ final class Gr_Fluentforms_Adapter extends Gr_Form_Adapter_Base {
      * Same shape as the main hook.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    protected function translate_fallback( array $args ) {
+    protected function translate_fallback( array $args ): ?array {
         return $this->translate( $args );
     }
 
@@ -105,9 +105,9 @@ final class Gr_Fluentforms_Adapter extends Gr_Form_Adapter_Base {
      * the submission payload, never target internals.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    private function translate( array $args ) {
+    private function translate( array $args ): ?array {
         if ( count( $args ) < 2 || ! is_numeric( $args[0] ) || ! is_array( $args[1] ) ) {
             return null;
         }

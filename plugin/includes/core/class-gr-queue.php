@@ -70,9 +70,9 @@ final class Gr_Queue {
     /**
      * Dispatches one unit of async work.
      *
-     * @param string               $hook  Work hook fired on execution.
-     * @param array<string, mixed> $args  Arguments delivered with the hook.
-     * @param int                  $delay Seconds from now; retry backoff uses this.
+     * @param string                  $hook  Work hook fired on execution.
+     * @param array<array-key, mixed> $args  Arguments delivered with the hook; action arguments are positional lists by convention, so both list and keyed shapes are accepted.
+     * @param int                     $delay Seconds from now; retry backoff uses this.
      * @return void
      */
     public static function enqueue( string $hook, array $args = array(), int $delay = 0 ): void {

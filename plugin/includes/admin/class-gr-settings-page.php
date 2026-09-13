@@ -222,7 +222,7 @@ final class Gr_Settings_Page {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); free-text list parsed and trimmed below.
         $raw  = isset( $_POST['trusted_proxies'] ) ? (string) wp_unslash( $_POST['trusted_proxies'] ) : '';
         $list = array_filter( array_map( 'trim', explode( ',', $raw ) ) );
-        $settings->set( 'trusted_proxies', array_values( array_slice( $list, 0, 20 ) ) );
+        $settings->set( 'trusted_proxies', array_slice( $list, 0, 20 ) );
     }
 
     /**

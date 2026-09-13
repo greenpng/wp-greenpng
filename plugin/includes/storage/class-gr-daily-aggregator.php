@@ -98,7 +98,7 @@ final class Gr_Daily_Aggregator {
      * @param string $start Day start, 'Y-m-d H:i:s'.
      * @param string $end   Next day start, 'Y-m-d H:i:s'.
      * @param string $date  Day label.
-     * @return array<int, array<string, string>> Metric rows.
+     * @return array<int, array{0: string, 1: string, 2: string, 3: float}> Metric rows.
      */
     private static function session_metrics( string $start, string $end, string $date ): array {
         global $wpdb;
@@ -177,7 +177,7 @@ final class Gr_Daily_Aggregator {
      * @param string $start Day start.
      * @param string $end   Next day start.
      * @param string $date  Day label.
-     * @return array<int, array<string, string>> Metric rows.
+     * @return array<int, array{0: string, 1: string, 2: string, 3: float}> Metric rows.
      */
     private static function pageview_metrics( string $start, string $end, string $date ): array {
         global $wpdb;
@@ -206,7 +206,7 @@ final class Gr_Daily_Aggregator {
      * @param string $start Day start.
      * @param string $end   Next day start.
      * @param string $date  Day label.
-     * @return array<int, array<string, string>> Metric rows.
+     * @return array<int, array{0: string, 1: string, 2: string, 3: float}> Metric rows.
      */
     private static function security_metrics( string $start, string $end, string $date ): array {
         global $wpdb;
@@ -238,7 +238,7 @@ final class Gr_Daily_Aggregator {
      * @param string $start Day start.
      * @param string $end   Next day start.
      * @param string $date  Day label.
-     * @return array<int, array<string, string>> Metric rows.
+     * @return array<int, array{0: string, 1: string, 2: string, 3: float}> Metric rows.
      */
     private static function conversion_metrics( string $start, string $end, string $date ): array {
         global $wpdb;
@@ -273,7 +273,7 @@ final class Gr_Daily_Aggregator {
      * Batched idempotent upsert: the recomputation replaces the stored
      * value, so re-running a day never doubles it (docs/05 §1.4).
      *
-     * @param array<int, array<int, mixed>> $rows [date, type, key, value] tuples.
+     * @param array<int, array{0: string, 1: string, 2: string, 3: float}> $rows [date, type, key, value] tuples.
      * @return int Rows written.
      */
     private static function upsert( array $rows ): int {

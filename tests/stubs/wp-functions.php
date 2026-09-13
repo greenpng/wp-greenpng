@@ -97,6 +97,7 @@ if ( ! function_exists( 'is_wp_error' ) ) {
      *
      * @param mixed $thing Any value.
      * @return bool
+     * @phpstan-assert-if-true \WP_Error $thing
      */
     function is_wp_error( $thing ) {
         return $thing instanceof WP_Error;
@@ -1476,5 +1477,95 @@ if ( ! function_exists( 'paginate_links' ) ) {
         }
 
         return implode( "\n", $links );
+    }
+}
+
+if ( ! function_exists( 'plugin_dir_path' ) ) {
+    /**
+     * Plugin directory path.
+     *
+     * @param string $file Entry file.
+     * @return string
+     */
+    function plugin_dir_path( string $file ): string {
+        return trailingslashit( dirname( $file ) );
+    }
+}
+
+if ( ! function_exists( 'plugin_dir_url' ) ) {
+    /**
+     * Plugin directory URL.
+     *
+     * @param string $file Entry file.
+     * @return string
+     */
+    function plugin_dir_url( string $file ): string {
+        return 'http://example.test/wp-content/plugins/' . basename( dirname( $file ) ) . '/';
+    }
+}
+
+if ( ! function_exists( 'plugin_basename' ) ) {
+    /**
+     * Plugin basename.
+     *
+     * @param string $file Entry file.
+     * @return string
+     */
+    function plugin_basename( string $file ): string {
+        return basename( dirname( $file ) ) . '/' . basename( $file );
+    }
+}
+
+if ( ! function_exists( 'register_activation_hook' ) ) {
+    /**
+     * Activation hook registration.
+     *
+     * @param string   $file     Entry file.
+     * @param callable $callback Hook callback.
+     * @return void
+     */
+    function register_activation_hook( string $file, $callback ): void {
+        $GLOBALS['gr_stub_lifecycle_hooks']['activation'] = $callback;
+    }
+}
+
+if ( ! function_exists( 'register_deactivation_hook' ) ) {
+    /**
+     * Deactivation hook registration.
+     *
+     * @param string   $file     Entry file.
+     * @param callable $callback Hook callback.
+     * @return void
+     */
+    function register_deactivation_hook( string $file, $callback ): void {
+        $GLOBALS['gr_stub_lifecycle_hooks']['deactivation'] = $callback;
+    }
+}
+
+if ( ! function_exists( 'load_plugin_textdomain' ) ) {
+    /**
+     * Textdomain loader.
+     *
+     * @param string $domain Text domain.
+     * @param string|false $abs_rel_path Deprecated relative path.
+     * @param string|false $wp_rel_path Relative path inside WP_LANG_DIR.
+     * @return bool
+     */
+    function load_plugin_textdomain( string $domain, $abs_rel_path = false, $wp_rel_path = false ): bool {
+        return true;
+    }
+}
+
+if ( ! function_exists( 'dbDelta' ) ) {
+    /**
+     * Core schema applier.
+     *
+     * @param string|string[] $delta DDL statements.
+     * @return array<string>
+     */
+    function dbDelta( $delta ): array {
+        $GLOBALS['gr_stub_dbdelta'][] = is_array( $delta ) ? implode( ";\n", $delta ) : (string) $delta;
+
+        return array();
     }
 }

@@ -1,0 +1,85 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Offset ''result'' on array\{result\: string, messages\?\: int\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: plugin/includes/admin/class-gr-analytics-page.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/attribution/class-gr-attribution-listener.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: plugin/includes/core/class-gr-cli.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: plugin/includes/core/class-gr-diagnostics.php
+
+		-
+			message: '#^Instanceof between WC_Order and WC_Order will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: plugin/includes/privacy/class-gr-privacy-api.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/security/class-gr-crawler-verify.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/security/class-gr-honeypot.php
+
+		-
+			message: '#^Variable \$_POST in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: plugin/includes/security/class-gr-honeypot.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/security/class-gr-ip-matcher.php
+
+		-
+			message: '#^Call to function is_scalar\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/security/class-gr-login-protection.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/security/class-gr-payload-inspector.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: plugin/includes/security/class-gr-payload-inspector.php
+
+		-
+			message: '#^Variable \$_GET in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: plugin/includes/security/class-gr-payload-inspector.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: plugin/includes/security/class-gr-security-logger.php

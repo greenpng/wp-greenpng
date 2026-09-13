@@ -99,7 +99,7 @@ final class Gr_Request_Inspector {
             try {
                 $finding = $check( $context );
             } catch ( \Throwable $error ) {
-                do_action( self::ERROR_HOOK, is_scalar( $id ) ? (string) $id : 'check', $error );
+                do_action( self::ERROR_HOOK, (string) $id, $error );
                 continue;
             }
 

@@ -172,7 +172,7 @@ final class Gr_Session_Repository {
      * the boolean conclusion the scorer already reached.
      *
      * @param int $days Look-back window in days.
-     * @return array{total: int, bots: int, bands: array<string, int>}
+     * @return array{total: int, bots: int, bands: array<int|string, int>}
      */
     public function bot_score_distribution( int $days ): array {
         global $wpdb;
@@ -250,7 +250,7 @@ final class Gr_Session_Repository {
     /**
      * The zero state of the band vocabulary.
      *
-     * @return array<string, int>
+     * @return array<int|string, int>
      */
     private static function empty_bands(): array {
         return array(

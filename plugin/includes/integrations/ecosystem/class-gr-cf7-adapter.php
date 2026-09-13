@@ -84,9 +84,9 @@ final class Gr_Cf7_Adapter extends Gr_Form_Adapter_Base {
      * Mail-sent shape: (contact_form).
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    protected function translate_main( array $args ) {
+    protected function translate_main( array $args ): ?array {
         if ( empty( $args[0] ) || ! is_object( $args[0] ) ) {
             return null;
         }
@@ -99,9 +99,9 @@ final class Gr_Cf7_Adapter extends Gr_Form_Adapter_Base {
      * result says the mail was sent.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    protected function translate_fallback( array $args ) {
+    protected function translate_fallback( array $args ): ?array {
         if ( empty( $args[0] ) || ! is_object( $args[0] ) ) {
             return null;
         }
@@ -119,9 +119,9 @@ final class Gr_Cf7_Adapter extends Gr_Form_Adapter_Base {
      * form's own id() riding along for the per-request source key.
      *
      * @param object $contact_form WPCF7_ContactForm or a stand-in.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    private function from_contact_form( $contact_form ) {
+    private function from_contact_form( $contact_form ): ?array {
         if ( ! method_exists( $contact_form, 'id' ) ) {
             return null;
         }

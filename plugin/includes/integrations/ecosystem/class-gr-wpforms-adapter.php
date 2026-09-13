@@ -86,9 +86,9 @@ final class Gr_Wpforms_Adapter extends Gr_Form_Adapter_Base {
      * extractor sees names/emails instead of digits.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    protected function translate_main( array $args ) {
+    protected function translate_main( array $args ): ?array {
         $fields    = isset( $args[0] ) && is_array( $args[0] ) ? $args[0] : array();
         $form_data = isset( $args[2] ) && is_array( $args[2] ) ? $args[2] : array();
         $entry_id  = isset( $args[3] ) && is_numeric( $args[3] ) ? (int) $args[3] : 0;
@@ -110,9 +110,9 @@ final class Gr_Wpforms_Adapter extends Gr_Form_Adapter_Base {
      * which is all the fallback can honestly see.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    protected function translate_fallback( array $args ) {
+    protected function translate_fallback( array $args ): ?array {
         $entry_id  = isset( $args[0] ) && is_numeric( $args[0] ) ? (int) $args[0] : 0;
         $form_data = isset( $args[1] ) && is_array( $args[1] ) ? $args[1] : array();
 

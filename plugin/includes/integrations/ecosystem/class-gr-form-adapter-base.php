@@ -132,17 +132,17 @@ abstract class Gr_Form_Adapter_Base implements Adapter_Interface {
      * skips the submission (shape not recognized).
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    abstract protected function translate_main( array $args );
+    abstract protected function translate_main( array $args ): ?array;
 
     /**
      * Normalizes the fallback hook's positional args the same way.
      *
      * @param array<int, mixed> $args Positional hook arguments.
-     * @return array{source: int, payload: array<string, mixed>>}|null
+     * @return array{source: int, payload: array<string, mixed>}|null
      */
-    abstract protected function translate_fallback( array $args );
+    abstract protected function translate_fallback( array $args ): ?array;
 
     /**
      * Mounts the main hook plus its fallback sentinel; no hooks at all
