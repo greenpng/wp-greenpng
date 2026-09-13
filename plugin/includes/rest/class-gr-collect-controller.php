@@ -99,6 +99,21 @@ final class Gr_Collect_Controller {
     }
 
     /**
+     * The score at which a session reads as a known bot: the owner's
+     * dial, clamped to the column's range. The default of 70 asks for
+     * two corroborating signals, so a single automation flag on a real
+     * developer's browser never costs them their conversions
+     * (ADR-0009 D1).
+     *
+     * @return int 1..100.
+     */
+    private static function verdict_threshold(): int {
+        $threshold = (int) gr()->settings()->get( 'bot_verdict_threshold', 70 );
+
+        return max( 1, min( 100, $threshold ) );
+    }
+
+    /**
      * Today's token, derived from the site salt; not a secret — its job
      * is to make blind mass watering cost a page fetch and to expire
      * daily (docs/02 §2.5). Exposed so the probe enqueue can localize it
@@ -230,6 +245,18 @@ final class Gr_Collect_Controller {
         $event = gr_dispatch_event( $name, $payload );
 
         gr()->sessions()->touch( $payload['visitor_id'], $payload['session_id'] );
+
+        if ( 'signal' === $name && isset( $params['bot_score'] ) && is_int( $params['bot_score'] ) ) {
+            // The probe's conclusion lands on the session row
+            // (ADR-0009 D1/D2): the server owns the verdict, the client
+            // only reports the score it measured.
+            gr()->sessions()->apply_probe_score(
+                (string) $payload['visitor_id'],
+                (string) $payload['session_id'],
+                $params['bot_score'],
+                $params['bot_score'] >= self::verdict_threshold() ? 1 : 0
+            );
+        }
 
         nocache_headers();
 

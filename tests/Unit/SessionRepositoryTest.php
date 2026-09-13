@@ -87,4 +87,81 @@ final class SessionRepositoryTest extends TestCase {
         self::assertStringContainsString( "'2026-09-09 23:59:30'", $floor_sql );
         self::assertStringContainsString( "'2026-09-09 23:00:00'", $ceiling_sql );
     }
+
+    public function testApplyProbeScoreRaisesTheScoreAndSticksTheVerdict(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+
+        $affected = ( new Gr_Session_Repository() )->apply_probe_score(
+            str_repeat( 'a', 32 ),
+            'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+            70,
+            1
+        );
+
+        self::assertSame( 1, $affected );
+
+        // GREATEST keeps the strongest evidence ever seen, and the
+        // verdict is sticky: a weaker later signal never un-convicts
+        // (ADR-0009 D2).
+        $sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'UPDATE wp_gr_sessions', $sql );
+        self::assertStringContainsString( 'bot_score = GREATEST(bot_score, 70)', $sql );
+        self::assertStringContainsString( 'is_bot = IF(1 = 1, 1, is_bot)', $sql );
+        self::assertStringContainsString( "WHERE visitor_id = '" . str_repeat( 'a', 32 ) . "'", $sql );
+        self::assertStringContainsString( "AND session_id = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'", $sql );
+    }
+
+    public function testApplyProbeScoreBelowTheVerdictLeavesTheColumnAlone(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+
+        ( new Gr_Session_Repository() )->apply_probe_score(
+            str_repeat( 'b', 32 ),
+            'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+            40,
+            0
+        );
+
+        $sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'bot_score = GREATEST(bot_score, 40)', $sql );
+        // A non-verdict reads IF(0 = 1, …): is_bot keeps whatever it
+        // already held.
+        self::assertStringContainsString( 'is_bot = IF(0 = 1, 1, is_bot)', $sql );
+    }
+
+    public function testApplyProbeScoreClampsToTheColumnRange(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+
+        ( new Gr_Session_Repository() )->apply_probe_score(
+            str_repeat( 'c', 32 ),
+            'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+            250,
+            1
+        );
+
+        $sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'GREATEST(bot_score, 100)', $sql );
+    }
+
+    public function testMarkSessionBotTouchesOnlyTheVerdictColumn(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+
+        self::assertSame(
+            1,
+            ( new Gr_Session_Repository() )->mark_session_bot(
+                str_repeat( 'd', 32 ),
+                'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
+            )
+        );
+
+        // The detector side writes the boolean conclusion only; the
+        // probe's measured score stays whatever the probe measured —
+        // the two mounts never overwrite each other (ADR-0009 D2).
+        $sql = (string) end( $wpdb->queries );
+        self::assertStringContainsString( 'UPDATE wp_gr_sessions SET is_bot = 1', $sql );
+        self::assertStringNotContainsString( 'bot_score', $sql );
+    }
 }

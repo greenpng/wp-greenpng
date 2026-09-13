@@ -12,6 +12,7 @@ declare( strict_types = 1 );
 namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Core\Gr_Event;
+use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use PHPUnit\Framework\TestCase;
 use WP_Error;
@@ -370,5 +371,88 @@ final class CollectControllerTest extends TestCase {
 
         self::assertStringEndsWith( 'greenpng/v1/collect', $data['url'] );
         self::assertSame( Gr_Collect_Controller::token(), $data['token'] );
+    }
+
+    public function testSignalPersistsItsScoreAndVerdictOntoTheSessionRow(): void {
+        global $wpdb;
+
+        ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'     => Gr_Collect_Controller::token(),
+                    'name'      => 'signal',
+                    'bot_score' => 87,
+                )
+            )
+        );
+
+        // 87 crosses the default threshold of 70 (ADR-0009 D1): the
+        // server, not the client, reaches the verdict and writes both
+        // columns.
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'bot_score = GREATEST(bot_score, 87)', $sql );
+        self::assertStringContainsString( 'is_bot = IF(1 = 1, 1, is_bot)', $sql );
+    }
+
+    public function testSignalBelowTheThresholdCarriesTheScoreWithoutTheVerdict(): void {
+        global $wpdb;
+
+        // One webdriver flag (40) stays under 70: the score is kept,
+        // the session is not convicted.
+        ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'     => Gr_Collect_Controller::token(),
+                    'name'      => 'signal',
+                    'bot_score' => 40,
+                )
+            )
+        );
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'bot_score = GREATEST(bot_score, 40)', $sql );
+        self::assertStringContainsString( 'is_bot = IF(0 = 1, 1, is_bot)', $sql );
+    }
+
+    public function testPageviewNeverTouchesTheVerdictColumns(): void {
+        global $wpdb;
+
+        ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token' => Gr_Collect_Controller::token(),
+                    'name'  => 'pageview',
+                    'path'  => '/',
+                )
+            )
+        );
+
+        // The touch upsert slides activity only; the conclusion
+        // columns stay out of the pageview path entirely.
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringNotContainsString( 'GREATEST(bot_score', $sql );
+        self::assertStringNotContainsString( 'is_bot = IF(', $sql );
+    }
+
+    public function testTheVerdictThresholdIsTheOwnersDial(): void {
+        global $wpdb;
+
+        ( new Gr_Settings() )->set( 'bot_verdict_threshold', 90 );
+
+        ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'     => Gr_Collect_Controller::token(),
+                    'name'      => 'signal',
+                    'bot_score' => 80,
+                )
+            )
+        );
+
+        // Same band as the crossing test, but the owner demanded 90:
+        // no verdict this time.
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'bot_score = GREATEST(bot_score, 80)', $sql );
+        self::assertStringContainsString( 'is_bot = IF(0 = 1, 1, is_bot)', $sql );
     }
 }

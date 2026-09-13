@@ -143,6 +143,75 @@ final class Gr_Session_Repository {
     }
 
     /**
+     * Persists the probe's conclusion onto one session row (ADR-0009
+     * D2): the score only ever rises — GREATEST keeps the strongest
+     * evidence seen — and a bot verdict is sticky, so a later weaker
+     * signal never un-convicts a session. The row itself belongs to
+     * touch(); a verdict on a path that never touched marks nothing.
+     *
+     * @param string $visitor_id Visitor identity.
+     * @param string $session_id Visit identity.
+     * @param int    $score     Probe score, clamped to 0..100.
+     * @param int    $verdict   1 when the score crossed the threshold.
+     * @return int Rows affected, or 0 when the write failed.
+     */
+    public function apply_probe_score( string $visitor_id, string $session_id, int $score, int $verdict ): int {
+        global $wpdb;
+
+        $score   = max( 0, min( 100, $score ) );
+        $verdict = 1 === $verdict ? 1 : 0;
+        $table   = Gr_Database::table( 'sessions' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+            "UPDATE {$table} SET bot_score = GREATEST(bot_score, %d), is_bot = IF(%d = 1, 1, is_bot) WHERE visitor_id = %s AND session_id = %s",
+            array(
+                $score,
+                $verdict,
+                $visitor_id,
+                $session_id,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sql is the prepare() output above; the probe conclusion rides the REST-collect budget line (docs/09 §1.1), one row per signal.
+        $affected = $wpdb->query( $sql );
+
+        return false === $affected ? 0 : (int) $affected;
+    }
+
+    /**
+     * Flags one session row as a known bot from the detector side
+     * (scanner UA, payload, trap verdicts — ADR-0009 D2): the boolean
+     * conclusion only; the probe score stays whatever the probe
+     * measured. UPDATE-only on purpose — rows come from touch(), and a
+     * detector verdict on a path that never touched (the login post,
+     * the trap's own wp_die) has no row worth inventing.
+     *
+     * @param string $visitor_id Visitor identity.
+     * @param string $session_id Visit identity.
+     * @return int Rows affected, or 0 when the write failed.
+     */
+    public function mark_session_bot( string $visitor_id, string $session_id ): int {
+        global $wpdb;
+
+        $table = Gr_Database::table( 'sessions' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+            "UPDATE {$table} SET is_bot = 1 WHERE visitor_id = %s AND session_id = %s",
+            array(
+                $visitor_id,
+                $session_id,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sql is the prepare() output above; request-end conclusion write, one row.
+        $affected = $wpdb->query( $sql );
+
+        return false === $affected ? 0 : (int) $affected;
+    }
+
+    /**
      * Visitors active within the window, via the last_active index range
      * scan (docs/05 §3.2); a live metric, so no persistent cache.
      *

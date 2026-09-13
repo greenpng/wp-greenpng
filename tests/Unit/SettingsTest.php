@@ -33,6 +33,10 @@ final class SettingsTest extends TestCase {
         // Probe: default on (safety conclusions only, toggle + disclosure).
         self::assertSame( 1, $defaults['probe_enabled'] );
 
+        // Verdict threshold: two corroborating signals before a session
+        // reads as a bot (ADR-0009 D1).
+        self::assertSame( 70, $defaults['bot_verdict_threshold'] );
+
         // Attribution: consent-gated, 30-day cookie window.
         self::assertSame( 1, $defaults['attribution_enabled'] );
         self::assertSame( 30, $defaults['attribution_cookie_days'] );

@@ -71,6 +71,12 @@ final class Gr_Settings {
             // basis; toggle + readme disclosure per ADR-0007).
             'probe_enabled'              => 1,
 
+            // Probe verdict threshold (ADR-0009 D1): the score at which
+            // a session reads as a known bot. 70 asks for two
+            // corroborating signals, so one automation flag on a real
+            // developer's browser never costs them their conversions.
+            'bot_verdict_threshold'      => 70,
+
             // Attribution (consent-gated at runtime; 30-day signed cookie).
             'attribution_enabled'        => 1,
             'attribution_cookie_days'    => 30,
