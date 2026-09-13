@@ -30,6 +30,7 @@ use GreenPNG\Admin\Gr_Analytics_Page;
 use GreenPNG\Admin\Gr_Ip_Intel_Page;
 use GreenPNG\Admin\Gr_Funnels_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
+use GreenPNG\Privacy\Gr_Privacy_Api;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
@@ -285,6 +286,7 @@ final class Gr_Plugin {
         Gr_Access_Rules_Page::register_hooks();
         Gr_Login_Protection_Page::register_hooks();
         Gr_Retention::register_hooks();
+        Gr_Privacy_Api::register_hooks();
         Gr_Data_Retention_Page::register_hooks();
         Gr_Status_Page::register_hooks();
         Gr_Settings_Page::register_hooks();

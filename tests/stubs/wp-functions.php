@@ -302,6 +302,7 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_http']              = array();
         $GLOBALS['gr_stub_http_calls']        = array();
         $GLOBALS['gr_stub_rest_routes']       = array();
+        $GLOBALS['gr_stub_privacy_policy']    = array();
         $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['gr_stub_wc_orders']         = array();
         $GLOBALS['gr_stub_enqueued_scripts']  = array();
@@ -1288,6 +1289,20 @@ if ( ! function_exists( 'apply_filters' ) ) {
         }
 
         return $value;
+    }
+}
+
+if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+    /**
+     * Suggested policy content recorder: core stores it for the
+     * policy page; tests assert the recorded plugin name and text.
+     *
+     * @param string $plugin_name Suggesting plugin name.
+     * @param string $content     Policy text.
+     * @return void
+     */
+    function wp_add_privacy_policy_content( $plugin_name, $content ) {
+        $GLOBALS['gr_stub_privacy_policy'][ (string) $plugin_name ] = (string) $content;
     }
 }
 

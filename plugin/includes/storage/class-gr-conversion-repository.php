@@ -155,4 +155,63 @@ final class Gr_Conversion_Repository {
 
         return array_values( array_filter( $rows, 'is_array' ) );
     }
+
+    /**
+     * All conversion rows for one visitor, oldest first — the WP
+     * privacy export read. The weights JSON travels as stored; the
+     * export page shows it as the attribution record it is.
+     *
+     * @param string $visitor_id Visitor identity.
+     * @return array<int, array<string, mixed>>
+     */
+    public function rows_for_visitor( string $visitor_id ): array {
+        global $wpdb;
+
+        if ( '' === $visitor_id ) {
+            return array();
+        }
+
+        $table = Gr_Database::table( 'conversions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- privacy-tool read over the visitor index, off the front-end path.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT id, source_type, source_id, session_id, amount, currency, model_weights, created_at FROM {$table}
+                WHERE visitor_id = %s
+                ORDER BY created_at ASC, id ASC",
+                $visitor_id
+            ),
+            ARRAY_A
+        );
+
+        return is_array( $rows ) ? array_values( array_filter( $rows, 'is_array' ) ) : array();
+    }
+
+    /**
+     * Deletes every conversion row for one visitor — the privacy
+     * erasure arm. Order meta binding is the caller's to remove (it
+     * lives in WooCommerce's store, not this table).
+     *
+     * @param string $visitor_id Visitor identity.
+     * @return int Rows removed.
+     */
+    public function delete_for_visitor( string $visitor_id ): int {
+        global $wpdb;
+
+        if ( '' === $visitor_id ) {
+            return 0;
+        }
+
+        $table = Gr_Database::table( 'conversions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- privacy-tool erasure, owner-initiated only.
+        return (int) $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "DELETE FROM {$table} WHERE visitor_id = %s",
+                $visitor_id
+            )
+        );
+    }
 }

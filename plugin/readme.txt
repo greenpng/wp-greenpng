@@ -69,7 +69,7 @@ This plugin performs no outbound requests by default. Each item below is opt-in 
 * Marketing-track data (sessions, touchpoints, behavior, CRM) stores anonymized IPs by default; identifiable marketing collection is gated on visitor consent through the WordPress Consent API.
 * Security logs store full client IPs on a legitimate-interest basis (site protection, GDPR Recital 49), are masked in the admin by default, and can be set to truncated storage instead, with the admin clearly noting that blocking then degrades to subnet level.
 * Visitor identity: a 30-day signed cookie when consent allows it; otherwise a daily-rotated salted hash of the anonymized IP and browser type, which cannot link visits across days.
-* The WordPress privacy API is fully supported: personal data export and erase handlers cover every `gr_` table, and suggested privacy policy text is provided in the admin.
+* The WordPress privacy API is supported where it applies: personal data export and erase handlers cover this plugin's marketing tables (sessions, touchpoints, conversions, the CRM contact row) and the visitor binding on orders. Security logs are retained on a legitimate-interest basis with short retention and masked display, and are intentionally outside person-level erasure.
 * Email addresses are stored as a searchable hash plus encrypted form and are never written outside the contacts table.
 
 == Attribution ==

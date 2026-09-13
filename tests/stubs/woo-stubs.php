@@ -113,6 +113,20 @@ if ( ! class_exists( 'WC_Order' ) ) {
         }
 
         /**
+         * Meta delete (recorded).
+         *
+         * @param string $key Meta key.
+         * @return void
+         */
+        public function delete_meta_data( string $key ): void {
+            if ( $this->explode ) {
+                throw new RuntimeException( 'order store unavailable' );
+            }
+
+            unset( $this->meta[ $key ] );
+        }
+
+        /**
          * Save (recorded).
          *
          * @return int
@@ -167,5 +181,29 @@ if ( ! function_exists( 'wc_get_order' ) ) {
      */
     function wc_get_order( $id ) {
         return $GLOBALS['gr_stub_wc_orders'][ (int) $id ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'wc_get_orders' ) ) {
+    /**
+     * Order query over the registry: supports the billing_email
+     * argument the privacy mapping chain uses, mirroring the real
+     * store's behavior.
+     *
+     * @param array<string, mixed> $args Query args.
+     * @return array<int, WC_Order>
+     */
+    function wc_get_orders( $args ) {
+        $email = isset( $args['billing_email'] ) ? strtolower( trim( (string) $args['billing_email'] ) ) : '';
+
+        $found = array();
+        foreach ( $GLOBALS['gr_stub_wc_orders'] as $order ) {
+            if ( '' !== $email && strtolower( $order->billing_email ) !== $email ) {
+                continue;
+            }
+            $found[] = $order;
+        }
+
+        return $found;
     }
 }
