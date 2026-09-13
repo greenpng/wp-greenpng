@@ -95,7 +95,7 @@ final class WooCommerceAdapterTest extends TestCase {
         }
     }
 
-    public function testPresentTargetRegistersAllThreeHooks(): void {
+    public function testPresentTargetRegistersAllFiveHooks(): void {
         if ( ! class_exists( 'WooCommerce', false ) ) {
             eval( 'final class WooCommerce {}' );
         }
@@ -113,6 +113,12 @@ final class WooCommerceAdapterTest extends TestCase {
         self::assertContains( 'woocommerce_checkout_update_order_meta', $hooks );
         self::assertContains( 'woocommerce_store_api_checkout_update_order_from_request', $hooks );
         self::assertContains( 'woocommerce_payment_complete', $hooks );
+        // The offline-gateway hole (ADR-0009 D4): Store API orders on
+        // offline gateways are born directly in a paid status, so
+        // payment_complete never fires for them — the status
+        // transitions are the binding path that does.
+        self::assertContains( 'woocommerce_order_status_processing', $hooks );
+        self::assertContains( 'woocommerce_order_status_completed', $hooks );
     }
 
     public function testPresentTargetAlsoRegistersTheCapiPaymentForwarder(): void {
@@ -317,5 +323,51 @@ final class WooCommerceAdapterTest extends TestCase {
             }
         }
         self::assertTrue( $reported );
+    }
+
+    public function testBornPaidStatusTransitionsBindAndStayIdempotent(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $visitor = $this->arm_cookie_track();
+        $order   = $this->order( 509 );
+
+        $GLOBALS['gr_adapter']->register_hooks();
+
+        $wpdb->results   = array();
+        $wpdb->insert_id = 31;
+
+        // A Store API order on an offline gateway is born directly in
+        // processing: payment_complete never fires, so the status hook
+        // is the only binding path (ADR-0009 D4).
+        do_action( 'woocommerce_order_status_processing', 509 );
+
+        self::assertSame( '1', $order->get_meta( Gr_Woocommerce_Adapter::ATTRIBUTED_META ) );
+
+        $binding_queries = array_filter(
+            $wpdb->queries,
+            static function ( $sql ): bool {
+                return false !== strpos( (string) $sql, 'INSERT IGNORE INTO wp_gr_conversions' );
+            }
+        );
+        self::assertNotSame( array(), $binding_queries );
+        self::assertStringContainsString( "'" . $visitor . "'", implode( ' ', $binding_queries ) );
+
+        // The meta lock collapses the replay: payment_complete and the
+        // completed transition both arrive later and neither writes a
+        // second record.
+        do_action( 'woocommerce_payment_complete', 509 );
+        do_action( 'woocommerce_order_status_completed', 509 );
+
+        $after = array_filter(
+            $wpdb->queries,
+            static function ( $sql ): bool {
+                return false !== strpos( (string) $sql, 'INSERT IGNORE INTO wp_gr_conversions' );
+            }
+        );
+        self::assertCount( count( $binding_queries ), $after );
     }
 }

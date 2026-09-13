@@ -3,7 +3,8 @@
  * WooCommerce adapter (docs/13 C10): captures attribution state at
  * checkout through both order-creation paths — classic checkout and
  * the Store API (Blocks) — and binds the conversion when payment
- * completes. Every callback is Throwable-isolated: a failure inside
+ * completes or an order settles into a paid status (offline gateways,
+ * ADR-0009 D4). Every callback is Throwable-isolated: a failure inside
  * the adapter must never break checkout or payment (docs/02 §2.7
  * fail-open).
  *
@@ -92,9 +93,14 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
     }
 
     /**
-     * Registers the three mount points. The Store API hook coexists
-     * with the classic one; both write-once the same meta, so
-     * whichever fires first wins and the other no-ops.
+     * Registers the mounts. The Store API hook coexists with the
+     * classic one; both write-once the same meta, so whichever fires
+     * first wins and the other no-ops. The two status transitions
+     * close the offline hole (ADR-0009 D4): Store API orders on
+     * offline gateways are born directly in a paid status, so
+     * payment_complete never fires for them — the status hooks are
+     * the path that does. The lock and the conversions UNIQUE key
+     * collapse the double fire on orders that hit both.
      *
      * @return void
      */
@@ -106,6 +112,8 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         add_action( 'woocommerce_checkout_update_order_meta', array( $this, 'capture_classic' ), 10, 2 );
         add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( $this, 'capture_store_api' ), 10, 2 );
         add_action( 'woocommerce_payment_complete', array( $this, 'complete_payment' ), 10, 1 );
+        add_action( 'woocommerce_order_status_processing', array( $this, 'complete_payment' ), 10, 1 );
+        add_action( 'woocommerce_order_status_completed', array( $this, 'complete_payment' ), 10, 1 );
     }
 
     /**
