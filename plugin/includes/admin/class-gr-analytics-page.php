@@ -7,10 +7,11 @@
  * rendered back in plaintext — the page shows the real state ("not
  * configured" is an explicit state, not a blank) plus a masked preview.
  *
- * The v1.0 self-check is local: decrypt round-trip and shape checks on
- * what is actually stored. The outbound connectivity probe (GA4 debug
- * endpoint) rides the outbound integration tasks through Http_Client;
- * this page deliberately ships no direct network call of its own.
+ * The local self-check tests decryption and shape on what is
+ * actually stored. The GA4 block additionally offers the outbound
+ * connectivity probe: one owner-clicked validation request to
+ * Google's debug endpoint, executed by the GA4 service class through
+ * Http_Client — this page still makes no network call of its own.
  *
  * @package GreenPNG
  */
@@ -23,6 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Core\Gr_Ga4_Mp;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Storage\Gr_Audit_Repository;
@@ -52,6 +54,9 @@ final class Gr_Analytics_Page {
 
     /** POST action: local self-check of the GA4 block. */
     public const ACTION_CHECK_GA4 = 'check_ga4';
+
+    /** POST action: owner-clicked GA4 debug-endpoint connectivity probe. */
+    public const ACTION_DEBUG_GA4 = 'debug_ga4';
 
     /** Secret option names, owned by Gr_Secrets; the page only mirrors them. */
     public const META_PIXEL_OPTION = Gr_Secrets::META_PIXEL_OPTION;
@@ -96,6 +101,9 @@ final class Gr_Analytics_Page {
             case self::ACTION_CHECK_META:
             case self::ACTION_CHECK_GA4:
                 self::check_service( self::ACTION_CHECK_META === $action ? 'meta' : 'ga4' );
+                break;
+            case self::ACTION_DEBUG_GA4:
+                self::debug_ga4();
                 break;
         }
     }
@@ -191,6 +199,38 @@ final class Gr_Analytics_Page {
                 array(
                     'gr_check'  => $service,
                     'gr_result' => self::local_check( $service ),
+                )
+            )
+        );
+    }
+
+    /**
+     * The GA4 connectivity probe: one validation request to Google's
+     * debug endpoint, owner-clicked and this click only. The service
+     * class owns the wire call through the door — this page still
+     * makes no network request of its own. The audit trail carries
+     * the outcome word and nothing else: no endpoint, no credential.
+     *
+     * @return void
+     */
+    private static function debug_ga4(): void {
+        $outcome = Gr_Ga4_Mp::debug_check();
+        $result  = isset( $outcome['result'] ) ? sanitize_key( (string) $outcome['result'] ) : 'unreachable';
+
+        ( new Gr_Audit_Repository() )->log(
+            'ga4_debug_check',
+            'analytics',
+            'ga4',
+            array(),
+            array( 'result' => $result ),
+            get_current_user_id()
+        );
+
+        wp_safe_redirect(
+            self::page_url(
+                array(
+                    'gr_debug'  => 'ga4',
+                    'gr_result' => $result,
                 )
             )
         );
@@ -360,6 +400,8 @@ final class Gr_Analytics_Page {
         $check = isset( $_GET['gr_check'] ) ? sanitize_key( (string) wp_unslash( $_GET['gr_check'] ) ) : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- PRG result flags are words from our own redirects, read-only display.
         $result = isset( $_GET['gr_result'] ) ? sanitize_key( (string) wp_unslash( $_GET['gr_result'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- PRG result flag is a word from our own redirect, read-only display.
+        $debug = isset( $_GET['gr_debug'] ) ? sanitize_key( (string) wp_unslash( $_GET['gr_debug'] ) ) : '';
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__( 'Analytics & CAPI', 'greenpng' ); ?></h1>
@@ -408,7 +450,21 @@ final class Gr_Analytics_Page {
                 </p></div>
             <?php endif; ?>
 
-            <p><?php echo esc_html__( 'Both services stay off until you turn them on, and neither sends anything without credentials. Dispatch is consent-gated: events travel only after the visitor gave marketing consent, PII leaves only as hashes, and every request goes through the plugin queue, never during a page view. The v1.0 self-check below is local (decryption and shape); the outbound connectivity probe ships with the outbound integration tasks.', 'greenpng' ); ?></p>
+            <?php if ( '' !== $debug ) : ?>
+                <div class="notice <?php echo esc_attr( 'ok' === $result ? 'notice-success' : 'notice-warning' ); ?>"><p>
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %s: probe result word. */
+                            __( 'Connectivity probe (GA4 debug endpoint): %s. The probe validates one test event and ingests nothing; it sends only on this click and never on a schedule.', 'greenpng' ),
+                            '' === $result ? 'unknown' : $result
+                        )
+                    );
+                    ?>
+                </p></div>
+            <?php endif; ?>
+
+            <p><?php echo esc_html__( 'Both services stay off until you turn them on, and neither sends anything without credentials. Dispatch is consent-gated: events travel only after the visitor gave marketing consent, PII leaves only as hashes, and every data request goes through the plugin queue, never during a page view. The local self-check tests decryption and shape; the GA4 block also offers a connectivity probe that sends one validation request to Google\'s debug endpoint when you click it, and nothing ever on its own.', 'greenpng' ); ?></p>
 
             <?php
             self::render_service_block(
@@ -523,6 +579,9 @@ final class Gr_Analytics_Page {
             <p class="submit">
                 <button type="submit" class="button button-primary" name="gr_analytics_action" value="<?php echo esc_attr( 'meta' === $service ? self::ACTION_SAVE_META : self::ACTION_SAVE_GA4 ); ?>"><?php echo esc_html__( 'Save', 'greenpng' ); ?></button>
                 <button type="submit" class="button" name="gr_analytics_action" value="<?php echo esc_attr( 'meta' === $service ? self::ACTION_CHECK_META : self::ACTION_CHECK_GA4 ); ?>"><?php echo esc_html__( 'Self-check', 'greenpng' ); ?></button>
+                <?php if ( 'ga4' === $service ) : ?>
+                    <button type="submit" class="button" name="gr_analytics_action" value="<?php echo esc_attr( self::ACTION_DEBUG_GA4 ); ?>"><?php echo esc_html__( 'Test connection (one validation request to Google, this click only)', 'greenpng' ); ?></button>
+                <?php endif; ?>
             </p>
         </form>
         <?php

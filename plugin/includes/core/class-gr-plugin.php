@@ -261,6 +261,7 @@ final class Gr_Plugin {
         Gr_Daily_Aggregator::register();
         Gr_Geoip_Refresh::register();
         Gr_Meta_Capi::register();
+        Gr_Ga4_Mp::register();
 
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );

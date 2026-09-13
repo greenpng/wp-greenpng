@@ -360,4 +360,97 @@ final class AnalyticsPageTest extends TestCase {
         }
         $this->assertContains( 'admin_init', $hooks );
     }
+
+    public function testRenderShowsTheGa4DebugButtonInOneBlockOnly(): void {
+        ob_start();
+        Gr_Analytics_Page::render();
+        $html = (string) ob_get_clean();
+
+        $this->assertSame( 1, substr_count( $html, 'Test connection' ) );
+        $this->assertStringContainsString( 'debug endpoint', $html );
+        $this->assertStringContainsString( 'this click only', $html );
+        $this->assertStringContainsString( 'nothing ever on its own', $html );
+    }
+
+    public function testDebugProbeNoticeRendersTheResultWord(): void {
+        $_GET = array( 'gr_debug' => 'ga4', 'gr_result' => 'ok' );
+        ob_start();
+        Gr_Analytics_Page::render();
+        $html = (string) ob_get_clean();
+
+        $this->assertStringContainsString( 'Connectivity probe (GA4 debug endpoint): ok', $html );
+        $this->assertStringContainsString( 'never on a schedule', $html );
+        $this->assertStringContainsString( 'notice-success', $html );
+        unset( $_GET );
+    }
+
+    public function testDebugProbeClickGoesThroughTheDoorAndAuditsTheWord(): void {
+        $settings = new Gr_Settings();
+        $settings->set( 'capi_ga4_enabled', 1 );
+        Gr_Secrets::store( Gr_Secrets::GA4_ID_OPTION, 'G-ABC1234567' );
+        Gr_Secrets::store( Gr_Secrets::GA4_SECRET_OPTION, 'TESTSECRET32CHARSXXXXXXXXXXXX' );
+        $GLOBALS['gr_stub_http']['https://www.google-analytics.com/debug/mp/collect?measurement_id=G-ABC1234567&api_secret=TESTSECRET32CHARSXXXXXXXXXXXX'] = array(
+            'response' => array( 'code' => 200 ),
+            'body'     => '{"validationMessages":[]}',
+        );
+
+        $this->post( Gr_Analytics_Page::ACTION_DEBUG_GA4 );
+        $_REQUEST = $_POST;
+
+        ob_start();
+        Gr_Analytics_Page::handle_actions();
+        ob_end_clean();
+
+        $this->assertCount( 1, $GLOBALS['gr_stub_http_calls'] );
+        $this->assertStringContainsString( 'gr_debug=ga4', $this->redirected_to() );
+        $this->assertStringContainsString( 'gr_result=ok', $this->redirected_to() );
+
+        $rows = array();
+        foreach ( $this->audit_rows() as $insert ) {
+            if ( 'ga4_debug_check' === (string) $insert['data']['action'] ) {
+                $rows[] = $insert;
+            }
+        }
+        $this->assertCount( 1, $rows );
+
+        // The audit row carries the outcome word in its diff, never
+        // the endpoint or any credential.
+        $this->assertStringContainsString( 'ok', (string) $rows[0]['data']['diff_json'] );
+        $this->assertStringNotContainsString( 'google-analytics', var_export( $rows[0], true ) );
+    }
+
+    public function testDebugProbeUnconfiguredRefusesWithoutTheNetwork(): void {
+        $this->post( Gr_Analytics_Page::ACTION_DEBUG_GA4 );
+        $_REQUEST = $_POST;
+
+        ob_start();
+        Gr_Analytics_Page::handle_actions();
+        ob_end_clean();
+
+        $this->assertSame( array(), $GLOBALS['gr_stub_http_calls'] );
+        $this->assertStringContainsString( 'gr_result=not_configured', $this->redirected_to() );
+
+        $diffs = array();
+        foreach ( $this->audit_rows() as $insert ) {
+            if ( 'ga4_debug_check' === (string) $insert['data']['action'] ) {
+                $diffs[] = (string) $insert['data']['diff_json'];
+            }
+        }
+        $this->assertCount( 1, $diffs );
+        $this->assertStringContainsString( 'not_configured', $diffs[0] );
+    }
+
+    public function testDebugProbeBadNonceRefusesEverything(): void {
+        $this->post( Gr_Analytics_Page::ACTION_DEBUG_GA4 );
+        $_POST[ Gr_Analytics_Page::NONCE_FIELD ] = 'wrong';
+        $_REQUEST                                = $_POST;
+
+        ob_start();
+        Gr_Analytics_Page::handle_actions();
+        ob_end_clean();
+
+        $this->assertSame( array(), $GLOBALS['gr_stub_http_calls'] );
+        $this->assertSame( array(), $this->audit_rows() );
+        $this->assertSame( '', $this->redirected_to() );
+    }
 }
