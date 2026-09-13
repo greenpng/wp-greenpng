@@ -132,7 +132,7 @@ v1.0 页面：Dashboard、Traffic & Security（3 标签）、Access Rules、Logi
 
 | ID | 任务 | 状态 | 交付物 | 验收标准 | 依据 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| T1 | 单元测试集 | ⬜ | CIDR / 归因 5 模型 / 浪涌折叠并发 / 登录锁定 / 提取器 / 递归 diff / 参数解析 / **A/B 分流稳定性与 Z 检验 / UA 引擎命中 / 队列互斥** | 核心域 ≥70% 门槛；全绿 | `11` §3 |
+| T1 | 单元测试集 | ✅ | 十项必测域全部在位（`11` §3）：CIDR（CidrMatcherTest）/ 归因 5 模型（AttributionModelsTest）/ 浪涌折叠（SecurityLogTest 原子 upsert 形状 + **真并发实弹**见实测列）/ 登录锁定（LoginProtectionTest）/ 提取器（SemanticExtractorTest 9 测：CF7/FluentForms 嵌套形状、深度帽、get_data 对象、首检出 email 胜出）/ 递归 diff（gr_audit_diff 递归 added/modified/removed 门面，AuditLogTest diff_json 断言）/ 参数解析（AttributionParamsTest）/ A-B 分流稳定性与 Z 检验（AbEngineTest crc32 分流 + AbSignificanceTest 三态 z）/ UA 引擎命中（ScannerUaTest 种子语料+Exclusions）/ 队列互斥（QueueTest testMutexBlocksReentryWhileHeldAndResumesAfterRelease） | 实测 2026-09-13：phpunit **649 tests 3878 assertions 全绿**；**浪涌并发真栈实弹**：10 个并行 PHP 进程同折键（ip+rule+hour）写真 MariaDB → **恰 1 行、hit_count=10、零 1062 重复键错误**（原子 upsert 在唯一键上串行化=并发保证的机制证明，不宣称压缩率百分比）；清理折键行删净、debug.log phar 噪声裁回 2126 | **如实跳过项**：`11` §7 核心域 ≥70% **行覆盖率**门槛——本机 FrankenPHP PHP 8.5 构建无 xdebug/pcov/phpdbg/pecl（扩展目录零覆盖驱动，实测核查），行覆盖数值**不可测**故不声称；以十域逐项在位+全绿+并发实弹为 T1 收口证据，覆盖率门槛移交 CI（wp-env 矩阵有驱动时测）| `11` §3 |
 | T2 | 集成测试集（含常用插件矩阵） | ⬜ | 采集端点五情形 / WC 双回调幂等 / **HPOS 开×关 × 经典/Blocks 结账四组合** / CF7、Fluent Forms、WPForms 桥接 / Elementor 前台共存 / 缓存插件下 collect 端点 nocache / dbDelta 幂等 / 卸载两模式 | MySQL 主验证站实测全绿；矩阵结果如实记录 | `11` §3/§5、ADR-0007 |
 | T3 | 性能基准 | ⬜ | `tests/benchmarks/front-request.php` 装前/装后 P95 对比 | **分层预算口径**（`09` §1.1：稳态 ≤2 SQL、归因落地 ≤4、collect 独立口径）；数字写入报告 | `09`、`11` §6 |
 | T4 | PHPStan | ⬜ | level 6 + 基线文件 | 零未处理错误；**零动态属性赋值** | `11` §2、ADR-0007 |
