@@ -33,7 +33,7 @@
 | E6 | agy-suite 停用预案 | ✅ | 实测 2026-09-10：greenpng 装入 :8091 前已在 :8090 执行 `wp plugin deactivate agy-suite` 成功；`wp plugin list` 实测 `agy-suite inactive`；:8090 站点 HTTP 200 |
 | E7 | greenpng 插件目录链接 | ✅ | 实测 2026-09-10：symlink `greenpng -> /Users/macos/greenpng/plugin` 就位并经 :8091 `wp plugin list` 可见 |
 | E8 | 参考环境保留 | ✅ | `:8090` SQLite 站原样保留，仅作参考环境（ADR-0007：不承诺 SQLite 兼容，不设兼容门禁任务） |
-| E9 | 常用插件补装（OQ-4） | ⬜ | 从 wordpress.org 下载安装：Contact Form 7、WPForms、Elementor、WP Super Cache（或等价缓存插件）、Yoast SEO（或等价）；`wp plugin list` 实测就位；激活时机随对应适配器/共存测试任务 |
+| E9 | 常用插件补装（OQ-4） | ✅ | 实测 2026-09-13：五插件自 wordpress.org 官方 downloads 端点取 latest-stable zip——contact-form-7 6.1.7 / wpforms-lite 2.0.1.1 / elementor 4.2.4 / wp-super-cache 3.1.3 / wordpress-seo 28.4；沙盒外域经核心 HTTP 结构性拒发（DNS 映 198.18/15 + SSRF 硬化，I1 既有结论）→ 直接 curl 走映射代理下载、本地 zip 离线安装（五连 `Success: Installed 1 of 1`）；`wp plugin list` 五行就位且**全 inactive**（装而不启——激活时机随对应适配器/共存测试任务；dev 基线零扰动：greenpng 仍 active、WooCommerce 11.1.0/FluentForms 6.2.13/limit-login 状态原样）；代码零改动，四检查沿用 V4 全绿（649/3878）；T2/T7 矩阵任务按需激活 |
 
 ## 2. Phase 1 — 插件骨架与存储底座
 
