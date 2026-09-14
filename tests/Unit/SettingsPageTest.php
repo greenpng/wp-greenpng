@@ -82,7 +82,7 @@ final class SettingsPageTest extends TestCase {
         Gr_Settings_Page::render();
         $html = (string) ob_get_clean();
 
-        foreach ( array( 'security_enabled', 'security_log_anonymize', 'trust_proxy_headers', 'trusted_proxies', 'probe_enabled', 'security_action_mode' ) as $field ) {
+        foreach ( array( 'security_enabled', 'security_log_anonymize', 'trust_proxy_headers', 'trusted_proxies', 'probe_enabled', 'behavior_enabled', 'security_action_mode' ) as $field ) {
             $this->assertStringContainsString( 'name="' . $field . '"', $html );
         }
         $this->assertStringContainsString( 'value="block"', $html );

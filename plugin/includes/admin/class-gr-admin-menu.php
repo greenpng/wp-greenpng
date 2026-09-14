@@ -165,6 +165,17 @@ final class Gr_Admin_Menu {
             array( Gr_Funnels_Page::class, 'render' )
         );
 
+        // Audience section opens (docs/06 tree): the behavior
+        // reporting surface, read-only, consent-gated upstream.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Behavior Insights', 'greenpng' ),
+            __( 'Behavior Insights', 'greenpng' ),
+            'manage_options',
+            Gr_Behavior_Page::SLUG,
+            array( Gr_Behavior_Page::class, 'render' )
+        );
+
         // Integrations section opens (docs/06 tree); the outbound
         // analytics page registers its own admin_init write handler.
         add_submenu_page(

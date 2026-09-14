@@ -48,7 +48,7 @@ Not by default, and never any GreenPNG-operated server. The optional integration
 
 = What does the client probe collect? =
 
-The probe has two modules. The security module loads by default and reports only automation conclusions (a bot score and automation flags); it never collects fingerprint strings, canvas or audio data, or persistent identifiers. It exists to protect forms and checkouts under GDPR legitimate interest (Recital 49) and can be switched off with one setting. The behavior module (dwell, scrolling, rage clicks) is only emitted after you enable it and the visitor consents through the WordPress Consent API.
+The probe has two modules. The security module loads by default and reports only automation conclusions (a bot score and automation flags); it never collects fingerprint strings, canvas or audio data, or persistent identifiers. It exists to protect forms and checkouts under GDPR legitimate interest (Recital 49) and can be switched off with one setting. The behavior module is off by default and additionally gated on visitor consent through the WordPress Consent API: both gates must open before anything is recorded. It reports four signals — dwell time in coarse buckets, the deepest scroll milestone reached, rage clicks (repeated rapid clicks on one spot), and dead clicks (clicks on non-interactive elements with no visible response). Click locators are structural only (tag plus id or first class name): never page text, never coordinates.
 
 = What happens to my data when I uninstall? =
 
@@ -68,7 +68,7 @@ Planned for later versions and not present in 1.0: AbuseIPDB blocklist checks an
 
 * Marketing-track data (sessions, touchpoints, behavior, CRM) stores anonymized IPs by default; identifiable marketing collection is gated on visitor consent through the WordPress Consent API.
 * Security logs store full client IPs on a legitimate-interest basis (site protection, GDPR Recital 49), are masked in the admin by default, and can be set to truncated storage instead, with the admin clearly noting that blocking then degrades to subnet level.
-* The client probe's security module reports only automation conclusions (a bot score and automation flags) for form and checkout protection under the same legitimate-interest basis; it collects no fingerprint identifier strings, no canvas or audio data, and no persistent identifiers, and can be switched off with one setting. The behavior module (dwell, scrolling, rage clicks) runs only after you enable it and the visitor consents through the WordPress Consent API.
+* The client probe's security module reports only automation conclusions (a bot score and automation flags) for form and checkout protection under the same legitimate-interest basis; it collects no fingerprint identifier strings, no canvas or audio data, and no persistent identifiers, and can be switched off with one setting. The behavior module (dwell buckets, deepest scroll milestone, rage clicks, dead clicks) is off by default and additionally gated on visitor consent through the WordPress Consent API; its click locators are structural (tag plus id or first class name), never page text or coordinates.
 * Crawler verification resolves connecting addresses through your server's normal DNS infrastructure and records only the verdict word and the resolved hostname on the security track; it uses no third-party API, stores no credentials, and a failed lookup always resolves to allow.
 * Visitor identity: a 30-day signed cookie when consent allows it; otherwise a daily-rotated salted hash of the anonymized IP and browser type, which cannot link visits across days.
 * The WordPress privacy API is supported where it applies: personal data export and erase handlers cover this plugin's marketing tables (sessions, touchpoints, conversions, the CRM contact row) and the visitor binding on orders. Security logs are retained on a legitimate-interest basis with short retention and masked display, and are intentionally outside person-level erasure.
@@ -87,6 +87,7 @@ The scanner user-agent detection rules bundled in assets/data/ are seeded from J
 3. Traffic & Security — the request log with bot verdicts and the allow/block rule table.
 4. Campaigns — attribution breakdowns by channel, source, and campaign.
 5. Funnels & Goals — funnel results and A/B significance testing.
+6. Behavior Insights — dwell, scroll, rage-click, and dead-click engagement and friction signals, consent-gated and off by default.
 
 == Changelog ==
 

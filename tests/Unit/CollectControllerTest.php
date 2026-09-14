@@ -11,6 +11,7 @@ declare( strict_types = 1 );
 
 namespace GreenPNG\Tests\Unit;
 
+use GreenPNG\Behavior\Gr_Behavior;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Rest\Gr_Collect_Controller;
@@ -454,5 +455,282 @@ final class CollectControllerTest extends TestCase {
         $sql = implode( ' ', $wpdb->queries );
         self::assertStringContainsString( 'bot_score = GREATEST(bot_score, 80)', $sql );
         self::assertStringContainsString( 'is_bot = IF(0 = 1, 1, is_bot)', $sql );
+    }
+
+    // ------------------------------------------------------------------
+    // Behavior module (ADR-0012): batch envelope, purpose gates.
+    // ------------------------------------------------------------------
+
+    /**
+     * Arms the module exactly as the plugin wiring does: the setting
+     * on, marketing consent granted, the vocabulary filter attached.
+     *
+     * @return void
+     */
+    private function arm_behavior(): void {
+        ( new Gr_Settings() )->set( 'behavior_enabled', 1 );
+        $GLOBALS['gr_stub_consent']['marketing'] = true;
+        add_filter( 'gr_collect_events', array( Gr_Behavior::class, 'vocabulary' ) );
+    }
+
+    /**
+     * The gr_event firings this request produced, in order.
+     *
+     * @return array<int, Gr_Event>
+     */
+    private function fired_events(): array {
+        $events = array();
+        foreach ( $GLOBALS['gr_stub_fired_action_args'] as $record ) {
+            if ( 'gr_event' === $record['hook'] ) {
+                $events[] = $record['args'][0];
+            }
+        }
+
+        return $events;
+    }
+
+    public function testBehaviorNamesStayUnknownWhileTheModuleIsOff(): void {
+        $GLOBALS['gr_stub_consent']['marketing'] = true;
+        add_filter( 'gr_collect_events', array( Gr_Behavior::class, 'vocabulary' ) );
+
+        $result = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'  => Gr_Collect_Controller::token(),
+                    'name'   => 'behavior',
+                    'events' => array(
+                        array( 'name' => 'dwell', 'bucket' => '15-60', 'path' => '/' ),
+                    ),
+                )
+            )
+        );
+
+        // behavior_enabled defaults to 0: the vocabulary added nothing,
+        // so the envelope itself is an unknown name.
+        self::assertInstanceOf( WP_Error::class, $result );
+        self::assertSame( 'gr_collect_event', $result->get_error_code() );
+        self::assertSame( 400, $result->get_error_data()['status'] );
+    }
+
+    public function testBehaviorBatchStoresEveryInnerEventAsItsOwnRow(): void {
+        global $wpdb;
+
+        $this->arm_behavior();
+
+        $result = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token' => Gr_Collect_Controller::token(),
+                    'name'  => 'behavior',
+                    'events' => array(
+                        array( 'name' => 'dwell', 'bucket' => '60-180', 'path' => '/pricing/' ),
+                        array( 'name' => 'scroll_depth', 'milestone' => 75, 'path' => '/pricing/' ),
+                        array( 'name' => 'rage_click', 'clicks' => 4, 'locator' => 'button.buy-now', 'path' => '/pricing/' ),
+                        array( 'name' => 'dead_click', 'locator' => 'div.hero', 'path' => '/pricing/' ),
+                    ),
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_REST_Response::class, $result );
+        self::assertTrue( $result->get_data()['stored'] );
+        self::assertGreaterThan( 0, $result->get_data()['id'] );
+
+        $events = $this->fired_events();
+        self::assertCount( 4, $events );
+        self::assertSame( array( 'dwell', 'scroll_depth', 'rage_click', 'dead_click' ), array_map( static function ( Gr_Event $event ) {
+            return $event->name();
+        }, $events ) );
+
+        foreach ( $events as $event ) {
+            self::assertSame( 'behavior', $event->group() );
+            self::assertSame( '/pricing/', $event->payload()['path'] );
+        }
+
+        self::assertSame( '60-180', $events[0]->payload()['bucket'] );
+        self::assertSame( 75, $events[1]->payload()['milestone'] );
+        self::assertSame( 4, $events[2]->payload()['clicks'] );
+        self::assertSame( 'button.buy-now', $events[2]->payload()['locator'] );
+        self::assertSame( 'div.hero', $events[3]->payload()['locator'] );
+
+        // One beacon, one session slide: exactly one unique touch
+        // statement (prepare and query each record an identical line).
+        $touches = array_values(
+            array_unique(
+                array_filter(
+                    $wpdb->queries,
+                    static function ( $line ): bool {
+                        return false !== strpos( (string) $line, 'INSERT INTO wp_gr_sessions' );
+                    }
+                )
+            )
+        );
+        self::assertCount( 1, $touches );
+    }
+
+    public function testBehaviorBatchNeedsMarketingConsent(): void {
+        ( new Gr_Settings() )->set( 'behavior_enabled', 1 );
+        add_filter( 'gr_collect_events', array( Gr_Behavior::class, 'vocabulary' ) );
+
+        // No consent granted: the third gate refuses before any row.
+        $result = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'  => Gr_Collect_Controller::token(),
+                    'name'   => 'behavior',
+                    'events' => array(
+                        array( 'name' => 'dwell', 'bucket' => '15-60', 'path' => '/' ),
+                    ),
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_Error::class, $result );
+        self::assertSame( 'gr_collect_consent', $result->get_error_code() );
+        self::assertSame( 400, $result->get_error_data()['status'] );
+    }
+
+    public function testBehaviorBatchRefusesPrefetchFetches(): void {
+        $this->arm_behavior();
+
+        $request = $this->request(
+            array(
+                'token'  => Gr_Collect_Controller::token(),
+                'name'   => 'behavior',
+                'events' => array(
+                    array( 'name' => 'dwell', 'bucket' => '15-60', 'path' => '/' ),
+                ),
+            )
+        );
+        $request->set_header( 'Sec-Purpose', 'prefetch' );
+
+        $result = ( new Gr_Collect_Controller() )->handle( $request );
+
+        self::assertInstanceOf( WP_Error::class, $result );
+        self::assertSame( 'gr_collect_prefetch', $result->get_error_code() );
+        self::assertSame( 400, $result->get_error_data()['status'] );
+    }
+
+    public function testBehaviorBatchValidatesEveryInnerValue(): void {
+        $this->arm_behavior();
+        $controller = new Gr_Collect_Controller();
+
+        $cases = array(
+            array( 'gr_collect_bucket', array( 'name' => 'dwell', 'bucket' => '999', 'path' => '/' ) ),
+            array( 'gr_collect_milestone', array( 'name' => 'scroll_depth', 'milestone' => 30, 'path' => '/' ) ),
+            array( 'gr_collect_clicks', array( 'name' => 'rage_click', 'clicks' => 2, 'locator' => 'div.x', 'path' => '/' ) ),
+            array( 'gr_collect_locator', array( 'name' => 'dead_click', 'locator' => '<>', 'path' => '/' ) ),
+            array( 'gr_collect_field', array( 'name' => 'dead_click', 'locator' => 'div.x', 'path' => '/', 'text' => 'never accepted' ) ),
+            array( 'gr_collect_event', array( 'name' => 'behavior', 'events' => array() ) ),
+            array( 'gr_collect_event', array( 'name' => 'signal', 'bot_score' => 10 ) ),
+        );
+
+        foreach ( $cases as $case ) {
+            $result = $controller->handle(
+                $this->request(
+                    array(
+                        'token'  => Gr_Collect_Controller::token(),
+                        'name'   => 'behavior',
+                        'events' => array( $case[1] ),
+                    )
+                )
+            );
+
+            self::assertInstanceOf( WP_Error::class, $result, 'Inner event must be rejected: ' . wp_json_encode( $case[1] ) );
+            self::assertSame( $case[0], $result->get_error_code() );
+        }
+    }
+
+    public function testBehaviorBatchCapsAtTwentyInnerEvents(): void {
+        $this->arm_behavior();
+
+        $inner = array();
+        for ( $i = 0; $i < 21; $i++ ) {
+            $inner[] = array( 'name' => 'dwell', 'bucket' => '0-15', 'path' => '/' );
+        }
+
+        $result = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'  => Gr_Collect_Controller::token(),
+                    'name'   => 'behavior',
+                    'events' => $inner,
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_Error::class, $result );
+        self::assertSame( 'gr_collect_batch', $result->get_error_code() );
+    }
+
+    public function testDirectBehaviorPostsRideTheSameValidation(): void {
+        $this->arm_behavior();
+        $controller = new Gr_Collect_Controller();
+
+        $result = $controller->handle(
+            $this->request(
+                array(
+                    'token'  => Gr_Collect_Controller::token(),
+                    'name'   => 'dwell',
+                    'bucket' => '15-60',
+                    'path'   => '/about/',
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_REST_Response::class, $result );
+        self::assertTrue( $result->get_data()['stored'] );
+
+        $events = $this->fired_events();
+        $last   = end( $events );
+        self::assertSame( 'dwell', $last->name() );
+        self::assertSame( 'behavior', $last->group() );
+        self::assertSame( '15-60', $last->payload()['bucket'] );
+
+        // The transport keys never reach the stored payload.
+        self::assertArrayNotHasKey( 'token', $last->payload() );
+        self::assertArrayNotHasKey( 'name', $last->payload() );
+
+        // Off-vocabulary value on the direct path: same code as the
+        // batch inner check.
+        gr_stub_reset_options();
+        $this->arm_behavior();
+        $bad = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'  => Gr_Collect_Controller::token(),
+                    'name'   => 'dwell',
+                    'bucket' => 'three-minutes',
+                )
+            )
+        );
+        self::assertInstanceOf( WP_Error::class, $bad );
+        self::assertSame( 'gr_collect_bucket', $bad->get_error_code() );
+    }
+
+    public function testLocatorLosesAnythingOutsideTheStructuralCharset(): void {
+        $this->arm_behavior();
+
+        ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'  => Gr_Collect_Controller::token(),
+                    'name'   => 'behavior',
+                    'events' => array(
+                        array( 'name' => 'dead_click', 'locator' => 'button#buy"><svg onload=x>', 'path' => '/' ),
+                    ),
+                )
+            )
+        );
+
+        $events = $this->fired_events();
+        $stored = (string) end( $events )->payload()['locator'];
+
+        // The markup never survives: only the structural charset does.
+        self::assertStringStartsWith( 'button#buy', $stored );
+        self::assertStringNotContainsString( '<', $stored );
+        self::assertStringNotContainsString( '>', $stored );
+        self::assertStringNotContainsString( '"', $stored );
+        self::assertLessThanOrEqual( 64, strlen( $stored ) );
     }
 }

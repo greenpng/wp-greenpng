@@ -19,8 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Behavior\Gr_Behavior;
 use GreenPNG\Admin\Gr_Access_Rules_Page;
 use GreenPNG\Admin\Gr_Admin_Menu;
+use GreenPNG\Admin\Gr_Behavior_Page;
 use GreenPNG\Admin\Gr_Chart_Assets;
 use GreenPNG\Admin\Gr_Login_Protection_Page;
 use GreenPNG\Admin\Gr_Data_Retention_Page;
@@ -274,6 +276,7 @@ final class Gr_Plugin {
         add_action( 'rest_api_init', array( Gr_Live_Controller::class, 'register_routes' ) );
         add_action( 'rest_api_init', array( Gr_Panels_Controller::class, 'register_routes' ) );
         Gr_Probe_Script::register_hooks();
+        Gr_Behavior::register_hooks();
         Gr_Ab_Shortcode::register();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
         $this->inspector->register_hooks();

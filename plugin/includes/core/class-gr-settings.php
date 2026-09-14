@@ -71,6 +71,12 @@ final class Gr_Settings {
             // basis; toggle + readme disclosure per ADR-0007).
             'probe_enabled'              => 1,
 
+            // Behavior probe (ADR-0012): the marketing-track file —
+            // dwell, scroll, rage and dead clicks. Off by default and
+            // additionally consent-gated on both ends; on only when the
+            // owner opts in AND the visitor allows marketing.
+            'behavior_enabled'           => 0,
+
             // Probe verdict threshold (ADR-0009 D1): the score at which
             // a session reads as a known bot. 70 asks for two
             // corroborating signals, so one automation flag on a real

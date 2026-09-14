@@ -149,6 +149,35 @@ final class DailyAggregatorTest extends TestCase {
         $this->assertStringNotContainsString( 'security_hits', $sql );
     }
 
+    public function testBehaviorEventsFoldIntoTheirOwnMetricFamily(): void {
+        $GLOBALS['wpdb']->var_result = '0';
+
+        $GLOBALS['wpdb']->results = static function ( string $sql ): array {
+            if ( false !== strpos( $sql, "event_group = 'behavior'" ) ) {
+                return array(
+                    array( 'metric_key' => 'dwell', 'metric_value' => '12' ),
+                    array( 'metric_key' => 'rage_click', 'metric_value' => '2' ),
+                );
+            }
+
+            return array();
+        };
+
+        $written = Gr_Daily_Aggregator::aggregate_date( '2026-09-10' );
+
+        // 5 scalar rows + the two behavior dimension rows; the
+        // query itself read the behavior group only.
+        $this->assertSame( 7, $written );
+        $sql = implode( ' ', $this->upserts() );
+        $this->assertStringContainsString( "('2026-09-10', 'behavior_events', 'dwell', 12.000000)", $sql );
+        $this->assertStringContainsString( "('2026-09-10', 'behavior_events', 'rage_click', 2.000000)", $sql );
+
+        // The family source is the behavior group of the event
+        // stream, its own statement beside the pageview count.
+        $queries = implode( ' ', $GLOBALS['wpdb']->queries );
+        $this->assertStringContainsString( "WHERE event_group = 'behavior'", $queries );
+    }
+
     public function testRepeatedRunsReplaceInsteadOfAdding(): void {
         $this->seed_reads(
             array(

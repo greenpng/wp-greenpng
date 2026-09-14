@@ -85,6 +85,7 @@ final class Gr_Daily_Aggregator {
         $rows = array_merge(
             self::session_metrics( $start, $end, $date ),
             self::pageview_metrics( $start, $end, $date ),
+            self::behavior_metrics( $start, $end, $date ),
             self::security_metrics( $start, $end, $date ),
             self::conversion_metrics( $start, $end, $date )
         );
@@ -197,6 +198,44 @@ final class Gr_Daily_Aggregator {
         );
 
         return array( array( $date, 'pageviews', '', (float) $count ) );
+    }
+
+    /**
+     * Behavior events per name (ADR-0012 D4): the engagement and
+     * friction vocabulary folded into one metric family whose key is
+     * the event name, so the Behavior Insights tiles read the summary
+     * table like every other report.
+     *
+     * @param string $start Day start.
+     * @param string $end   Next day start.
+     * @param string $date  Day label.
+     * @return array<int, array{0: string, 1: string, 2: string, 3: float}> Metric rows.
+     */
+    private static function behavior_metrics( string $start, string $end, string $date ): array {
+        global $wpdb;
+
+        $events = Gr_Database::table( 'events' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- daily batch job, never a front-end request.
+        $grouped = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from the DDL registry, not user input; it sits on the first string line so this ignore reaches it.
+                "SELECT event_name AS metric_key, COUNT(*) AS metric_value FROM {$events} WHERE event_group = %s AND created_at >= %s AND created_at < %s GROUP BY event_name",
+                'behavior',
+                $start,
+                $end
+            ),
+            ARRAY_A
+        );
+
+        $rows = array();
+        foreach ( (array) $grouped as $hit ) {
+            if ( is_array( $hit ) ) {
+                $rows[] = array( $date, 'behavior_events', (string) $hit['metric_key'], (float) $hit['metric_value'] );
+            }
+        }
+
+        return $rows;
     }
 
     /**

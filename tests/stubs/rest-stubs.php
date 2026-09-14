@@ -343,6 +343,14 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
         private $params = array();
 
         /**
+         * Recorded headers, canonical (lowercased, hyphens to
+         * underscores) like core's attribute bag.
+         *
+         * @var array<string, string>
+         */
+        private $headers = array();
+
+        /**
          * Raw body, when set.
          *
          * @var string
@@ -358,6 +366,31 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
          */
         public function set_param( $key, $value ) {
             $this->params[ $key ] = $value;
+        }
+
+        /**
+         * Records one request header; the name canonicalizes the same
+         * way core's REST request does, so get_header() accepts either
+         * spelling.
+         *
+         * @param string $key   Header name, e.g. 'Sec-Purpose'.
+         * @param string $value Header value.
+         * @return void
+         */
+        public function set_header( $key, $value ) {
+            $this->headers[ strtolower( str_replace( '-', '_', (string) $key ) ) ] = (string) $value;
+        }
+
+        /**
+         * Reads one request header, or null when absent.
+         *
+         * @param string $key Header name in either spelling.
+         * @return string|null
+         */
+        public function get_header( $key ) {
+            $canonical = strtolower( str_replace( '-', '_', (string) $key ) );
+
+            return $this->headers[ $canonical ] ?? null;
         }
 
         /**

@@ -151,6 +151,7 @@ final class Gr_Settings_Page {
             'trust_proxy_headers',
             'trusted_proxies',
             'probe_enabled',
+            'behavior_enabled',
             'bot_verdict_threshold',
             'login_fail_threshold',
             'login_lockout_base',
@@ -216,6 +217,7 @@ final class Gr_Settings_Page {
         $settings->set( 'security_log_anonymize', self::checkbox( 'security_log_anonymize' ) );
         $settings->set( 'trust_proxy_headers', self::checkbox( 'trust_proxy_headers' ) );
         $settings->set( 'probe_enabled', self::checkbox( 'probe_enabled' ) );
+        $settings->set( 'behavior_enabled', self::checkbox( 'behavior_enabled' ) );
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); the value is whitelist-checked below.
         $mode = isset( $_POST['security_action_mode'] ) ? sanitize_key( (string) wp_unslash( $_POST['security_action_mode'] ) ) : 'log';
@@ -399,6 +401,15 @@ final class Gr_Settings_Page {
                                 <label>
                                     <input type="checkbox" name="probe_enabled" value="1" <?php checked( 1, (int) $settings->get( 'probe_enabled' ) ); ?> />
                                     <?php echo esc_html__( 'Collect client safety signals (on by default; disclosed in the readme).', 'greenpng' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'Behavior signals', 'greenpng' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="behavior_enabled" value="1" <?php checked( 1, (int) $settings->get( 'behavior_enabled' ) ); ?> />
+                                    <?php echo esc_html__( 'Collect dwell time, scroll depth, rage and dead clicks for consenting visitors only (off by default; marketing consent required).', 'greenpng' ); ?>
                                 </label>
                             </td>
                         </tr>

@@ -8,6 +8,15 @@
  * stream. Identity is resolved server-side from the dual-track model;
  * the client can never assert visitor or session ids.
  *
+ * The behavior module (ADR-0012) rides the same route with a batch
+ * envelope: the client flushes once per page under the 'behavior'
+ * name carrying at most 20 inner events (dwell, scroll_depth,
+ * rage_click, dead_click), each validated against its own field
+ * whitelist before its own dispatch. Behavior events additionally
+ * pass two purpose gates: marketing consent (the marketing track's
+ * checkpoint) and a prefetch refusal — a prefetched page is not a
+ * visit, so it must not count behavior.
+ *
  * @package GreenPNG
  */
 
@@ -21,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Core\Gr_Rate_Limiter;
 use GreenPNG\Core\Gr_Secrets;
+use GreenPNG\Privacy\Gr_Consent;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -42,6 +52,9 @@ final class Gr_Collect_Controller {
     /** Rate window in seconds. */
     public const RATE_WINDOW = 60;
 
+    /** Inner events one behavior batch may carry (ADR-0012 D3). */
+    public const BEHAVIOR_BATCH_CAP = 20;
+
     /**
      * Registered event vocabulary: name => event_group. The filter lets
      * site owners and extensions register more names; unknown names are
@@ -53,9 +66,10 @@ final class Gr_Collect_Controller {
     );
 
     /**
-     * The complete accepted-field list; anything else in the body is a
-     * schema violation. Identity keys are deliberately absent — the
-     * server derives them.
+     * The complete accepted-field list across every event; anything
+     * else in the body is a transport-layer schema violation. Identity
+     * keys are deliberately absent — the server derives them. Tighter
+     * per-event rules follow in validate_event().
      */
     private const FIELDS = array(
         'token',
@@ -67,7 +81,30 @@ final class Gr_Collect_Controller {
         'software_renderer',
         'headless_window',
         'language_anomaly',
+        'events',
+        'bucket',
+        'milestone',
+        'clicks',
+        'locator',
     );
+
+    /**
+     * Behavior vocabulary: the inner event names the batch envelope
+     * may carry, each with its own accepted fields (ADR-0012 D2 —
+     * whitelists tighten per event, never per route).
+     */
+    private const BEHAVIOR_FIELDS = array(
+        'dwell'        => array( 'path', 'event_id', 'bucket' ),
+        'scroll_depth' => array( 'path', 'event_id', 'milestone' ),
+        'rage_click'   => array( 'path', 'event_id', 'clicks', 'locator' ),
+        'dead_click'   => array( 'path', 'event_id', 'locator' ),
+    );
+
+    /**
+     * Dwell bucket vocabulary: the four engagement bands the client
+     * reports seconds through (ADR-0012 D2).
+     */
+    private const DWELL_BUCKETS = array( '0-15', '15-60', '60-180', '180+' );
 
     /**
      * Boolean conclusion flags the probe may report; raw signal strings
@@ -188,7 +225,9 @@ final class Gr_Collect_Controller {
 
     /**
      * Serves one validated event: strict schema, server-side identity,
-     * dispatch into the stream, session activity slide.
+     * dispatch into the stream, session activity slide. The behavior
+     * envelope unwraps into its inner events, each dispatched on its
+     * own row with its own validation.
      *
      * @param WP_REST_Request $request Incoming request.
      * @return WP_REST_Response|WP_Error
@@ -230,29 +269,95 @@ final class Gr_Collect_Controller {
             );
         }
 
+        // Purpose gates for the behavior group: consent first (the
+        // marketing track's checkpoint, ADR-0005), then the prefetch
+        // refusal — a prefetched page is not a visit.
+        if ( 'behavior' === $events[ $name ] ) {
+            if ( ! Gr_Consent::allows( 'marketing' ) ) {
+                return new WP_Error(
+                    'gr_collect_consent',
+                    __( 'Behavior events require marketing consent.', 'greenpng' ),
+                    array( 'status' => 400 )
+                );
+            }
+
+            if ( $this->is_prefetch( $request ) ) {
+                return new WP_Error(
+                    'gr_collect_prefetch',
+                    __( 'Prefetched pages do not count behavior.', 'greenpng' ),
+                    array( 'status' => 400 )
+                );
+            }
+        }
+
         $violation = $this->validate_event( $name, $params );
         if ( null !== $violation ) {
             return $violation;
         }
 
-        $identity               = gr()->identity();
-        $payload                = $this->payload( $name, $params );
-        $payload['visitor_id']  = $identity->visitor_id();
-        $payload['session_id']  = $identity->session_id();
-        $payload['event_id']    = isset( $params['event_id'] ) ? (string) $params['event_id'] : '';
-        $payload['event_group'] = $events[ $name ];
+        $identity = gr()->identity();
 
-        $event = gr_dispatch_event( $name, $payload );
+        // The batch envelope: validate every inner event, then store
+        // each on its own row. A violation anywhere rejects the whole
+        // batch — partial acceptance would tell the client less than
+        // the truth.
+        if ( 'behavior' === $name ) {
+            $inner = $params['events'];
+            $rows  = array();
+            foreach ( (array) $inner as $event ) {
+                if ( ! is_array( $event ) ) {
+                    return new WP_Error( 'gr_collect_batch', __( 'Malformed behavior batch.', 'greenpng' ), array( 'status' => 400 ) );
+                }
+                $rows[] = $event;
+            }
 
-        gr()->sessions()->touch( $payload['visitor_id'], $payload['session_id'] );
+            if ( count( $rows ) > self::BEHAVIOR_BATCH_CAP ) {
+                return new WP_Error( 'gr_collect_batch', __( 'Behavior batch too large.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+
+            foreach ( $rows as $event ) {
+                $inner_name = isset( $event['name'] ) ? (string) $event['name'] : '';
+                $violation  = $this->validate_behavior_event( $inner_name, $event );
+                if ( null !== $violation ) {
+                    return $violation;
+                }
+            }
+
+            $stored   = 0;
+            $first_id = 0;
+            foreach ( $rows as $event ) {
+                $inner_name = (string) $event['name'];
+                $row_event  = $this->store_event( $inner_name, $events, $event, $identity->visitor_id(), $identity->session_id() );
+                if ( $row_event->persisted_id() > 0 ) {
+                    ++$stored;
+                    if ( 0 === $first_id ) {
+                        $first_id = $row_event->persisted_id();
+                    }
+                }
+            }
+
+            gr()->sessions()->touch( $identity->visitor_id(), $identity->session_id() );
+            nocache_headers();
+
+            return rest_ensure_response(
+                array(
+                    'stored' => $stored > 0,
+                    'id'     => $first_id,
+                )
+            );
+        }
+
+        $event = $this->store_event( $name, $events, $params, $identity->visitor_id(), $identity->session_id() );
+
+        gr()->sessions()->touch( $identity->visitor_id(), $identity->session_id() );
 
         if ( 'signal' === $name && isset( $params['bot_score'] ) && is_int( $params['bot_score'] ) ) {
             // The probe's conclusion lands on the session row
             // (ADR-0009 D1/D2): the server owns the verdict, the client
             // only reports the score it measured.
             gr()->sessions()->apply_probe_score(
-                (string) $payload['visitor_id'],
-                (string) $payload['session_id'],
+                (string) $identity->visitor_id(),
+                (string) $identity->session_id(),
                 $params['bot_score'],
                 $params['bot_score'] >= self::verdict_threshold() ? 1 : 0
             );
@@ -269,8 +374,60 @@ final class Gr_Collect_Controller {
     }
 
     /**
-     * Per-event field rules beyond the shared args schema: lengths and
-     * the signal-specific requirements.
+     * Builds and dispatches one event row with the server-derived
+     * identity; transport keys never reach the payload.
+     *
+     * @param string                $name       Event name.
+     * @param array<string, string> $group_map  Registered names and groups.
+     * @param array<string, mixed>  $params     Body params.
+     * @param string                $visitor_id Server identity.
+     * @param string                $session_id Server identity.
+     * @return \GreenPNG\Core\Gr_Event
+     */
+    private function store_event( string $name, array $group_map, array $params, string $visitor_id, string $session_id ) {
+        $payload = $params;
+        unset( $payload['token'], $payload['name'], $payload['events'] );
+
+        if ( ! isset( $payload['event_id'] ) ) {
+            $payload['event_id'] = '';
+        } else {
+            $payload['event_id'] = (string) $payload['event_id'];
+        }
+
+        // The locator carries the structural form whatever the client
+        // sent; validation already refused junk-only values.
+        if ( isset( $payload['locator'] ) ) {
+            $payload['locator'] = $this->sanitize_locator( (string) $payload['locator'] );
+        }
+
+        $payload['visitor_id']  = $visitor_id;
+        $payload['session_id']  = $session_id;
+        $payload['event_group'] = $group_map[ $name ];
+
+        return gr_dispatch_event( $name, $payload );
+    }
+
+    /**
+     * Prefetch detection on the fetch-metadata purpose header: a
+     * prefetch or prerender fetch is the browser warming the cache,
+     * not a visit.
+     *
+     * @param WP_REST_Request $request Incoming request.
+     * @return bool
+     */
+    private function is_prefetch( WP_REST_Request $request ): bool {
+        $purpose = (string) $request->get_header( 'Sec-Purpose' );
+
+        if ( '' === $purpose ) {
+            return false;
+        }
+
+        return false !== stripos( $purpose, 'prefetch' ) || false !== stripos( $purpose, 'prerender' );
+    }
+
+    /**
+     * Per-event field rules beyond the shared args schema: lengths, the
+     * envelope shape, and the per-event key whitelists (ADR-0012 D2).
      *
      * @param string               $name   Event name.
      * @param array<string, mixed> $params Body params.
@@ -283,6 +440,20 @@ final class Gr_Collect_Controller {
 
         if ( isset( $params['event_id'] ) && strlen( (string) $params['event_id'] ) > 64 ) {
             return new WP_Error( 'gr_collect_event_id', __( 'Event id too long.', 'greenpng' ), array( 'status' => 400 ) );
+        }
+
+        if ( 'behavior' === $name ) {
+            if ( ! isset( $params['events'] ) || ! is_array( $params['events'] ) ) {
+                return new WP_Error( 'gr_collect_batch', __( 'Behavior batches carry an events array.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+
+            return null;
+        }
+
+        if ( isset( self::BEHAVIOR_FIELDS[ $name ] ) ) {
+            // A direct post of one behavior event: same per-event rules
+            // the batch applies to its inner events.
+            return $this->validate_behavior_event( $name, $params );
         }
 
         if ( 'signal' !== $name ) {
@@ -303,20 +474,84 @@ final class Gr_Collect_Controller {
     }
 
     /**
-     * Strips the transport keys and keeps the event's real payload.
+     * One inner behavior event against its own whitelist: the name
+     * must be one of the four (no nested envelopes), the fields must
+     * be exactly that event's, and each value must sit in its
+     * vocabulary — buckets in the four bands, milestones in the four
+     * steps, click counts plausible, locators in the structural
+     * charset the client builds them from.
      *
-     * @param string               $name   Event name.
-     * @param array<string, mixed> $params Body params.
-     * @return array<string, mixed>
+     * @param string               $name   Inner event name.
+     * @param array<string, mixed> $params Inner event body.
+     * @return WP_Error|null
      */
-    private function payload( string $name, array $params ): array {
-        unset( $params['token'], $params['name'] );
-
-        if ( ! isset( $params['event_id'] ) ) {
-            $params['event_id'] = '';
+    private function validate_behavior_event( string $name, array $params ) {
+        if ( ! isset( self::BEHAVIOR_FIELDS[ $name ] ) ) {
+            return new WP_Error( 'gr_collect_event', __( 'Unknown behavior event name.', 'greenpng' ), array( 'status' => 400 ) );
         }
 
-        return $params;
+        // Direct posts still carry the transport keys at this point;
+        // the batch's inner events never do. Stripping both here keeps
+        // one whitelist for the two shapes.
+        $body = $params;
+        unset( $body['token'], $body['name'] );
+
+        $unknown = array_diff( array_keys( $body ), self::BEHAVIOR_FIELDS[ $name ] );
+        if ( array() !== $unknown ) {
+            return new WP_Error(
+                'gr_collect_field',
+                __( 'Unknown collect field.', 'greenpng' ),
+                array(
+                    'status' => 400,
+                    'field'  => (string) reset( $unknown ),
+                )
+            );
+        }
+
+        if ( isset( $params['path'] ) && strlen( (string) $params['path'] ) > 191 ) {
+            return new WP_Error( 'gr_collect_path', __( 'Path too long.', 'greenpng' ), array( 'status' => 400 ) );
+        }
+
+        if ( 'dwell' === $name ) {
+            if ( ! isset( $params['bucket'] ) || ! in_array( (string) $params['bucket'], self::DWELL_BUCKETS, true ) ) {
+                return new WP_Error( 'gr_collect_bucket', __( 'Dwell bucket outside the vocabulary.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+        }
+
+        if ( 'scroll_depth' === $name ) {
+            if ( ! isset( $params['milestone'] ) || ! is_int( $params['milestone'] ) || ! in_array( $params['milestone'], array( 25, 50, 75, 100 ), true ) ) {
+                return new WP_Error( 'gr_collect_milestone', __( 'Scroll milestone outside the vocabulary.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+        }
+
+        if ( 'rage_click' === $name ) {
+            if ( ! isset( $params['clicks'] ) || ! is_int( $params['clicks'] ) || $params['clicks'] < 3 || $params['clicks'] > 100 ) {
+                return new WP_Error( 'gr_collect_clicks', __( 'Rage click count outside the plausible range.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+        }
+
+        if ( isset( $params['locator'] ) ) {
+            $locator = $this->sanitize_locator( (string) $params['locator'] );
+            if ( '' === $locator && '' !== (string) $params['locator'] ) {
+                return new WP_Error( 'gr_collect_locator', __( 'Locator outside the structural charset.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Locator re-sanitization server-side: tag, optional id or class
+     * mark, at most 64 characters — the structural vocabulary the
+     * client builds, with everything outside it clipped away.
+     *
+     * @param string $locator Client locator.
+     * @return string
+     */
+    private function sanitize_locator( string $locator ): string {
+        $clean = preg_replace( '/[^A-Za-z0-9_.#-]/', '', substr( $locator, 0, 64 ) );
+
+        return is_string( $clean ) ? $clean : '';
     }
 
     /**
@@ -367,6 +602,24 @@ final class Gr_Collect_Controller {
             'software_renderer' => array( 'type' => 'boolean' ),
             'headless_window'   => array( 'type' => 'boolean' ),
             'language_anomaly'  => array( 'type' => 'boolean' ),
+            'events'            => array(
+                'type' => 'array',
+            ),
+            'bucket'            => array(
+                'type' => 'string',
+                'enum' => self::DWELL_BUCKETS,
+            ),
+            'milestone'         => array(
+                'type'    => 'integer',
+                'minimum' => 25,
+                'maximum' => 100,
+            ),
+            'clicks'            => array(
+                'type'    => 'integer',
+                'minimum' => 3,
+                'maximum' => 100,
+            ),
+            'locator'           => array( 'type' => 'string' ),
         );
     }
 }
