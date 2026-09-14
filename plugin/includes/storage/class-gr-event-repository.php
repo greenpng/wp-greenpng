@@ -104,6 +104,47 @@ final class Gr_Event_Repository {
     }
 
     /**
+     * Reads one visitor's newest events, newest first, payload
+     * decoded — the contact profile's timeline read.
+     *
+     * @param string $visitor_id Cookie-track visitor identity.
+     * @param int    $limit      Row ceiling, clamped to [1, 500].
+     * @return array<int, array<string, mixed>>
+     */
+    public function recent_for_visitor( string $visitor_id, int $limit = 30 ): array {
+        global $wpdb;
+
+        if ( '' === $visitor_id ) {
+            return array();
+        }
+
+        $table = Gr_Database::table( 'events' );
+        $limit = max( 1, min( $limit, self::LIMIT_CEILING ) );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- profile point read on the visitor_id index; admin surface only.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT * FROM {$table} WHERE visitor_id = %s ORDER BY id DESC LIMIT %d",
+                array( $visitor_id, $limit )
+            ),
+            ARRAY_A
+        );
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
+        foreach ( $rows as $index => $row ) {
+            if ( is_array( $row ) ) {
+                $row['payload'] = self::decode_payload( isset( $row['payload_json'] ) ? (string) $row['payload_json'] : '' );
+                $rows[ $index ] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * A/B arm counts for one experiment, grouped from the stream:
      * variant => type => count. Conversions without a matching
      * impression are still honest data — they count on their own.
@@ -136,6 +177,54 @@ final class Gr_Event_Repository {
                     $type    = (string) ( $row['ab_type'] ?? '' );
                     if ( '' !== $variant && '' !== $type ) {
                         $counts[ $variant ][ $type ] = (int) ( $row['n'] ?? 0 );
+                    }
+                }
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Per-day, per-name event counts for one visitor over a window —
+     * the lead-scoring engine's event source (ADR-0013 D3). The day cap
+     * is applied in PHP, so the count stays honest here.
+     *
+     * @param string $visitor_id Visitor identity.
+     * @param int    $days       Window length in days, clamped 1..90.
+     * @return array<string, array<string, int>> name => day => count.
+     */
+    public function daily_counts_for_visitor( string $visitor_id, int $days ): array {
+        global $wpdb;
+
+        if ( '' === $visitor_id ) {
+            return array();
+        }
+
+        $days  = max( 1, min( $days, 90 ) );
+        $table = Gr_Database::table( 'events' );
+        $from  = gmdate( 'Y-m-d H:i:s', (int) strtotime( substr( (string) current_time( 'mysql' ), 0, 10 ) . ' -' . ( $days - 1 ) . ' days' ) );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scoring-pass read over the visitor_time index; one grouped statement per contact, never a front-end request.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT event_name, DATE(created_at) AS day, COUNT(*) AS n FROM {$table}
+                WHERE visitor_id = %s AND created_at >= %s
+                GROUP BY event_name, DATE(created_at)",
+                array( $visitor_id, $from )
+            ),
+            ARRAY_A
+        );
+
+        $counts = array();
+        if ( is_array( $rows ) ) {
+            foreach ( $rows as $row ) {
+                if ( is_array( $row ) ) {
+                    $name = (string) ( $row['event_name'] ?? '' );
+                    $day  = (string) ( $row['day'] ?? '' );
+                    if ( '' !== $name && '' !== $day ) {
+                        $counts[ $name ][ $day ] = (int) ( $row['n'] ?? 0 );
                     }
                 }
             }

@@ -165,8 +165,43 @@ final class Gr_Admin_Menu {
             array( Gr_Funnels_Page::class, 'render' )
         );
 
-        // Audience section opens (docs/06 tree): the behavior
-        // reporting surface, read-only, consent-gated upstream.
+        // Audience section opens (docs/06 tree): the CRM surfaces.
+        // Contacts is the captured-lead list, read-only; the profile
+        // page nested under it carries the audited reveal and rescore
+        // writes on its own admin_init handler.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Contacts', 'greenpng' ),
+            __( 'Contacts', 'greenpng' ),
+            'manage_options',
+            Gr_Contacts_Page::SLUG,
+            array( Gr_Contacts_Page::class, 'render' )
+        );
+
+        // Inline entry from the Contacts list (docs/06 tree); a bare
+        // visit explains itself and links back.
+        add_submenu_page(
+            Gr_Contacts_Page::SLUG,
+            __( 'Contact Profile', 'greenpng' ),
+            __( 'Contact Profile', 'greenpng' ),
+            'manage_options',
+            Gr_Contact_Profile_Page::SLUG,
+            array( Gr_Contact_Profile_Page::class, 'render' )
+        );
+
+        // The site owner's points table (docs/06 tree); its write
+        // handler joins on admin_init.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Scoring Rules', 'greenpng' ),
+            __( 'Scoring Rules', 'greenpng' ),
+            'manage_options',
+            Gr_Scoring_Rules_Page::SLUG,
+            array( Gr_Scoring_Rules_Page::class, 'render' )
+        );
+
+        // The behavior reporting surface closes the Audience
+        // section (docs/06 tree), read-only, consent-gated upstream.
         add_submenu_page(
             self::SLUG,
             __( 'Behavior Insights', 'greenpng' ),

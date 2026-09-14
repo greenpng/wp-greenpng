@@ -6,7 +6,9 @@
  * drift sentinel. Whichever order the two hooks fire in, a submission
  * processed by the fallback alone is a drift event: it is still bound
  * (fail-open, never silent loss) and reported on gr_bridge_drift for
- * the status page.
+ * the status page. Since v1.1 the same pass captures the lead
+ * (ADR-0013 D2): a consented submission carrying an email upserts the
+ * CRM contact row and tags its source bridge.
  *
  * @package GreenPNG
  */
@@ -24,6 +26,7 @@ use GreenPNG\Attribution\Gr_Identity;
 use GreenPNG\Integrations\Adapter_Interface;
 use GreenPNG\Integrations\Gr_Semantic_Extractor;
 use GreenPNG\Privacy\Gr_Consent;
+use GreenPNG\Storage\Gr_Contact_Repository;
 
 /**
  * Main-plus-fallback form bridge base.
@@ -43,6 +46,14 @@ abstract class Gr_Form_Adapter_Base implements Adapter_Interface {
      * @var Gr_Attribution_Service
      */
     private Gr_Attribution_Service $attribution;
+
+    /**
+     * Lead capture store (ADR-0013 D2); the same consent gate that
+     * guards the conversion binding guards the contact upsert.
+     *
+     * @var Gr_Contact_Repository
+     */
+    private Gr_Contact_Repository $contacts;
 
     /**
      * Submissions the fallback hook accepted, awaiting the shutdown
@@ -75,14 +86,18 @@ abstract class Gr_Form_Adapter_Base implements Adapter_Interface {
     private array $synthetic = array();
 
     /**
-     * Wires the collaborators.
+     * Wires the collaborators. The contacts store is optional so
+     * existing constructions keep working; lead capture rides on a
+     * default instance when none is injected.
      *
-     * @param Gr_Identity            $identity    Identity service.
-     * @param Gr_Attribution_Service $attribution Binding service.
+     * @param Gr_Identity                $identity     Identity service.
+     * @param Gr_Attribution_Service     $attribution  Binding service.
+     * @param Gr_Contact_Repository|null $contacts     Lead store, null for default.
      */
-    public function __construct( Gr_Identity $identity, Gr_Attribution_Service $attribution ) {
+    public function __construct( Gr_Identity $identity, Gr_Attribution_Service $attribution, ?Gr_Contact_Repository $contacts = null ) {
         $this->identity    = $identity;
         $this->attribution = $attribution;
+        $this->contacts    = null === $contacts ? new Gr_Contact_Repository() : $contacts;
     }
 
     /**
@@ -231,9 +246,16 @@ abstract class Gr_Form_Adapter_Base implements Adapter_Interface {
     }
 
     /**
-     * Binds one submission as a conversion. Idempotent end to end: the
-     * gr_conversions UNIQUE source key collapses replayed hooks and
-     * the main-plus-fallback double fire into one row (docs/05 §3.3).
+     * Binds one submission as a conversion and captures the lead.
+     * Idempotent end to end: the gr_conversions UNIQUE source key
+     * collapses replayed hooks and the main-plus-fallback double fire
+     * into one row (docs/05 §3.3), and the contact upsert collapses
+     * repeated emails onto one row the same way. Lead capture
+     * (ADR-0013 D2) sits inside the very same consent gate — a form
+     * submission is not implicit consent (docs/15 §1) — and stores
+     * only what the schema owns: email in its two tracks, names, the
+     * cookie-track visitor binding, and a source tag. The extractor
+     * may surface a phone; no column accepts it, so none is written.
      *
      * @param int                  $source  Submission id.
      * @param array<string, mixed> $payload Source-plugin submission data.
@@ -245,6 +267,28 @@ abstract class Gr_Form_Adapter_Base implements Adapter_Interface {
         }
 
         $semantics = Gr_Semantic_Extractor::extract( $payload );
+
+        if ( null !== $semantics['email'] ) {
+            $contact_id = $this->contacts->capture(
+                (string) $semantics['email'],
+                null === $semantics['first_name'] ? '' : (string) $semantics['first_name'],
+                null === $semantics['last_name'] ? '' : (string) $semantics['last_name'],
+                $this->identity->visitor_id()
+            );
+
+            if ( $contact_id > 0 ) {
+                $this->contacts->attach_tag(
+                    $contact_id,
+                    'sys:form:' . static::get_id(),
+                    sprintf(
+                        /* translators: %s: form bridge identifier, e.g. fluentform. */
+                        __( 'Form submission: %s', 'greenpng' ),
+                        static::get_id()
+                    ),
+                    true
+                );
+            }
+        }
 
         $this->attribution->bind(
             $source,

@@ -126,6 +126,25 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 		}
 
 		/**
+		 * Core's row-actions markup: the inline links under a primary
+		 * column value, spans separated by pipes.
+		 *
+		 * @param array<string, string> $actions        Anchor markup keyed by action slug.
+		 * @param bool                  $always_visible Show without hover; unused here.
+		 * @return string
+		 */
+		protected function row_actions( $actions, $always_visible = false ) {
+			unset( $always_visible );
+
+			$spans = array();
+			foreach ( $actions as $slug => $markup ) {
+				$spans[] = '<span class="' . esc_attr( (string) $slug ) . '">' . (string) $markup . '</span>';
+			}
+
+			return '<div class="row-actions">' . implode( ' | ', $spans ) . '</div>';
+		}
+
+		/**
 		 * Checkbox column (overridden).
 		 *
 		 * @param array<string, mixed> $item Row data.

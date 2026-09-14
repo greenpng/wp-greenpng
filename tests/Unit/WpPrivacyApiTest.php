@@ -134,6 +134,30 @@ final class WpPrivacyApiTest extends TestCase {
         self::assertSame( array(), Gr_Privacy_Api::visitor_ids_for_email( '' ) );
     }
 
+    public function testMappingChainIncludesTheCapturedContactBinding(): void {
+        // A form-lead with no order at all still owns their sessions:
+        // the contact's own visitor binding feeds the chain.
+        $GLOBALS['wpdb']->results = array(
+            array(
+                'id'         => '9',
+                'visitor_id' => 'v-lead-1',
+            ),
+        );
+
+        $ids = Gr_Privacy_Api::visitor_ids_for_email( 'lead@example.com' );
+
+        self::assertSame( array( 'v-lead-1' ), $ids );
+
+        // And a captured binding merges with the order bindings,
+        // deduplicated.
+        $this->seed_order( 'lead@example.com', 'v-lead-1', 5 );
+        $this->seed_order( 'lead@example.com', 'v-order-1', 6 );
+        self::assertSame(
+            array( 'v-lead-1', 'v-order-1' ),
+            Gr_Privacy_Api::visitor_ids_for_email( 'lead@example.com' )
+        );
+    }
+
     public function testExporterRegistryAddsFourFamilies(): void {
         $exporters = Gr_Privacy_Api::register_exporters( array( array( 'callback' => 'core' ) ) );
 
@@ -220,15 +244,24 @@ final class WpPrivacyApiTest extends TestCase {
         self::assertSame( 'USD', $conv_fields['currency'] );
     }
 
-    public function testContactExportIsEmptyUntilTheCrmPhaseLands(): void {
-        // The contacts table has no v1.0 writer: the honest answer is
-        // no data, not a fabricated row.
+    public function testContactExportIsHonestWhenNoRowExists(): void {
+        // An email that was never captured answers no data, not a
+        // fabricated row — and the lookup hashes with the same
+        // unprefixed sha-256 the form bridges capture under.
         $GLOBALS['wpdb']->results = array();
 
         $result = Gr_Privacy_Api::export_contact( 'person@example.com', 1 );
 
         self::assertSame( array(), $result['data'] );
         self::assertTrue( $result['done'] );
+
+        $looked = '';
+        foreach ( $GLOBALS['wpdb']->queries as $query ) {
+            if ( false !== strpos( (string) $query, 'FROM wp_gr_contacts' ) ) {
+                $looked = (string) $query;
+            }
+        }
+        self::assertStringContainsString( "'" . hash( 'sha256', 'person@example.com' ) . "'", $looked );
     }
 
     public function testContactExportMapsARealRowWhenPresent(): void {
@@ -327,17 +360,28 @@ final class WpPrivacyApiTest extends TestCase {
 
         $result = Gr_Privacy_Api::erase_contact( 'person@example.com' );
 
-        // 1 contact row + 1 order binding.
-        self::assertSame( 2, (int) $result['items_removed'] );
+        // 1 tag-link sweep + 1 contact row + 1 order binding.
+        self::assertSame( 3, (int) $result['items_removed'] );
         self::assertSame( '', $order->get_meta( Gr_Woocommerce_Adapter::VISITOR_META ) );
         self::assertStringContainsString( 'order bindings', (string) $result['messages'][0] );
-        $deleted = '';
+
+        $deleted_links   = '';
+        $deleted_contact = '';
         foreach ( $GLOBALS['wpdb']->queries as $query ) {
+            if ( 0 === strpos( (string) $query, 'DELETE FROM wp_gr_contact_tags' ) ) {
+                $deleted_links = (string) $query;
+            }
             if ( 0 === strpos( (string) $query, 'DELETE FROM wp_gr_contacts' ) ) {
-                $deleted = (string) $query;
+                $deleted_contact = (string) $query;
             }
         }
-        self::assertStringContainsString( 'email_hash', $deleted );
+        // The links sweep first, scoped to the contact id.
+        self::assertStringContainsString( 'contact_id', $deleted_links );
+        // The row delete keys on the capture hash, the same one the
+        // form bridges write — a drifted hash here would erase
+        // nothing and report success.
+        self::assertStringContainsString( 'email_hash', $deleted_contact );
+        self::assertStringContainsString( "'" . hash( 'sha256', 'person@example.com' ) . "'", $deleted_contact );
     }
 
     public function testContactEraserFinalizesBindingsEvenWithoutACrmRow(): void {
@@ -346,8 +390,8 @@ final class WpPrivacyApiTest extends TestCase {
 
         $result = Gr_Privacy_Api::erase_contact( 'person@example.com' );
 
-        // No CRM writer exists yet, but the binding is real person
-        // data and must still go.
+        // No captured contact, but the binding is real person data
+        // and must still go.
         self::assertSame( 1, (int) $result['items_removed'] );
         self::assertSame( '', $order->get_meta( Gr_Woocommerce_Adapter::VISITOR_META ) );
     }

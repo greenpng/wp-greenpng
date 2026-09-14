@@ -586,4 +586,112 @@ final class FormAdaptersTest extends TestCase {
         self::assertContains( 'wpforms_process_complete', $hooks );
         self::assertContains( 'wpforms_entry_saved', $hooks );
     }
+
+    public function testConsentedSubmissionCapturesTheLeadAndTagsTheBridge(): void {
+        global $wpdb;
+
+        $this->define_targets();
+        $visitor = $this->arm_cookie_track();
+
+        $wpdb->results   = array();
+        $wpdb->insert_id = 81;
+
+        $GLOBALS['gr_form_adapters']['fluentform']->on_main(
+            9010,
+            array(
+                'names' => array( 'first_name' => 'Ming', 'last_name' => 'Li' ),
+                'email' => 'lead@example-cn.com',
+            ),
+            null
+        );
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'INSERT INTO wp_gr_contacts', $sql );
+        self::assertStringContainsString( "'Ming', 'Li'", $sql );
+        self::assertStringContainsString( "'" . $visitor . "'", $sql );
+        self::assertStringContainsString( 'sys:form:fluentform', $sql );
+        self::assertStringContainsString( 'INSERT IGNORE INTO wp_gr_contact_tags', $sql );
+        // The conversion still binds on the same pass.
+        self::assertNotSame( '', $this->last_conversion_insert() );
+    }
+
+    public function testLeadCaptureStaysBehindTheConsentGate(): void {
+        global $wpdb;
+
+        $this->define_targets();
+        // No cookie track, no consent: the submission binds nothing and
+        // captures no lead (docs/15 §1 — submission is not consent).
+        $_COOKIE = array();
+        $GLOBALS['gr_stub_consent']['marketing'] = false;
+
+        $wpdb->queries = array();
+
+        $GLOBALS['gr_form_adapters']['fluentform']->on_main( 9011, array( 'email' => 'nogate@example.com' ), null );
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringNotContainsString( 'wp_gr_contacts', $sql );
+        self::assertStringNotContainsString( 'wp_gr_conversions', $sql );
+    }
+
+    public function testFallbackDriftPathCapturesTheLeadToo(): void {
+        global $wpdb;
+
+        $this->define_targets();
+        $this->arm_cookie_track();
+
+        $wpdb->results   = array();
+        $wpdb->insert_id = 83;
+
+        // The wpforms fallback honestly sees no entry values (empty
+        // payload by design); the Fluent Forms legacy hook does carry
+        // the submission, so the drift path captures the lead there.
+        $GLOBALS['gr_form_adapters']['fluentform']->on_fallback( 9012, array( 'email' => 'drift@example.com' ), null );
+        $GLOBALS['gr_form_adapters']['fluentform']->resolve_drift();
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'INSERT INTO wp_gr_contacts', $sql );
+        self::assertStringContainsString( 'sys:form:fluentform', $sql );
+        self::assertNotSame( '', $this->last_conversion_insert() );
+    }
+
+    public function testEmaillessSubmissionLeavesTheContactsTableUntouched(): void {
+        global $wpdb;
+
+        $this->define_targets();
+        $this->arm_cookie_track();
+
+        $wpdb->results   = array();
+        $wpdb->insert_id = 84;
+
+        $GLOBALS['gr_form_adapters']['fluentform']->on_main( 9013, array( 'input_total' => '9' ), null );
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringNotContainsString( 'wp_gr_contacts', $sql );
+        self::assertNotSame( '', $this->last_conversion_insert() );
+    }
+
+    public function testExtractedPhoneHasNoColumnToLandIn(): void {
+        global $wpdb;
+
+        $this->define_targets();
+        $this->arm_cookie_track();
+
+        $wpdb->results   = array();
+        $wpdb->insert_id = 85;
+
+        $GLOBALS['gr_form_adapters']['fluentform']->on_main(
+            9014,
+            array(
+                'email' => 'phone@example.com',
+                'names' => array( 'first_name' => 'Ada', 'last_name' => 'Lovelace' ),
+                'phone' => '+86 138 0013 8000',
+            ),
+            null
+        );
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'INSERT INTO wp_gr_contacts', $sql );
+        self::assertStringNotContainsString( '13800138000', $sql, 'The phone is extracted, then deliberately dropped.' );
+        self::assertStringNotContainsString( 'phone', $sql );
+    }
 }

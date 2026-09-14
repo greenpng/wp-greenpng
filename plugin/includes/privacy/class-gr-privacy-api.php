@@ -2,13 +2,14 @@
 /**
  * WordPress privacy API integration (ADR-0005 §4, docs/13 V2): the
  * person-level export and erase arms over the marketing rail. The
- * email-to-visitor mapping is real in v1.0: the WooCommerce orders a
- * person placed carry the visitor binding this plugin wrote at
- * checkout, so the chain email → orders → visitor ids → rows is a
- * join over public data both sides already own. The CRM contacts
- * exporter rides along over the contacts table's email hash; with no
- * CRM writer yet it honestly finds nothing, and the same code works
- * the day the CRM phase lands.
+ * email-to-visitor mapping is real: the WooCommerce orders a person
+ * placed carry the visitor binding this plugin wrote at checkout,
+ * and a captured CRM contact carries its own visitor binding from
+ * the consented form submission, so the chain email → orders and
+ * contact → visitor ids → rows is a join over data both sides
+ * already own. The CRM contact arm hashes with the same unprefixed
+ * sha-256 the form bridges capture under — the two must never drift
+ * apart, or the tools would honestly find nothing.
  *
  * The security rail is deliberately absent: security logs keep full
  * addresses on a legitimate-interest basis with short retention, are
@@ -46,7 +47,7 @@ final class Gr_Privacy_Api {
     /** Exporter key: conversions. */
     public const EXPORTER_CONVERSIONS = 'greenpng-conversions';
 
-    /** Exporter key: CRM contacts (empty until the CRM phase lands). */
+    /** Exporter key: CRM contacts. */
     public const EXPORTER_CONTACTS = 'greenpng-contacts';
 
     /**
@@ -116,41 +117,51 @@ final class Gr_Privacy_Api {
 
     /**
      * The person's visitor ids: derived from the WooCommerce orders
-     * placed under the email, each carrying the visitor binding this
-     * plugin wrote at checkout. Without WooCommerce the chain is
-     * empty and every exporter honestly reports no data — no
-     * fabricated linkage.
+     * placed under the email (each carrying the visitor binding this
+     * plugin wrote at checkout) plus the visitor binding of a
+     * captured CRM contact. Without either, the chain is empty and
+     * every exporter honestly reports no data — no fabricated
+     * linkage.
      *
      * @param string $email The requester's email address.
      * @return array<int, string> Unique visitor ids.
      */
     public static function visitor_ids_for_email( string $email ): array {
-        if ( '' === $email || ! Gr_Woocommerce_Adapter::is_available() ) {
-            return array();
-        }
-
-        try {
-            $orders = wc_get_orders(
-                array(
-                    'billing_email' => $email,
-                    'status'        => 'any',
-                    'limit'         => -1,
-                )
-            );
-        } catch ( \Throwable $error ) {
-            do_action( 'gr_adapter_error', 'privacy_api', $error );
-
+        if ( '' === $email ) {
             return array();
         }
 
         $ids = array();
-        foreach ( (array) $orders as $order ) {
-            if ( ! $order instanceof \WC_Order ) {
-                continue;
+
+        // The captured contact's own binding: a form-lead without a
+        // single order still owns their sessions and touchpoints.
+        $contact = self::contact_row( $email );
+        if ( array() !== $contact && ! empty( $contact['visitor_id'] ) ) {
+            $ids[] = (string) $contact['visitor_id'];
+        }
+
+        if ( Gr_Woocommerce_Adapter::is_available() ) {
+            try {
+                $orders = wc_get_orders(
+                    array(
+                        'billing_email' => $email,
+                        'status'        => 'any',
+                        'limit'         => -1,
+                    )
+                );
+            } catch ( \Throwable $error ) {
+                do_action( 'gr_adapter_error', 'privacy_api', $error );
+                $orders = array();
             }
-            $visitor = (string) $order->get_meta( Gr_Woocommerce_Adapter::VISITOR_META );
-            if ( '' !== $visitor ) {
-                $ids[] = $visitor;
+
+            foreach ( (array) $orders as $order ) {
+                if ( ! $order instanceof \WC_Order ) {
+                    continue;
+                }
+                $visitor = (string) $order->get_meta( Gr_Woocommerce_Adapter::VISITOR_META );
+                if ( '' !== $visitor ) {
+                    $ids[] = $visitor;
+                }
             }
         }
 
@@ -249,10 +260,12 @@ final class Gr_Privacy_Api {
     }
 
     /**
-     * CRM contact exporter: keyed by the internal email hash. The
-     * contacts table has no v1.0 writer, so this honestly returns no
-     * data until the CRM phase lands; the lookup itself is the real
-     * one the CRM will feed.
+     * CRM contact exporter: keyed by the email hash the form bridges
+     * capture under. The hash is unique, one page holds everything,
+     * and neither the hash nor the encrypted envelope ever rides
+     * into an export item — the person already knows their own
+     * email; the tools need the derived state, not the secret
+     * material.
      *
      * @param string $email Requester email.
      * @param int    $page  Unused; a hash lookup is one page.
@@ -360,11 +373,11 @@ final class Gr_Privacy_Api {
     }
 
     /**
-     * CRM contact eraser: deletes the hash-keyed row when it exists,
-     * then finalizes the whole family set by stripping the visitor
-     * binding meta from the orders — the linkage is the person's data
-     * too, and removing it last keeps every other eraser's mapping
-     * intact until it has run.
+     * CRM contact eraser: deletes the tag links, then the hash-keyed
+     * row, then finalizes the whole family set by stripping the
+     * visitor binding meta from the orders — the linkage is the
+     * person's data too, and removing it last keeps every other
+     * eraser's mapping intact until it has run.
      *
      * @param string $email Requester email.
      * @return array<string, mixed>
@@ -386,14 +399,30 @@ final class Gr_Privacy_Api {
         $row = self::contact_row( $email );
 
         if ( array() !== $row ) {
-            $table = Gr_Database::table( 'contacts' );
+            $contacts = Gr_Database::table( 'contacts' );
+            $links    = Gr_Database::table( 'contact_tags' );
+            $id       = (int) ( $row['id'] ?? 0 );
+
+            // The tag links go first: a dangling link row after the
+            // contact is gone is exactly the residue an erasure must
+            // not leave behind.
+            if ( $id > 0 ) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- privacy-tool erasure, owner-initiated only.
+                $out['items_removed'] = (int) $out['items_removed'] + (int) $wpdb->query(
+                    $wpdb->prepare(
+                        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $links is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                        "DELETE FROM {$links} WHERE contact_id = %d",
+                        $id
+                    )
+                );
+            }
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- privacy-tool erasure, owner-initiated only.
             $out['items_removed'] = (int) $out['items_removed'] + (int) $wpdb->query(
                 $wpdb->prepare(
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
-                    "DELETE FROM {$table} WHERE email_hash = %s",
-                    Gr_Secrets::hash_pii( $email, 'email' )
+                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $contacts is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                    "DELETE FROM {$contacts} WHERE email_hash = %s",
+                    Gr_Secrets::hash_pii_sha256( $email )
                 )
             );
         }
@@ -430,10 +459,11 @@ final class Gr_Privacy_Api {
         wp_add_privacy_policy_content(
             'greenpng',
             sprintf(
-                '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p>',
+                '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p><p>%s</p>',
                 esc_html__( 'greenpng analytics', 'greenpng' ),
                 esc_html__( 'Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time.', 'greenpng' ),
                 esc_html__( 'Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings.', 'greenpng' ),
+                esc_html__( 'Contact details submitted through the site\'s forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal.', 'greenpng' ),
                 esc_html__( 'Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin\'s marketing tables.', 'greenpng' )
             )
         );
@@ -561,8 +591,11 @@ final class Gr_Privacy_Api {
     }
 
     /**
-     * The CRM contact row for an email by internal hash, or an empty
-     * array when the table holds nothing for the person.
+     * The CRM contact row for an email, or an empty array when the
+     * table holds nothing for the person. The lookup hashes with the
+     * same unprefixed sha-256 the form bridges capture under — the
+     * prefixed hash_pii() is for internal joins, and mixing the two
+     * would make this lookup silently find nothing.
      *
      * @param string $email Requester email.
      * @return array<string, mixed>
@@ -576,8 +609,8 @@ final class Gr_Privacy_Api {
         $row = $wpdb->get_row(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
-                "SELECT id, first_name, last_name, lead_score, ltv, rfm_segment, first_seen, last_seen FROM {$table} WHERE email_hash = %s",
-                Gr_Secrets::hash_pii( $email, 'email' )
+                "SELECT id, visitor_id, first_name, last_name, lead_score, ltv, rfm_segment, first_seen, last_seen FROM {$table} WHERE email_hash = %s",
+                Gr_Secrets::hash_pii_sha256( $email )
             ),
             ARRAY_A
         );

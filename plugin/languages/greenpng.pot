@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-14T03:53:11+00:00\n"
+"POT-Creation-Date: 2026-09-14T04:57:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -88,6 +88,8 @@ msgid "Add rule"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-table.php:62
+#: includes/admin/class-gr-scoring-rules-page.php:206
+#: includes/admin/class-gr-scoring-rules-page.php:233
 msgid "Active"
 msgstr ""
 
@@ -166,38 +168,58 @@ msgstr ""
 msgid "Funnels & Goals"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:172
-#: includes/admin/class-gr-admin-menu.php:173
+#: includes/admin/class-gr-admin-menu.php:174
+#: includes/admin/class-gr-admin-menu.php:175
+#: includes/admin/class-gr-contacts-page.php:56
+#: includes/admin/class-gr-contacts-page.php:210
+#: includes/admin/class-gr-contacts-page.php:258
+msgid "Contacts"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:185
+#: includes/admin/class-gr-admin-menu.php:186
+#: includes/admin/class-gr-contact-profile-page.php:161
+msgid "Contact Profile"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:196
+#: includes/admin/class-gr-admin-menu.php:197
+#: includes/admin/class-gr-scoring-rules-page.php:174
+msgid "Scoring Rules"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:207
+#: includes/admin/class-gr-admin-menu.php:208
 #: includes/admin/class-gr-behavior-page.php:60
 msgid "Behavior Insights"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:183
-#: includes/admin/class-gr-admin-menu.php:184
+#: includes/admin/class-gr-admin-menu.php:218
+#: includes/admin/class-gr-admin-menu.php:219
 #: includes/admin/class-gr-analytics-page.php:407
 msgid "Analytics & CAPI"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:195
-#: includes/admin/class-gr-admin-menu.php:196
+#: includes/admin/class-gr-admin-menu.php:230
+#: includes/admin/class-gr-admin-menu.php:231
 #: includes/admin/class-gr-ip-intel-page.php:116
 msgid "IP Intelligence"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:206
-#: includes/admin/class-gr-admin-menu.php:207
+#: includes/admin/class-gr-admin-menu.php:241
+#: includes/admin/class-gr-admin-menu.php:242
 #: includes/admin/class-gr-audit-log-page.php:74
 msgid "Audit Log"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:217
-#: includes/admin/class-gr-admin-menu.php:218
+#: includes/admin/class-gr-admin-menu.php:252
+#: includes/admin/class-gr-admin-menu.php:253
 #: includes/admin/class-gr-data-retention-page.php:188
 msgid "Data Retention"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:228
-#: includes/admin/class-gr-admin-menu.php:229
+#: includes/admin/class-gr-admin-menu.php:263
+#: includes/admin/class-gr-admin-menu.php:264
 #: includes/admin/class-gr-status-page.php:126
 msgid "Status & Diagnostics"
 msgstr ""
@@ -297,6 +319,8 @@ msgid "— stored. Type a new value to replace it."
 msgstr ""
 
 #: includes/admin/class-gr-analytics-page.php:569
+#: includes/admin/class-gr-scoring-rules-page.php:207
+#: includes/admin/class-gr-scoring-rules-page.php:237
 msgid "Remove"
 msgstr ""
 
@@ -332,12 +356,14 @@ msgid "Action"
 msgstr ""
 
 #: includes/admin/class-gr-audit-log-page.php:87
+#: includes/admin/class-gr-contacts-page.php:149
 #: includes/admin/class-gr-traffic-page.php:209
 msgid "Filter"
 msgstr ""
 
 #. translators: %d: number of pages.
 #: includes/admin/class-gr-audit-log-page.php:126
+#: includes/admin/class-gr-contacts-page.php:169
 #: includes/admin/class-gr-traffic-page.php:232
 #, php-format
 msgid "%d pages"
@@ -345,6 +371,8 @@ msgstr ""
 
 #: includes/admin/class-gr-audit-log-table.php:55
 #: includes/admin/class-gr-behavior-page.php:165
+#: includes/admin/class-gr-contact-profile-page.php:312
+#: includes/admin/class-gr-contact-profile-page.php:345
 #: includes/admin/class-gr-traffic-page.php:113
 #: includes/admin/class-gr-traffic-page.php:268
 #: includes/rest/class-gr-live-controller.php:63
@@ -510,10 +538,12 @@ msgstr ""
 #: includes/admin/class-gr-bot-signals-page.php:120
 #: includes/admin/class-gr-campaigns-page.php:136
 #: includes/admin/class-gr-campaigns-page.php:241
+#: includes/admin/class-gr-contact-profile-page.php:276
+#: includes/admin/class-gr-contacts-table.php:61
 #: includes/admin/class-gr-login-protection-page.php:205
 #: includes/admin/class-gr-login-protection-page.php:262
 #: includes/admin/class-gr-traffic-page.php:151
-#: includes/privacy/class-gr-privacy-api.php:308
+#: includes/privacy/class-gr-privacy-api.php:321
 msgid "Last seen"
 msgstr ""
 
@@ -558,6 +588,7 @@ msgid "Score band"
 msgstr ""
 
 #: includes/admin/class-gr-bot-signals-page.php:157
+#: includes/admin/class-gr-contact-profile-page.php:378
 #: includes/admin/class-gr-dashboard-page.php:107
 #: includes/admin/class-gr-dashboard-page.php:135
 #: includes/admin/class-gr-dashboard-page.php:164
@@ -616,6 +647,7 @@ msgstr ""
 
 #: includes/admin/class-gr-campaigns-page.php:131
 #: includes/admin/class-gr-campaigns-page.php:185
+#: includes/admin/class-gr-contact-profile-page.php:346
 msgid "Source"
 msgstr ""
 
@@ -639,7 +671,8 @@ msgid "Visitors"
 msgstr ""
 
 #: includes/admin/class-gr-campaigns-page.php:135
-#: includes/privacy/class-gr-privacy-api.php:304
+#: includes/admin/class-gr-contact-profile-page.php:272
+#: includes/privacy/class-gr-privacy-api.php:317
 msgid "First seen"
 msgstr ""
 
@@ -729,6 +762,247 @@ msgstr ""
 msgid "(no campaign name)"
 msgstr ""
 
+#: includes/admin/class-gr-contact-profile-page.php:166
+msgid "Back to Contacts"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:172
+msgid "No contact matches this id. Open a profile from the Contacts list."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:182
+msgid "Recomputed: the lead score and the RFM segments refreshed from the same engines the nightly pass runs."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:196
+msgid "Email"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:200
+msgid "Revealed for this view only. The reveal is in the audit log; the mask returns on the next page load."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:207
+msgid "Reveal email"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:209
+msgid "The reveal needs your confirmation and lands in the audit log."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:214
+#: includes/admin/class-gr-contacts-page.php:208
+#: includes/admin/class-gr-contacts-table.php:57
+msgid "Name"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:218
+#: includes/admin/class-gr-contacts-table.php:58
+#: includes/privacy/class-gr-privacy-api.php:305
+msgid "Lead score"
+msgstr ""
+
+#. translators: %d: the stored lead score, 0..100.
+#: includes/admin/class-gr-contact-profile-page.php:222
+#, php-format
+msgid "%d of 100"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:228
+msgid "Recompute now"
+msgstr ""
+
+#. translators: %d: length of the scoring window in days, the same window retention keeps.
+#: includes/admin/class-gr-contact-profile-page.php:233
+#, php-format
+msgid "Points come from the active scoring rules over the last %d days of events; a suspected bot verdict outranks every rule and scores zero."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:239
+msgid "RFM"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:242
+msgid "No axes yet."
+msgstr ""
+
+#. translators: 1: recency quintile, 2: frequency quintile, 3: monetary quintile, 4: the segment word, 5: net value.
+#: includes/admin/class-gr-contact-profile-page.php:246
+#, php-format
+msgid "r %1$d / f %2$d / m %3$d — %4$s, net value %5$s"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:248
+msgid "Quintiles are population relative and refresh with the nightly pass; r/f/m themselves are never stored."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:253
+#: includes/admin/class-gr-contacts-page.php:63
+msgid "Tags"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:258
+msgid "No tags attached."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:268
+msgid "Visitor binding"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:269
+msgid "none (fallback track capture)"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:281
+msgid "Timeline"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:283
+msgid "This contact arrived on the fallback track, which is deliberately not linked across days — there is no visitor timeline to show."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:308
+msgid "Events, newest 30"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:313
+#: includes/admin/class-gr-login-protection-page.php:206
+#: includes/admin/class-gr-scoring-rules-page.php:203
+#: includes/admin/class-gr-scoring-rules-page.php:214
+#: includes/admin/class-gr-traffic-page.php:114
+#: includes/rest/class-gr-live-controller.php:64
+msgid "Event"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:318
+msgid "No events recorded for this visitor."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:341
+#: includes/admin/class-gr-dashboard-page.php:138
+#: includes/admin/class-gr-funnels-page.php:201
+#: includes/rest/class-gr-dashboard-controller.php:79
+msgid "Conversions"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:347
+msgid "Amount"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:348
+#: includes/admin/class-gr-status-page.php:177
+msgid "Status"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:353
+msgid "No conversions bound to this visitor."
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:382
+#: includes/admin/class-gr-sessions-table.php:57
+msgid "Started"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:383
+#: includes/admin/class-gr-sessions-table.php:58
+msgid "Last active"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:384
+#: includes/admin/class-gr-dashboard-page.php:106
+#: includes/admin/class-gr-sessions-table.php:62
+msgid "Device"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:385
+#: includes/admin/class-gr-dashboard-page.php:163
+msgid "Country"
+msgstr ""
+
+#: includes/admin/class-gr-contact-profile-page.php:390
+msgid "No sessions recorded for this visitor."
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:62
+msgid "List"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:64
+msgid "RFM segments"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:132
+#: includes/admin/class-gr-contacts-table.php:59
+#: includes/privacy/class-gr-privacy-api.php:313
+msgid "RFM segment"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:134
+msgid "All segments"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:140
+msgid "Tag"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:142
+msgid "All tags"
+msgstr ""
+
+#. translators: %s: the system tag namespace, literally "sys:".
+#: includes/admin/class-gr-contacts-page.php:200
+#, php-format
+msgid "System tags (%s…) are attached by the engines and never re-attached after you remove them: removal is your call and it sticks. Form bridges attach one system tag per consented submission; the suspected-bot verdict attaches its own for review."
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:207
+msgid "Slug"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:209
+msgid "Kind"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:215
+msgid "No tags in use yet."
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:221
+msgid "System"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:221
+msgid "Custom"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:251
+msgid "Segments refresh in the nightly pass, next to lead scoring. Recency reads the last visit, frequency the number of conversion bindings, and value their net amount after refunds. The eight words are the whole vocabulary — nothing outside it is ever stored."
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:257
+msgid "Segment"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-page.php:270
+msgid "Not yet segmented"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-table.php:56
+msgid "Email (masked)"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-table.php:60
+msgid "Net value"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-table.php:87
+msgid "Open profile"
+msgstr ""
+
+#: includes/admin/class-gr-contacts-table.php:109
+msgid "No contacts captured yet. A consented form submission creates the first one."
+msgstr ""
+
 #: includes/admin/class-gr-dashboard-page.php:62
 #: includes/rest/class-gr-panels-controller.php:72
 msgid "Sessions today"
@@ -768,11 +1042,6 @@ msgstr ""
 msgid "Devices today"
 msgstr ""
 
-#: includes/admin/class-gr-dashboard-page.php:106
-#: includes/admin/class-gr-sessions-table.php:62
-msgid "Device"
-msgstr ""
-
 #: includes/admin/class-gr-dashboard-page.php:112
 #: includes/rest/class-gr-panels-controller.php:75
 msgid "No sessions recorded yet today."
@@ -795,12 +1064,6 @@ msgstr ""
 msgid "Page views"
 msgstr ""
 
-#: includes/admin/class-gr-dashboard-page.php:138
-#: includes/admin/class-gr-funnels-page.php:201
-#: includes/rest/class-gr-dashboard-controller.php:79
-msgid "Conversions"
-msgstr ""
-
 #: includes/admin/class-gr-dashboard-page.php:139
 msgid "Revenue"
 msgstr ""
@@ -811,10 +1074,6 @@ msgstr ""
 
 #: includes/admin/class-gr-dashboard-page.php:158
 msgid "No country data yet."
-msgstr ""
-
-#: includes/admin/class-gr-dashboard-page.php:163
-msgid "Country"
 msgstr ""
 
 #: includes/admin/class-gr-dashboard-page.php:201
@@ -1101,12 +1360,6 @@ msgstr ""
 msgid "No failed sign-ins recorded yet."
 msgstr ""
 
-#: includes/admin/class-gr-login-protection-page.php:206
-#: includes/admin/class-gr-traffic-page.php:114
-#: includes/rest/class-gr-live-controller.php:64
-msgid "Event"
-msgstr ""
-
 #: includes/admin/class-gr-login-protection-page.php:207
 #: includes/admin/class-gr-login-protection-page.php:260
 #: includes/admin/class-gr-traffic-page.php:153
@@ -1161,12 +1414,40 @@ msgstr ""
 msgid "%1$dm %2$02ds"
 msgstr ""
 
-#: includes/admin/class-gr-sessions-table.php:57
-msgid "Started"
+#. translators: %d: one-based rule row number on the form.
+#: includes/admin/class-gr-scoring-rules-page.php:114
+#, php-format
+msgid "%1$s (row %2$d)"
 msgstr ""
 
-#: includes/admin/class-gr-sessions-table.php:58
-msgid "Last active"
+#. translators: %d: length of the retention window in days, the same window the scores see.
+#: includes/admin/class-gr-scoring-rules-page.php:181
+#, php-format
+msgid "Rules saved. A background recompute of every contact score has been queued; scores always read the last %d days of events, the same window retention keeps."
+msgstr ""
+
+#. translators: %d: length of the scoring window in days, the same window retention keeps.
+#: includes/admin/class-gr-scoring-rules-page.php:193
+#, php-format
+msgid "Points are earned per event name, capped per day. A suspected bot verdict outranks every rule: the contact scores zero and is tagged for review. Scores recompute nightly and always read the last %d days of events, the same window retention keeps."
+msgstr ""
+
+#: includes/admin/class-gr-scoring-rules-page.php:204
+#: includes/admin/class-gr-scoring-rules-page.php:224
+msgid "Points"
+msgstr ""
+
+#: includes/admin/class-gr-scoring-rules-page.php:205
+#: includes/admin/class-gr-scoring-rules-page.php:229
+msgid "Daily cap"
+msgstr ""
+
+#: includes/admin/class-gr-scoring-rules-page.php:215
+msgid "— add a rule —"
+msgstr ""
+
+#: includes/admin/class-gr-scoring-rules-page.php:243
+msgid "Save rules"
 msgstr ""
 
 #: includes/admin/class-gr-sessions-table.php:61
@@ -1179,6 +1460,7 @@ msgstr ""
 
 #: includes/admin/class-gr-sessions-table.php:64
 #: includes/admin/class-gr-traffic-page.php:270
+#: includes/crm/class-gr-scoring-engine.php:136
 msgid "Suspected bot"
 msgstr ""
 
@@ -1420,10 +1702,6 @@ msgstr ""
 msgid "Bridge"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:177
-msgid "Status"
-msgstr ""
-
 #: includes/admin/class-gr-status-page.php:186
 msgid "Mounted"
 msgstr ""
@@ -1610,81 +1888,99 @@ msgstr ""
 msgid "Temporary lock released for %s."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:71
-#: includes/privacy/class-gr-privacy-api.php:98
-#: includes/privacy/class-gr-privacy-api.php:171
-#: includes/privacy/class-gr-privacy-api.php:327
+#: includes/crm/class-gr-scoring-rules.php:96
+msgid "Too many scoring rules."
+msgstr ""
+
+#: includes/crm/class-gr-scoring-rules.php:106
+msgid "Every scoring rule must be a set of fields."
+msgstr ""
+
+#: includes/crm/class-gr-scoring-rules.php:115
+msgid "The scoring rule is not valid."
+msgstr ""
+
+#: includes/crm/class-gr-scoring-rules.php:123
+msgid "Unknown event name for a scoring rule."
+msgstr ""
+
+#. translators: %s: form bridge identifier, e.g. fluentform.
+#: includes/integrations/ecosystem/class-gr-form-adapter-base.php:285
+#, php-format
+msgid "Form submission: %s"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:72
+#: includes/privacy/class-gr-privacy-api.php:99
+#: includes/privacy/class-gr-privacy-api.php:182
+#: includes/privacy/class-gr-privacy-api.php:340
 msgid "greenpng sessions"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:75
-#: includes/privacy/class-gr-privacy-api.php:102
-#: includes/privacy/class-gr-privacy-api.php:206
-#: includes/privacy/class-gr-privacy-api.php:341
+#: includes/privacy/class-gr-privacy-api.php:76
+#: includes/privacy/class-gr-privacy-api.php:103
+#: includes/privacy/class-gr-privacy-api.php:217
+#: includes/privacy/class-gr-privacy-api.php:354
 msgid "greenpng touchpoints"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:79
-#: includes/privacy/class-gr-privacy-api.php:106
-#: includes/privacy/class-gr-privacy-api.php:235
-#: includes/privacy/class-gr-privacy-api.php:358
+#: includes/privacy/class-gr-privacy-api.php:80
+#: includes/privacy/class-gr-privacy-api.php:107
+#: includes/privacy/class-gr-privacy-api.php:246
+#: includes/privacy/class-gr-privacy-api.php:371
 msgid "greenpng conversions"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:83
-#: includes/privacy/class-gr-privacy-api.php:110
-#: includes/privacy/class-gr-privacy-api.php:279
+#: includes/privacy/class-gr-privacy-api.php:84
+#: includes/privacy/class-gr-privacy-api.php:111
+#: includes/privacy/class-gr-privacy-api.php:292
 msgid "greenpng CRM contact"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:281
+#: includes/privacy/class-gr-privacy-api.php:294
 msgid "CRM contact"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:284
+#: includes/privacy/class-gr-privacy-api.php:297
 msgid "First name"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:288
+#: includes/privacy/class-gr-privacy-api.php:301
 msgid "Last name"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:292
-msgid "Lead score"
-msgstr ""
-
-#: includes/privacy/class-gr-privacy-api.php:296
+#: includes/privacy/class-gr-privacy-api.php:309
 msgid "Lifetime value"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:300
-msgid "RFM segment"
-msgstr ""
-
 #. translators: %s: number of items removed.
-#: includes/privacy/class-gr-privacy-api.php:415
+#: includes/privacy/class-gr-privacy-api.php:444
 #, php-format
 msgid "%s items removed from the CRM contact and order bindings."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:434
+#: includes/privacy/class-gr-privacy-api.php:463
 msgid "greenpng analytics"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:435
+#: includes/privacy/class-gr-privacy-api.php:464
 msgid "Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:436
+#: includes/privacy/class-gr-privacy-api.php:465
 msgid "Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:437
+#: includes/privacy/class-gr-privacy-api.php:466
+msgid "Contact details submitted through the site's forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:467
 msgid "Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin's marketing tables."
 msgstr ""
 
 #. translators: 1: number of rows removed, 2: data family name.
-#: includes/privacy/class-gr-privacy-api.php:520
+#: includes/privacy/class-gr-privacy-api.php:550
 #, php-format
 msgid "%1$s rows removed from %2$s."
 msgstr ""

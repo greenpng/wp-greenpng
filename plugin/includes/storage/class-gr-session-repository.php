@@ -475,6 +475,33 @@ final class Gr_Session_Repository {
     }
 
     /**
+     * Whether any session of one visitor was bot-flagged: the CRM
+     * verdict consumption's single boolean (ADR-0013 D3). Verdicts are
+     * sticky — one flagged session marks the visitor.
+     *
+     * @param string $visitor_id Visitor identity.
+     * @return bool True when at least one session row says is_bot=1.
+     */
+    public function is_bot_for_visitor( string $visitor_id ): bool {
+        global $wpdb;
+
+        if ( '' === $visitor_id ) {
+            return false;
+        }
+
+        $table = Gr_Database::table( 'sessions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- scoring/queue-path read over the visitor index; bounded by the exists-style LIMIT 1.
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
+                "SELECT 1 FROM {$table} WHERE visitor_id = %s AND is_bot = 1 LIMIT 1",
+                $visitor_id
+            )
+        ) === 1;
+    }
+
+    /**
      * The zero state of the band vocabulary.
      *
      * @return array<int|string, int>
