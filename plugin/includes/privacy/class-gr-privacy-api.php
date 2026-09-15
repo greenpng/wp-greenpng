@@ -30,6 +30,7 @@ use GreenPNG\Core\Gr_Database;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
 use GreenPNG\Storage\Gr_Conversion_Repository;
+use GreenPNG\Storage\Gr_Funnel_Repository;
 use GreenPNG\Storage\Gr_Session_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
@@ -106,6 +107,10 @@ final class Gr_Privacy_Api {
         $erasers[] = array(
             'eraser_friendly_name' => __( 'greenpng conversions', 'greenpng' ),
             'callback'             => array( __CLASS__, 'erase_conversions' ),
+        );
+        $erasers[] = array(
+            'eraser_friendly_name' => __( 'greenpng funnel journeys', 'greenpng' ),
+            'callback'             => array( __CLASS__, 'erase_funnel_journeys' ),
         );
         $erasers[] = array(
             'eraser_friendly_name' => __( 'greenpng CRM contact', 'greenpng' ),
@@ -342,6 +347,22 @@ final class Gr_Privacy_Api {
     }
 
     /**
+     * Funnel journeys eraser: the visitor's progress rows through
+     * every funnel. Definitions are the site owner's configuration
+     * and stay; a person's journey through them is their data.
+     *
+     * @param string $email Requester email.
+     * @return array<string, mixed>
+     */
+    public static function erase_funnel_journeys( string $email ) {
+        return self::erase_by_visitor(
+            array( new Gr_Funnel_Repository(), 'delete_journeys_for_visitor' ),
+            $email,
+            __( 'greenpng funnel journeys', 'greenpng' )
+        );
+    }
+
+    /**
      * Touchpoints eraser.
      *
      * @param string $email Requester email.
@@ -459,11 +480,12 @@ final class Gr_Privacy_Api {
         wp_add_privacy_policy_content(
             'greenpng',
             sprintf(
-                '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p><p>%s</p>',
+                '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p><p>%s</p><p>%s</p>',
                 esc_html__( 'greenpng analytics', 'greenpng' ),
                 esc_html__( 'Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time.', 'greenpng' ),
                 esc_html__( 'Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings.', 'greenpng' ),
                 esc_html__( 'Contact details submitted through the site\'s forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal.', 'greenpng' ),
+                esc_html__( 'Funnel journeys record which steps of a site-owner-defined journey a consented session reached. They carry session and visitor identifiers only, never email or IP, and follow the same 30-day retention as the events they derive from.', 'greenpng' ),
                 esc_html__( 'Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin\'s marketing tables.', 'greenpng' )
             )
         );

@@ -58,7 +58,13 @@ final class Gr_Attribution_Service {
     /**
      * Binds one conversion source to the visitor's attribution state.
      * The current session identity rides along for funnel joins; the
-     * amount and currency are recorded as given by the source.
+     * amount and currency are recorded as given by the source. A
+     * successful bind also lands a 'conversion' event on the bus —
+     * the event vocabulary's funnel arm — so funnel journeys can end
+     * on a conversion step exactly as ADR-0014 D1 draws the closed
+     * vocabulary. Replayed callbacks dispatch again: the binding
+     * table dedupes by source, the event row is the honest record
+     * that the callback arrived, and the funnel upsert is guarded.
      *
      * @param int    $source_id   Order or form submission id.
      * @param string $visitor_id  Visitor identity (cookie track).
@@ -74,17 +80,35 @@ final class Gr_Attribution_Service {
         $first = array() !== $sequence ? (int) $sequence[0]['id'] : 0;
         $last  = array() !== $sequence ? (int) end( $sequence )['id'] : 0;
 
-        return $this->conversions->bind(
+        $session = gr()->identity()->session_id();
+        $bound   = $this->conversions->bind(
             $source_type,
             $source_id,
             $visitor_id,
-            gr()->identity()->session_id(),
+            $session,
             $amount,
             $currency,
             $first,
             $last,
             (string) wp_json_encode( $models )
         );
+
+        if ( $bound > 0 ) {
+            gr_dispatch_event(
+                'conversion',
+                array(
+                    'event_group' => 'funnel',
+                    'visitor_id'  => $visitor_id,
+                    'session_id'  => $session,
+                    'source_type' => $source_type,
+                    'source_id'   => $source_id,
+                    'amount'      => $amount,
+                    'currency'    => $currency,
+                )
+            );
+        }
+
+        return $bound;
     }
 
     /**

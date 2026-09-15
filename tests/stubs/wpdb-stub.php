@@ -209,6 +209,36 @@ if ( ! class_exists( 'Gr_Stub_Wpdb' ) ) {
         }
 
         /**
+         * Column read stand-in: resolves through the same results store
+         * (Closure included) and flattens the rows to their first
+         * column, mirroring core's contract of an empty array when
+         * nothing matched.
+         *
+         * @param string $query SQL to run.
+         * @param int    $column Column offset; ignored beyond the first.
+         * @return array<int, string>
+         */
+        public function get_col( $query, $column = 0 ) {
+            $rows = $this->get_results( $query );
+
+            $col = array();
+            foreach ( $rows as $row ) {
+                if ( is_object( $row ) ) {
+                    $values = get_object_vars( $row );
+                    if ( array() !== $values ) {
+                        $col[] = (string) reset( $values );
+                    }
+                    continue;
+                }
+                if ( is_array( $row ) && array() !== $row ) {
+                    $col[] = (string) reset( $row );
+                }
+            }
+
+            return $col;
+        }
+
+        /**
          * LIKE-escape stand-in, mirroring core: backslashes before the
          * wildcard and escape characters so user input never becomes
          * pattern syntax.

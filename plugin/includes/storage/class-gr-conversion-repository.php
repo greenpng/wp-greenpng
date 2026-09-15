@@ -276,6 +276,47 @@ final class Gr_Conversion_Repository {
     }
 
     /**
+     * Conversion count and net value per source type over a bounded
+     * window (ADR-0014 D5, the Goals tab): frequency counts every
+     * binding, net sums only active rows so refunds stay excluded.
+     *
+     * @param int $days Window in days, clamped 1..365.
+     * @return array<string, array{conversions: int, net: float}> source_type => stats.
+     */
+    public function totals_by_source( int $days = 30 ): array {
+        global $wpdb;
+
+        $days  = max( 1, min( $days, 365 ) );
+        $table = Gr_Database::table( 'conversions' );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- admin report read; one grouped statement over the created_at range.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; the SQL is the prepare() output below.
+                "SELECT source_type, COUNT(*) AS n, COALESCE(SUM(CASE WHEN status = 'active' THEN amount ELSE 0 END), 0) AS net FROM {$table}
+                WHERE created_at >= %s GROUP BY source_type",
+                array( $since )
+            ),
+            ARRAY_A
+        );
+
+        $stats = array();
+        if ( is_array( $rows ) ) {
+            foreach ( $rows as $row ) {
+                if ( is_array( $row ) ) {
+                    $stats[ (string) ( $row['source_type'] ?? '' ) ] = array(
+                        'conversions' => (int) ( $row['n'] ?? 0 ),
+                        'net'         => (float) ( $row['net'] ?? 0 ),
+                    );
+                }
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
      * Deletes every conversion row for one visitor — the privacy
      * erasure arm. Order meta binding is the caller's to remove (it
      * lives in WooCommerce's store, not this table).

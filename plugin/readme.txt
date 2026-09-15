@@ -54,6 +54,10 @@ The probe has two modules. The security module loads by default and reports only
 
 When a visitor with marketing consent submits a form on a supported form plugin, the CRM stores the submitted name and email address (the email as a searchable hash plus an encrypted copy), the cookie-track visitor binding, and derived state: a lead score computed from your scoring rules over the scoring window, and a customer segment refreshed nightly. Phone-number fields are not stored. Email addresses are shown masked in the admin and appear in plaintext only behind an audited reveal; the personal data export and erasure tools cover the contact row, its tags, and the visitor binding.
 
+= What do funnels record? =
+
+Funnel journeys derive from the events the stream already recorded: for each active funnel you define, the tracker stores how far each consented session got through the ordered steps. A journey row carries the session and visitor identifiers, the step position, and timestamps — never an email address, never an IP. Step matching uses pageview paths and a closed event vocabulary; probe verdicts are never steps. Journey rows follow the same 30-day retention as the events they derive from, and the personal data erasure tools remove a person's journey rows together with their other marketing data.
+
 = What happens to my data when I uninstall? =
 
 It is kept by default. For a full wipe, enable the delete-all-data-on-uninstall option first; uninstalling then removes every `gr_` table and option.
@@ -75,7 +79,7 @@ Planned for later versions and not present in 1.0: AbuseIPDB blocklist checks an
 * The client probe's security module reports only automation conclusions (a bot score and automation flags) for form and checkout protection under the same legitimate-interest basis; it collects no fingerprint identifier strings, no canvas or audio data, and no persistent identifiers, and can be switched off with one setting. The behavior module (dwell buckets, deepest scroll milestone, rage clicks, dead clicks) is off by default and additionally gated on visitor consent through the WordPress Consent API; its click locators are structural (tag plus id or first class name), never page text or coordinates.
 * Crawler verification resolves connecting addresses through your server's normal DNS infrastructure and records only the verdict word and the resolved hostname on the security track; it uses no third-party API, stores no credentials, and a failed lookup always resolves to allow.
 * Visitor identity: a 30-day signed cookie when consent allows it; otherwise a daily-rotated salted hash of the anonymized IP and browser type, which cannot link visits across days.
-* The WordPress privacy API is supported where it applies: personal data export and erase handlers cover this plugin's marketing tables (sessions, touchpoints, conversions, the CRM contact row and its tags) and the visitor binding on orders. Security logs are retained on a legitimate-interest basis with short retention and masked display, and are intentionally outside person-level erasure.
+* The WordPress privacy API is supported where it applies: personal data export and erase handlers cover this plugin's marketing tables (sessions, touchpoints, conversions, funnel journeys, the CRM contact row and its tags) and the visitor binding on orders. Security logs are retained on a legitimate-interest basis with short retention and masked display, and are intentionally outside person-level erasure.
 * Email addresses are stored as a searchable hash plus encrypted form and are never written outside the contacts table. Contact capture from forms happens only inside the marketing-consent gate; the admin shows masked addresses and an audited reveal; lead scores read the same event window retention keeps, and a suspected-bot verdict outranks every rule with a zero score.
 
 == Attribution ==
@@ -90,7 +94,7 @@ The scanner user-agent detection rules bundled in assets/data/ are seeded from J
 2. Settings — privacy defaults (IP anonymization, consent gate), security switches, and attribution options.
 3. Traffic & Security — the request log with bot verdicts and the allow/block rule table.
 4. Campaigns — attribution breakdowns by channel, source, and campaign.
-5. Funnels & Goals — funnel results and A/B significance testing.
+5. Funnels & Goals — funnel definitions, the step-loss staircase, goals by source, and A/B significance testing.
 6. Behavior Insights — dwell, scroll, rage-click, and dead-click engagement and friction signals, consent-gated and off by default.
 7. Contacts — the captured-lead list with masked emails, lead scores, and RFM segments; profiles open inline with an audited email reveal.
 

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-14T04:57:08+00:00\n"
+"POT-Creation-Date: 2026-09-15T06:14:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -88,6 +88,7 @@ msgid "Add rule"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-table.php:62
+#: includes/admin/class-gr-funnels-page.php:944
 #: includes/admin/class-gr-scoring-rules-page.php:206
 #: includes/admin/class-gr-scoring-rules-page.php:233
 msgid "Active"
@@ -164,7 +165,7 @@ msgstr ""
 
 #: includes/admin/class-gr-admin-menu.php:161
 #: includes/admin/class-gr-admin-menu.php:162
-#: includes/admin/class-gr-funnels-page.php:56
+#: includes/admin/class-gr-funnels-page.php:495
 msgid "Funnels & Goals"
 msgstr ""
 
@@ -319,6 +320,7 @@ msgid "— stored. Type a new value to replace it."
 msgstr ""
 
 #: includes/admin/class-gr-analytics-page.php:569
+#: includes/admin/class-gr-funnels-page.php:958
 #: includes/admin/class-gr-scoring-rules-page.php:207
 #: includes/admin/class-gr-scoring-rules-page.php:237
 msgid "Remove"
@@ -543,7 +545,7 @@ msgstr ""
 #: includes/admin/class-gr-login-protection-page.php:205
 #: includes/admin/class-gr-login-protection-page.php:262
 #: includes/admin/class-gr-traffic-page.php:151
-#: includes/privacy/class-gr-privacy-api.php:321
+#: includes/privacy/class-gr-privacy-api.php:326
 msgid "Last seen"
 msgstr ""
 
@@ -606,7 +608,7 @@ msgstr ""
 
 #. translators: %s: percentage.
 #: includes/admin/class-gr-bot-signals-page.php:173
-#: includes/admin/class-gr-funnels-page.php:215
+#: includes/admin/class-gr-funnels-page.php:759
 #, php-format
 msgid "%s%%"
 msgstr ""
@@ -648,6 +650,7 @@ msgstr ""
 #: includes/admin/class-gr-campaigns-page.php:131
 #: includes/admin/class-gr-campaigns-page.php:185
 #: includes/admin/class-gr-contact-profile-page.php:346
+#: includes/admin/class-gr-funnels-page.php:1176
 msgid "Source"
 msgstr ""
 
@@ -672,7 +675,7 @@ msgstr ""
 
 #: includes/admin/class-gr-campaigns-page.php:135
 #: includes/admin/class-gr-contact-profile-page.php:272
-#: includes/privacy/class-gr-privacy-api.php:317
+#: includes/privacy/class-gr-privacy-api.php:322
 msgid "First seen"
 msgstr ""
 
@@ -793,12 +796,13 @@ msgstr ""
 #: includes/admin/class-gr-contact-profile-page.php:214
 #: includes/admin/class-gr-contacts-page.php:208
 #: includes/admin/class-gr-contacts-table.php:57
+#: includes/admin/class-gr-funnels-page.php:835
 msgid "Name"
 msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:218
 #: includes/admin/class-gr-contacts-table.php:58
-#: includes/privacy/class-gr-privacy-api.php:305
+#: includes/privacy/class-gr-privacy-api.php:310
 msgid "Lead score"
 msgstr ""
 
@@ -880,7 +884,8 @@ msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:341
 #: includes/admin/class-gr-dashboard-page.php:138
-#: includes/admin/class-gr-funnels-page.php:201
+#: includes/admin/class-gr-funnels-page.php:745
+#: includes/admin/class-gr-funnels-page.php:1177
 #: includes/rest/class-gr-dashboard-controller.php:79
 msgid "Conversions"
 msgstr ""
@@ -933,7 +938,7 @@ msgstr ""
 
 #: includes/admin/class-gr-contacts-page.php:132
 #: includes/admin/class-gr-contacts-table.php:59
-#: includes/privacy/class-gr-privacy-api.php:313
+#: includes/privacy/class-gr-privacy-api.php:318
 msgid "RFM segment"
 msgstr ""
 
@@ -992,6 +997,7 @@ msgid "Email (masked)"
 msgstr ""
 
 #: includes/admin/class-gr-contacts-table.php:60
+#: includes/admin/class-gr-funnels-page.php:1178
 msgid "Net value"
 msgstr ""
 
@@ -1123,102 +1129,354 @@ msgstr ""
 msgid "Optimize selected tables"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:59
-msgid "A/B experiments: the variant split each visitor lands in, and the significance verdict over what was actually recorded. Funnel, step-loss, and goal tracking arrive in a later version."
+#: includes/admin/class-gr-funnels-page.php:234
+msgid "The experiment needs a key and at least two distinct variant slugs (first is control). The repository enforces the 20-experiment and 8-variant bounds."
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:62
-msgid "No experiments defined yet. Experiment definitions are created through the experiments repository (the gr_ab_experiments option); content then splits per visitor with the [gr_ab] shortcode. This page reports on them and creates nothing."
+#: includes/admin/class-gr-funnels-page.php:501
+#: includes/admin/class-gr-funnels-page.php:546
+msgid "A/B experiments"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:502
+msgid "Funnels"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:503
+#: includes/admin/class-gr-funnels-page.php:1005
+#: includes/admin/class-gr-funnels-page.php:1029
+msgid "Step loss"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:504
+#: includes/admin/class-gr-funnels-page.php:1167
+msgid "Goals"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:547
+msgid "The variant split each visitor lands in, and the two-proportion Z-test verdict over what was actually recorded. Content splits per visitor with the [gr_ab] shortcode; recording happens through the gr_ab_record() template facade."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:553
+msgid "Experiment saved."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:556
+msgid "Experiment deleted."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:560
+msgid "No experiments defined yet. Create one below; the first variant is the control."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:567
+msgid "Create an experiment"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:573
+msgid "Experiment key"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:576
+msgid "A short slug, e.g. hero. The shortcode references it: [gr_ab experiment=\"hero\" control=\"...\" treatment=\"...\"]."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:580
+msgid "Variants"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:583
+msgid "One variant slug per line, at most 8, first line is the control. Each slug matches one attribute of the shortcode."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:587
+msgid "Running"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:591
+msgid "Assign visitors to variants"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:596
+msgid "Save experiment"
 msgstr ""
 
 #. translators: 1: experiment key, 2: state word.
-#: includes/admin/class-gr-funnels-page.php:92
+#: includes/admin/class-gr-funnels-page.php:621
 #, php-format
 msgid "Experiment: %1$s (%2$s)"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:94
+#: includes/admin/class-gr-funnels-page.php:623
 msgid "running"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:94
+#: includes/admin/class-gr-funnels-page.php:623
+#: includes/admin/class-gr-funnels-page.php:849
 msgid "paused"
 msgstr ""
 
 #. translators: %s: comma-separated variant slugs.
-#: includes/admin/class-gr-funnels-page.php:105
+#: includes/admin/class-gr-funnels-page.php:634
 #, php-format
 msgid "Variants (first is control): %s"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:113
+#: includes/admin/class-gr-funnels-page.php:649
+#: includes/admin/class-gr-funnels-page.php:856
+msgid "Pause"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:649
+#: includes/admin/class-gr-funnels-page.php:856
+msgid "Resume"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:655
+#: includes/admin/class-gr-funnels-page.php:862
+msgid "Delete"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:659
 msgid "Assignment is paused: the shortcode falls back to control content and the engine assigns nothing. Recorded data stays readable below."
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:136
+#: includes/admin/class-gr-funnels-page.php:680
 msgid "Assignment split preview"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:137
+#: includes/admin/class-gr-funnels-page.php:681
 msgid "The same visitor always lands in the same variant on every request; the preview below is the pure hash split for eight fixed sample ids."
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:140
+#: includes/admin/class-gr-funnels-page.php:684
 msgid "Sample visitor"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:141
+#: includes/admin/class-gr-funnels-page.php:685
 msgid "Assigned variant"
 msgstr ""
 
 #. translators: %s: comma-separated variant=count pairs.
-#: includes/admin/class-gr-funnels-page.php:163
+#: includes/admin/class-gr-funnels-page.php:707
 #, php-format
 msgid "Sample tally: %s"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:190
+#: includes/admin/class-gr-funnels-page.php:734
 msgid "Insufficient sample: each arm needs at least 30 impressions before the comparison is readable."
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:191
+#: includes/admin/class-gr-funnels-page.php:735
 msgid "Inconclusive: no difference proven at 95% confidence yet."
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:192
+#: includes/admin/class-gr-funnels-page.php:736
 msgid "Significant at 95% confidence."
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:196
+#: includes/admin/class-gr-funnels-page.php:740
 msgid "Recorded counts and significance"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:199
+#: includes/admin/class-gr-funnels-page.php:743
 msgid "Variant"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:200
+#: includes/admin/class-gr-funnels-page.php:744
 msgid "Impressions"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:202
+#: includes/admin/class-gr-funnels-page.php:746
 msgid "CVR"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:229
+#: includes/admin/class-gr-funnels-page.php:773
 msgid "Comparison (control vs)"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:230
+#: includes/admin/class-gr-funnels-page.php:774
 msgid "z"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:231
+#: includes/admin/class-gr-funnels-page.php:775
+#: includes/admin/class-gr-funnels-page.php:837
 msgid "State"
 msgstr ""
 
-#: includes/admin/class-gr-funnels-page.php:232
+#: includes/admin/class-gr-funnels-page.php:776
 msgid "Winner"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:814
+msgid "Funnel definitions"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:815
+msgid "A funnel is an ordered list of steps. Each step matches either a pageview path (site-rooted, exact or prefix) or one event from the closed vocabulary: pageview, dwell, scroll_depth, rage_click, dead_click, conversion, ab. The tracker advances a session only step by step, so the counts answer \"how far did they get in order\"."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:821
+msgid "Funnel saved."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:824
+msgid "Funnel deleted, including its recorded journeys."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:827
+msgid "Funnel state updated."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:831
+msgid "No funnels defined yet. Create one below; tracking starts with the next event after a funnel is active."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:836
+#: includes/admin/class-gr-funnels-page.php:954
+msgid "Steps"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:838
+msgid "Actions"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:849
+msgid "active"
+msgstr ""
+
+#. translators: %s: funnel name.
+#: includes/admin/class-gr-funnels-page.php:927
+#, php-format
+msgid "Edit funnel: %s"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:928
+msgid "Create a funnel"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:938
+msgid "Funnel name"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:948
+msgid "Track journeys through this funnel"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:955
+msgid "Steps run in order. Leave a row blank to skip it; tick Remove to delete an existing step. A new blank row appears at the end for adding."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:959
+msgid "Step name"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:960
+msgid "Match kind"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:961
+msgid "Match value"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:962
+msgid "Comparison"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:971
+msgid "Pageview path"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:972
+msgid "Event name"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:978
+msgid "exact"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:979
+msgid "prefix"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:986
+msgid "Save funnel"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1006
+msgid "No funnels defined yet. Create one on the Funnels tab first; the staircase appears once journeys are recorded."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1030
+msgid "Journeys that began in the last 30 days, by how far they got in order. A session counts for a step only when it reached every step before it."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1035
+msgid "Funnel:"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1043
+msgid "View"
+msgstr ""
+
+#. translators: 1: step name, 2: session count, 3: percentage of step-one entrants.
+#: includes/admin/class-gr-funnels-page.php:1114
+#, php-format
+msgid "Step %1$s: %2$s sessions, %3$s%% of entrants"
+msgstr ""
+
+#. translators: %d: completed journey count.
+#: includes/admin/class-gr-funnels-page.php:1126
+#, php-format
+msgid "Completed the last step: %d journeys."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1135
+msgid "Step"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1136
+msgid "Reached"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1137
+msgid "Share of entrants"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1138
+msgid "Drop-off from previous"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1168
+msgid "The last 30 days: conversions and net value per source (reversed orders count as conversions but not value), and the journeys that completed each funnel."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1170
+msgid "Conversions by source"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1172
+msgid "No conversions recorded in the window yet."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1183
+msgid "WooCommerce"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1192
+msgid "Funnels completed"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1194
+msgid "No funnels defined yet; the Goals tab reports funnel completions once a funnel exists."
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1198
+msgid "Funnel"
+msgstr ""
+
+#: includes/admin/class-gr-funnels-page.php:1199
+msgid "Completed journeys"
 msgstr ""
 
 #: includes/admin/class-gr-ip-intel-page.php:119
@@ -1910,77 +2168,86 @@ msgstr ""
 msgid "Form submission: %s"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:72
-#: includes/privacy/class-gr-privacy-api.php:99
-#: includes/privacy/class-gr-privacy-api.php:182
-#: includes/privacy/class-gr-privacy-api.php:340
+#: includes/privacy/class-gr-privacy-api.php:73
+#: includes/privacy/class-gr-privacy-api.php:100
+#: includes/privacy/class-gr-privacy-api.php:187
+#: includes/privacy/class-gr-privacy-api.php:345
 msgid "greenpng sessions"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:76
-#: includes/privacy/class-gr-privacy-api.php:103
-#: includes/privacy/class-gr-privacy-api.php:217
-#: includes/privacy/class-gr-privacy-api.php:354
+#: includes/privacy/class-gr-privacy-api.php:77
+#: includes/privacy/class-gr-privacy-api.php:104
+#: includes/privacy/class-gr-privacy-api.php:222
+#: includes/privacy/class-gr-privacy-api.php:375
 msgid "greenpng touchpoints"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:80
-#: includes/privacy/class-gr-privacy-api.php:107
-#: includes/privacy/class-gr-privacy-api.php:246
-#: includes/privacy/class-gr-privacy-api.php:371
+#: includes/privacy/class-gr-privacy-api.php:81
+#: includes/privacy/class-gr-privacy-api.php:108
+#: includes/privacy/class-gr-privacy-api.php:251
+#: includes/privacy/class-gr-privacy-api.php:392
 msgid "greenpng conversions"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:84
-#: includes/privacy/class-gr-privacy-api.php:111
-#: includes/privacy/class-gr-privacy-api.php:292
+#: includes/privacy/class-gr-privacy-api.php:85
+#: includes/privacy/class-gr-privacy-api.php:116
+#: includes/privacy/class-gr-privacy-api.php:297
 msgid "greenpng CRM contact"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:294
+#: includes/privacy/class-gr-privacy-api.php:112
+#: includes/privacy/class-gr-privacy-api.php:361
+msgid "greenpng funnel journeys"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:299
 msgid "CRM contact"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:297
+#: includes/privacy/class-gr-privacy-api.php:302
 msgid "First name"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:301
+#: includes/privacy/class-gr-privacy-api.php:306
 msgid "Last name"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:309
+#: includes/privacy/class-gr-privacy-api.php:314
 msgid "Lifetime value"
 msgstr ""
 
 #. translators: %s: number of items removed.
-#: includes/privacy/class-gr-privacy-api.php:444
+#: includes/privacy/class-gr-privacy-api.php:465
 #, php-format
 msgid "%s items removed from the CRM contact and order bindings."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:463
+#: includes/privacy/class-gr-privacy-api.php:484
 msgid "greenpng analytics"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:464
+#: includes/privacy/class-gr-privacy-api.php:485
 msgid "Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:465
+#: includes/privacy/class-gr-privacy-api.php:486
 msgid "Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:466
+#: includes/privacy/class-gr-privacy-api.php:487
 msgid "Contact details submitted through the site's forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:467
+#: includes/privacy/class-gr-privacy-api.php:488
+msgid "Funnel journeys record which steps of a site-owner-defined journey a consented session reached. They carry session and visitor identifiers only, never email or IP, and follow the same 30-day retention as the events they derive from."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:489
 msgid "Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin's marketing tables."
 msgstr ""
 
 #. translators: 1: number of rows removed, 2: data family name.
-#: includes/privacy/class-gr-privacy-api.php:550
+#: includes/privacy/class-gr-privacy-api.php:572
 #, php-format
 msgid "%1$s rows removed from %2$s."
 msgstr ""
@@ -2105,4 +2372,80 @@ msgstr ""
 
 #: includes/security/class-gr-login-protection.php:108
 msgid "Too many failed sign-in attempts. Please try again later."
+msgstr ""
+
+#: includes/storage/class-gr-funnel-repository.php:76
+msgid "A funnel needs at least two steps."
+msgstr ""
+
+#. translators: %d: maximum step count.
+#: includes/storage/class-gr-funnel-repository.php:80
+#, php-format
+msgid "A funnel can have at most %d steps."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:89
+#, php-format
+msgid "Step %d is not a step definition."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:95
+#, php-format
+msgid "Step %d needs a name of at most 64 characters."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:99
+#, php-format
+msgid "Step %d repeats a name already used in this funnel."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:106
+#, php-format
+msgid "Step %d needs a match rule."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:115
+#, php-format
+msgid "Step %d match kind must be url or event."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:119
+#, php-format
+msgid "Step %d needs a match value of at most 191 characters."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:123
+#, php-format
+msgid "Step %d comparison must be exact or prefix."
+msgstr ""
+
+#. translators: 1: one-based step number, 2: comma-separated event names.
+#: includes/storage/class-gr-funnel-repository.php:127
+#, php-format
+msgid "Step %1$d event must be one of: %2$s."
+msgstr ""
+
+#. translators: %d: one-based step number.
+#: includes/storage/class-gr-funnel-repository.php:131
+#, php-format
+msgid "Step %d URL must be a site-rooted path like /checkout (no host or scheme)."
+msgstr ""
+
+#: includes/storage/class-gr-funnel-repository.php:170
+msgid "The funnel needs a name of at most 191 characters."
+msgstr ""
+
+#: includes/storage/class-gr-funnel-repository.php:184
+msgid "That funnel no longer exists."
+msgstr ""
+
+#: includes/storage/class-gr-funnel-repository.php:220
+msgid "The funnel could not be saved."
 msgstr ""

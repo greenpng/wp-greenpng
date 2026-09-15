@@ -1694,3 +1694,17 @@ if ( ! function_exists( 'str_starts_with' ) ) {
         return '' === $needle || 0 === strpos( $haystack, $needle );
     }
 }
+
+if ( ! function_exists( 'str_contains' ) ) {
+    /**
+     * Same story as str_starts_with: native on PHP 8.0+, polyfilled
+     * by the same core compat file, guaranteed by the WP 6.0 floor.
+     *
+     * @param string $haystack Subject string.
+     * @param string $needle   Substring to test.
+     * @return bool
+     */
+    function str_contains( string $haystack, string $needle ): bool {
+        return '' === $needle || false !== strpos( $haystack, $needle );
+    }
+}

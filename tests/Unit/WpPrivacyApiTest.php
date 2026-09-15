@@ -174,10 +174,10 @@ final class WpPrivacyApiTest extends TestCase {
         self::assertContains( 'export_contact', $names );
     }
 
-    public function testEraserRegistryAddsFourFamilies(): void {
+    public function testEraserRegistryAddsFiveFamilies(): void {
         $erasers = Gr_Privacy_Api::register_erasers( array() );
 
-        self::assertCount( 4, $erasers );
+        self::assertCount( 5, $erasers );
         foreach ( $erasers as $eraser ) {
             self::assertArrayHasKey( 'eraser_friendly_name', $eraser );
             self::assertArrayHasKey( 'callback', $eraser );
@@ -330,11 +330,29 @@ final class WpPrivacyApiTest extends TestCase {
     }
 
     public function testErasersWithoutOrdersRemoveNothing(): void {
-        foreach ( array( 'erase_sessions', 'erase_touchpoints', 'erase_conversions', 'erase_contact' ) as $method ) {
+        foreach ( array( 'erase_sessions', 'erase_touchpoints', 'erase_conversions', 'erase_funnel_journeys', 'erase_contact' ) as $method ) {
             $result = Gr_Privacy_Api::$method( 'nobody@example.com' );
             self::assertSame( 0, (int) $result['items_removed'], $method );
             self::assertTrue( $result['done'], $method );
         }
+    }
+
+    public function testEraseFunnelJourneysIssuesTheVisitorScopedDelete(): void {
+        $this->seed_order( 'person@example.com', 'v-person-1', 5 );
+        $GLOBALS['wpdb']->query_result = 2;
+
+        $result = Gr_Privacy_Api::erase_funnel_journeys( 'person@example.com' );
+
+        self::assertSame( 2, (int) $result['items_removed'] );
+        $deleted = '';
+        foreach ( $GLOBALS['wpdb']->queries as $query ) {
+            if ( 0 === strpos( (string) $query, 'DELETE FROM wp_gr_funnel_sessions' ) ) {
+                $deleted = (string) $query;
+            }
+        }
+        self::assertStringContainsString( "'v-person-1'", $deleted );
+        self::assertStringNotContainsString( 'wp_gr_funnels', $deleted, 'Definitions are the owner\'s configuration and never erased.' );
+        self::assertStringContainsString( 'funnel journeys', (string) $result['messages'][0] );
     }
 
     public function testEraseSessionsIssuesTheVisitorScopedDelete(): void {

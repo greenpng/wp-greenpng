@@ -93,7 +93,15 @@ final class ConversionBindingTest extends TestCase {
         $wpdb->var_result = '7';
 
         // insert_id stays 0: the UNIQUE key swallowed the insert.
-        $first  = $this->service()->bind( 902, str_repeat( 'b', 32 ), 50.0, 'eur' );
+        $first = $this->service()->bind( 902, str_repeat( 'b', 32 ), 50.0, 'eur' );
+
+        // The first call's conversion-event dispatch bumped the stub's
+        // insert_id (the event row insert). A real wpdb resets
+        // insert_id on every INSERT statement — swallowed ones report
+        // 0 — so the replay model resets it the same way before the
+        // second callback.
+        $wpdb->insert_id = 0;
+
         $second = $this->service()->bind( 902, str_repeat( 'b', 32 ), 50.0, 'eur' );
 
         self::assertSame( 7, $first );
@@ -154,5 +162,55 @@ final class ConversionBindingTest extends TestCase {
         }
         self::assertStringContainsString( 'INSERT IGNORE INTO wp_gr_conversions', $sql );
         self::assertStringContainsString( "'75.50'", $sql );
+    }
+
+    public function testSuccessfulBindingLandsAConversionEventOnTheBus(): void {
+        global $wpdb;
+        $wpdb->results   = array();
+        $wpdb->insert_id = 42;
+
+        $id = $this->service()->bind( 905, str_repeat( 'e', 32 ), 120.0, 'usd', 'fluentform' );
+
+        self::assertSame( 42, $id );
+
+        $events = array();
+        foreach ( $GLOBALS['gr_stub_fired_action_args'] as $record ) {
+            if ( 'gr_event' === $record['hook'] ) {
+                $events[] = $record['args'][0];
+            }
+        }
+        self::assertCount( 1, $events );
+        $event = $events[0];
+        self::assertSame( 'conversion', $event->name() );
+        self::assertSame( 'funnel', $event->group() );
+        self::assertSame( str_repeat( 'e', 32 ), $event->visitor_id() );
+        self::assertSame( 'fluentform', $event->payload()['source_type'] );
+        self::assertSame( 905, $event->payload()['source_id'] );
+        self::assertSame( 120.0, $event->payload()['amount'] );
+
+        // The stream row landed too, with the same identity context.
+        $event_rows = array();
+        foreach ( $wpdb->inserts as $insert ) {
+            if ( false !== strpos( (string) $insert['table'], 'gr_events' ) ) {
+                $event_rows[] = $insert['data'];
+            }
+        }
+        self::assertCount( 1, $event_rows );
+        self::assertSame( 'conversion', $event_rows[0]['event_name'] );
+        self::assertSame( 'funnel', $event_rows[0]['event_group'] );
+    }
+
+    public function testFailedBindingDispatchesNothing(): void {
+        global $wpdb;
+        $wpdb->results   = array();
+        $wpdb->insert_id = 0; // Neither insert nor lookup resolves.
+
+        $id = $this->service()->bind( 906, str_repeat( 'f', 32 ), 10.0, 'usd' );
+
+        self::assertSame( 0, $id );
+
+        foreach ( $GLOBALS['gr_stub_fired_action_args'] as $record ) {
+            self::assertNotSame( 'gr_event', $record['hook'], 'A failed binding publishes nothing.' );
+        }
     }
 }

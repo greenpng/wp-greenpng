@@ -37,6 +37,7 @@ use GreenPNG\Admin\Gr_Analytics_Page;
 use GreenPNG\Admin\Gr_Ip_Intel_Page;
 use GreenPNG\Admin\Gr_Funnels_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
+use GreenPNG\Funnel\Gr_Funnel_Tracker;
 use GreenPNG\Privacy\Gr_Privacy_Api;
 use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
@@ -283,6 +284,7 @@ final class Gr_Plugin {
         Gr_Probe_Script::register_hooks();
         Gr_Behavior::register_hooks();
         Gr_Ab_Shortcode::register();
+        Gr_Funnel_Tracker::register_hooks();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
         $this->inspector->register_hooks();
         Gr_Scanner_Ua::register_detector();
@@ -299,6 +301,7 @@ final class Gr_Plugin {
         Gr_Login_Protection_Page::register_hooks();
         Gr_Scoring_Rules_Page::register_hooks();
         Gr_Contact_Profile_Page::register_hooks();
+        Gr_Funnels_Page::register_hooks();
         Gr_Retention::register_hooks();
         Gr_Scoring_Engine::register_hooks();
         Gr_Rfm_Engine::register_hooks();
