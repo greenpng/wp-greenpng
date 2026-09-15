@@ -52,4 +52,5 @@
 - **签名体即线上体**：`post_raw` 接预编码 body 直发、永不重编（`json_encode` 单点持有 WPCS ignore——签名字节必须等于线上字节）；真栈三次投递 body md5 一致。
 - **per-endpoint 服务键** `webhook_<id>`：5s 超时与熔断互不连坐（一个死接收端不冷却另一个）；端点本身（owner 配置+active+非开路）即配置门，`configured()` 对该前缀永真。
 - **'lead' 事件入词表**（V31 补充）：表单适配器捕获成功后总线派发 crm 组 'lead'（contact_id + 来源，email 绝不入 payload）——此前联系人捕获无总线事件，词表随此闭合为 7 项；pageview/signal/cart_email 有意留外。
+- **存储门为结构门，非 DNS 门**（2026-09-15，e2e 轮暴露后修复）：`valid_url` 初版借用核心 `wp_http_validate_url()`——它是线上 SSRF 校验器，**对 host 做 DNS 解析并拒私网段**，于是内网/暂不可解析的接收端一概拒存；e2e 的 `hooks.e2e.test`（保留 TLD，任何解析器都 NXDOMAIN）以完美 https POST 被同词 `http_url` 拒存才暴露（unit 桩只做形状检查，掩盖了分叉）。修为纯结构门：scheme https + host 非空 + 长度 ≤2048；解析性与 SSRF 校验留在投递时（`post_raw` → `wp_safe_remote_post` 自带该校验，失败走既有重试/熔断梯级，绝不静默）。wp-plug 同类先例同结论（pixelyoursite 函数注释原文："must NOT be used for this"——它拒本地 host）。
 - **真栈验证注记**：:8091 无 TLS → 接收端验签往返经 http（scheme 存储门由 `add()` 拒存 http 真栈实证）；接收端为临时 mu-plugin（验签 HMAC/±300s/记录载荷），验毕撤除、路由 404 复核。

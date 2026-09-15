@@ -55,6 +55,25 @@ final class WebhookRepositoryTest extends TestCase {
         self::assertGreaterThan( 0, $this->add_one() );
     }
 
+    public function testTheUrlGateIsStructuralNotDnsBound(): void {
+        // The e2e receiver host is a reserved TLD no resolver ever
+        // answers, and a private-range host is refused by the core
+        // wire validator without any lookup: both must store,
+        // because resolvability is a delivery-time concern, not a
+        // storage one.
+        $error = '';
+        $id    = Gr_Webhook_Repository::add( 'https://hooks.e2e.test/receive', 'unit-test-secret-0123456789', array( 'conversion' ), true, $error );
+        self::assertGreaterThan( 0, $id, (string) $error );
+        self::assertTrue( Gr_Webhook_Repository::valid_url( 'https://192.168.10.10/hook' ) );
+
+        // What the gate still refuses is structural.
+        self::assertFalse( Gr_Webhook_Repository::valid_url( 'http://hooks.e2e.test/receive' ) );
+        self::assertFalse( Gr_Webhook_Repository::valid_url( 'ftp://hooks.e2e.test/receive' ) );
+        self::assertFalse( Gr_Webhook_Repository::valid_url( 'https:///receive' ) );
+        self::assertFalse( Gr_Webhook_Repository::valid_url( '' ) );
+        self::assertFalse( Gr_Webhook_Repository::valid_url( 'https://hooks.e2e.test/' . str_repeat( 'a', 2100 ) ) );
+    }
+
     public function testShortSecretsAreRefused(): void {
         $error = '';
         $id    = Gr_Webhook_Repository::add( 'https://receiver.example.test/hook', 'short-secret', array( 'conversion' ), true, $error );

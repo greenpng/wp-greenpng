@@ -326,7 +326,12 @@ final class Gr_Webhook_Repository {
     /**
      * URL gate (ADR-0016 D1): https-only storage — a signature on
      * the wire is meaningless over http, and the host must be
-     * non-empty.
+     * non-empty. Deliberately structural: core's
+     * wp_http_validate_url() resolves the host in DNS and refuses
+     * private ranges, so borrowing it here made internal and
+     * not-yet-resolvable receivers unstoreable; the wire call
+     * keeps that vetting at delivery time, where its failures
+     * land in the retry and circuit ladder instead of the gate.
      *
      * @param string $url Candidate URL.
      * @return bool
@@ -336,7 +341,12 @@ final class Gr_Webhook_Repository {
             return false;
         }
 
-        return wp_http_validate_url( $url ) !== false && 'https' === (string) wp_parse_url( $url, PHP_URL_SCHEME );
+        $parts = wp_parse_url( $url );
+        if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+            return false;
+        }
+
+        return 'https' === (string) $parts['scheme'];
     }
 
     /**
