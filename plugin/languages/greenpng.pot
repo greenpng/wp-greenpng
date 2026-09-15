@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-15T10:56:39+00:00\n"
+"POT-Creation-Date: 2026-09-15T11:41:35+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -91,6 +91,8 @@ msgstr ""
 #: includes/admin/class-gr-funnels-page.php:944
 #: includes/admin/class-gr-scoring-rules-page.php:206
 #: includes/admin/class-gr-scoring-rules-page.php:233
+#: includes/admin/class-gr-webhooks-page.php:223
+#: includes/admin/class-gr-webhooks-page.php:316
 msgid "Active"
 msgstr ""
 
@@ -101,7 +103,7 @@ msgstr ""
 #: includes/admin/class-gr-access-rules-table.php:90
 #: includes/admin/class-gr-sessions-table.php:134
 #: includes/admin/class-gr-sessions-table.php:143
-#: includes/admin/class-gr-status-page.php:137
+#: includes/admin/class-gr-status-page.php:138
 #: includes/admin/class-gr-traffic-page.php:284
 msgid "Yes"
 msgstr ""
@@ -109,7 +111,7 @@ msgstr ""
 #: includes/admin/class-gr-access-rules-table.php:90
 #: includes/admin/class-gr-sessions-table.php:134
 #: includes/admin/class-gr-sessions-table.php:143
-#: includes/admin/class-gr-status-page.php:137
+#: includes/admin/class-gr-status-page.php:138
 #: includes/admin/class-gr-traffic-page.php:284
 msgid "No"
 msgstr ""
@@ -209,21 +211,27 @@ msgstr ""
 msgid "IP Intelligence"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:241
 #: includes/admin/class-gr-admin-menu.php:242
+#: includes/admin/class-gr-admin-menu.php:243
+#: includes/admin/class-gr-webhooks-page.php:166
+msgid "Webhooks"
+msgstr ""
+
+#: includes/admin/class-gr-admin-menu.php:253
+#: includes/admin/class-gr-admin-menu.php:254
 #: includes/admin/class-gr-audit-log-page.php:74
 msgid "Audit Log"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:252
-#: includes/admin/class-gr-admin-menu.php:253
+#: includes/admin/class-gr-admin-menu.php:264
+#: includes/admin/class-gr-admin-menu.php:265
 #: includes/admin/class-gr-data-retention-page.php:188
 msgid "Data Retention"
 msgstr ""
 
-#: includes/admin/class-gr-admin-menu.php:263
-#: includes/admin/class-gr-admin-menu.php:264
-#: includes/admin/class-gr-status-page.php:127
+#: includes/admin/class-gr-admin-menu.php:275
+#: includes/admin/class-gr-admin-menu.php:276
+#: includes/admin/class-gr-status-page.php:128
 msgid "Status & Diagnostics"
 msgstr ""
 
@@ -934,7 +942,7 @@ msgid "Amount"
 msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:348
-#: includes/admin/class-gr-status-page.php:197
+#: includes/admin/class-gr-status-page.php:235
 #: includes/privacy/class-gr-privacy-api.php:514
 msgid "Status"
 msgstr ""
@@ -1137,7 +1145,7 @@ msgid "Two independent rails, whichever fires first: an age in days, and a row c
 msgstr ""
 
 #: includes/admin/class-gr-data-retention-page.php:203
-#: includes/admin/class-gr-status-page.php:218
+#: includes/admin/class-gr-status-page.php:256
 msgid "Table"
 msgstr ""
 
@@ -1264,6 +1272,7 @@ msgstr ""
 
 #: includes/admin/class-gr-funnels-page.php:649
 #: includes/admin/class-gr-funnels-page.php:856
+#: includes/admin/class-gr-webhooks-page.php:237
 msgid "Pause"
 msgstr ""
 
@@ -1274,6 +1283,7 @@ msgstr ""
 
 #: includes/admin/class-gr-funnels-page.php:655
 #: includes/admin/class-gr-funnels-page.php:862
+#: includes/admin/class-gr-webhooks-page.php:262
 msgid "Delete"
 msgstr ""
 
@@ -1341,6 +1351,8 @@ msgstr ""
 
 #: includes/admin/class-gr-funnels-page.php:775
 #: includes/admin/class-gr-funnels-page.php:837
+#: includes/admin/class-gr-status-page.php:202
+#: includes/admin/class-gr-webhooks-page.php:201
 msgid "State"
 msgstr ""
 
@@ -1969,7 +1981,7 @@ msgid "Reports compare all five models; this is the highlighted default."
 msgstr ""
 
 #: includes/admin/class-gr-settings-page.php:530
-#: includes/admin/class-gr-status-page.php:174
+#: includes/admin/class-gr-status-page.php:175
 msgid "Cart recovery"
 msgstr ""
 
@@ -2007,110 +2019,150 @@ msgstr ""
 msgid "Save settings"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:130
+#: includes/admin/class-gr-status-page.php:131
 msgid "Environment"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:133
+#: includes/admin/class-gr-status-page.php:134
 msgid "Plugin version"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:134
+#: includes/admin/class-gr-status-page.php:135
 msgid "PHP"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:135
+#: includes/admin/class-gr-status-page.php:136
 msgid "WordPress"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:136
+#: includes/admin/class-gr-status-page.php:137
 msgid "Database"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:137
+#: includes/admin/class-gr-status-page.php:138
 msgid "Multisite"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:141
+#: includes/admin/class-gr-status-page.php:142
 msgid "Queue"
 msgstr ""
 
 #. translators: %s: queue backend name.
-#: includes/admin/class-gr-status-page.php:147
+#: includes/admin/class-gr-status-page.php:148
 #, php-format
 msgid "Backend: %s"
 msgstr ""
 
 #. translators: %s: UTC timestamp.
-#: includes/admin/class-gr-status-page.php:158
+#: includes/admin/class-gr-status-page.php:159
 #, php-format
 msgid "next daily pass at %s (server UTC)."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:164
+#: includes/admin/class-gr-status-page.php:165
 msgid "no daily pass scheduled yet."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:169
+#: includes/admin/class-gr-status-page.php:170
 msgid "On low-traffic sites WP-Cron only fires when a visitor arrives. Point a real system cron at the WP-CLI entry to keep maintenance on a fixed clock:"
 msgstr ""
 
 #. translators: 1: number of failed mails, 2: timestamp of the newest attempt.
-#: includes/admin/class-gr-status-page.php:182
+#: includes/admin/class-gr-status-page.php:183
 #, php-format
 msgid "%1$s recovery mail(s) could not be delivered (newest attempt: %2$s). Check this site's mail delivery; the rows stay marked failed until retention removes them."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:190
+#: includes/admin/class-gr-status-page.php:191
 msgid "No failed recovery sends on record."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:193
+#: includes/admin/class-gr-status-page.php:194
+msgid "Webhook endpoints"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:197
+msgid "No webhook endpoints configured. Outbound notifications only ever go to endpoints added on the Webhooks page."
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:201
+msgid "Receiver"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:203
+#: includes/admin/class-gr-webhooks-page.php:202
+msgid "Last delivery"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:212
+msgid "Circuit open — deliveries paused"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:214
+msgid "Paused by the owner"
+msgstr ""
+
+#. translators: %d: failing delivery streak.
+#: includes/admin/class-gr-status-page.php:216
+#, php-format
+msgid "Retrying — %d failing delivery(s)"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:218
+msgid "Delivering normally"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:224
+#: includes/admin/class-gr-webhooks-page.php:227
+msgid "Never"
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:231
 msgid "Ecosystem adapters"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:196
+#: includes/admin/class-gr-status-page.php:234
 msgid "Bridge"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:206
+#: includes/admin/class-gr-status-page.php:244
 msgid "Mounted"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:207
+#: includes/admin/class-gr-status-page.php:245
 msgid "Not installed"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:215
+#: includes/admin/class-gr-status-page.php:253
 msgid "Table capacity"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:219
+#: includes/admin/class-gr-status-page.php:257
 msgid "Rows (estimate)"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:220
+#: includes/admin/class-gr-status-page.php:258
 msgid "Data"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:221
+#: includes/admin/class-gr-status-page.php:259
 msgid "Index"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:222
+#: includes/admin/class-gr-status-page.php:260
 #: includes/privacy/class-gr-privacy-api.php:522
 msgid "Total"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:237
+#: includes/admin/class-gr-status-page.php:275
 msgid "Diagnostics export"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:238
+#: includes/admin/class-gr-status-page.php:276
 msgid "A JSON snapshot of everything on this page: versions, queue posture, adapter mounts, table capacity. It carries no credentials, no addresses, and no content data."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:242
+#: includes/admin/class-gr-status-page.php:280
 msgid "Download diagnostics"
 msgstr ""
 
@@ -2234,6 +2286,171 @@ msgstr ""
 
 #: includes/admin/class-gr-url-builder-page.php:172
 msgid "Copy the link into your ad or newsletter; visits landing on it are attributed to this campaign."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:170
+msgid "Endpoint added. Deliveries begin with the next matching event."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:172
+msgid "Endpoint updated."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:174
+msgid "Endpoint deleted. Its queued deliveries stop with it."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:176
+msgid "Endpoint state changed."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:178
+msgid "Circuit reset. The endpoint takes deliveries again."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:180
+msgid "The URL was refused: endpoints must be https."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:182
+msgid "The signing secret was refused: at least 16 characters."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:184
+msgid "Choose at least one event to subscribe to."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:186
+#: includes/admin/class-gr-webhooks-page.php:273
+msgid "The endpoint list is full (10). Remove one to add another."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:188
+msgid "That endpoint no longer exists."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:191
+msgid "Endpoints"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:193
+msgid "No endpoints configured yet. Deliveries only ever go to endpoints you add and activate below."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:198
+msgid "URL"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:199
+#: includes/admin/class-gr-webhooks-page.php:302
+msgid "Events"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:200
+msgid "Secret"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:218
+msgid "Circuit open: deliveries stopped after repeated failures. Check the receiver, then reset."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:223
+msgid "Paused"
+msgstr ""
+
+#. translators: %d: failed delivery count.
+#: includes/admin/class-gr-webhooks-page.php:229
+#, php-format
+msgid "%d failing streak"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:237
+msgid "Activate"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:243
+msgid "Reset circuit"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:258
+msgid "Edit"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:271
+msgid "Edit endpoint"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:271
+#: includes/admin/class-gr-webhooks-page.php:321
+msgid "Add endpoint"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:280
+msgid "Endpoint URL"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:283
+msgid "https only. Each matching event posts one JSON delivery here."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:287
+msgid "Signing secret"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:294
+msgid "Leave empty to keep the current secret. At least 16 characters when set."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:295
+msgid "At least 16 characters. It never leaves this site and displays only masked."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:317
+msgid "Deliver to this endpoint"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:321
+msgid "Save endpoint"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:324
+msgid "Cancel"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:329
+msgid "Verifying deliveries (for the receiving side)"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:330
+msgid "Every delivery is a POST with a JSON body and four headers:"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:333
+msgid "sha256= followed by the HMAC-SHA256 of the raw request body, keyed with the endpoint's signing secret. Compare with a constant-time function."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:334
+msgid "The event name (for example conversion, lead, dwell, ab)."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:335
+msgid "A unique 32-hex id for this delivery; use it to deduplicate retries."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:336
+msgid "Unix time of the send. Reject deliveries outside a ±300-second window to stop replays."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:341
+msgid "Receiver-side verification in one line:"
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:345
+msgid "The body carries the event name, group, the visitor and session identifiers in their hashed forms, and the event parameters. No email addresses, raw IP addresses, or other personal identifiers are ever sent: what a delivery carries is exactly what the event reports already show."
+msgstr ""
+
+#: includes/admin/class-gr-webhooks-page.php:346
+msgid "Deliveries retry twice (60 seconds, then 300 seconds) before the delivery is recorded as failed; five consecutive failures pause the endpoint until you reset its circuit on this page. Nothing is delivered by any greenpng-operated service, and none exists."
 msgstr ""
 
 #: includes/cart/class-gr-cart-checkout.php:106

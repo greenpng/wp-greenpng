@@ -211,7 +211,7 @@ public static function maybe_upgrade(): void {
 ## 6. Option 设计
 
 - **唯一 autoload=yes 选项**：`gr_settings`（数组，≤8KB）。
-- 其余全部 `autoload=no`：`gr_db_version`、`gr_delete_data_on_uninstall`、`gr_secret_*`（加密存储，见 `10`）、`gr_ab_experiments`（A/B 定义，有界）、各模块开关。
+- 其余全部 `autoload=no`：`gr_db_version`、`gr_delete_data_on_uninstall`、`gr_secret_*`（加密存储，见 `10`）、`gr_ab_experiments`（A/B 定义，有界）、`gr_webhooks`（出网端点，≤10 行有界、secret 为 `Gr_Secrets` 信封、ADR-0016）、各模块开关。
 - **禁止**把计数器、在线状态、增长型数据放进 option/transient 做读-改-写。
 
 ## 7. 多站点（Multisite）行为

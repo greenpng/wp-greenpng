@@ -613,6 +613,26 @@ final class FormAdaptersTest extends TestCase {
         self::assertStringContainsString( 'INSERT IGNORE INTO wp_gr_contact_tags', $sql );
         // The conversion still binds on the same pass.
         self::assertNotSame( '', $this->last_conversion_insert() );
+
+        // The lead moment rides the event bus (ADR-0016 D1): the
+        // contact id and the source word, and nothing the contact
+        // row did not already own — the email never travels.
+        $lead = null;
+        foreach ( $GLOBALS['gr_stub_fired_action_args'] as $record ) {
+            if ( 'gr_event' === (string) $record['hook'] ) {
+                $event = $record['args'][0];
+                if ( 'lead' === (string) $event->name() ) {
+                    $lead = $event;
+                }
+            }
+        }
+        self::assertNotNull( $lead, 'the lead event must ride the bus' );
+        self::assertSame( 'crm', $lead->group() );
+        self::assertSame( 81, (int) $lead->payload()['contact_id'] );
+        self::assertSame( 'form', (string) $lead->payload()['source_type'] );
+        self::assertSame( 'fluentform', (string) $lead->payload()['source_id'] );
+        self::assertSame( $visitor, $lead->visitor_id() );
+        self::assertArrayNotHasKey( 'email', $lead->payload() );
     }
 
     public function testLeadCaptureStaysBehindTheConsentGate(): void {

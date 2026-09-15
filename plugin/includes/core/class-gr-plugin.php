@@ -37,6 +37,7 @@ use GreenPNG\Admin\Gr_Settings_Page;
 use GreenPNG\Admin\Gr_Status_Page;
 use GreenPNG\Admin\Gr_Analytics_Page;
 use GreenPNG\Admin\Gr_Ip_Intel_Page;
+use GreenPNG\Admin\Gr_Webhooks_Page;
 use GreenPNG\Admin\Gr_Funnels_Page;
 use GreenPNG\Funnel\Gr_Ab_Shortcode;
 use GreenPNG\Funnel\Gr_Funnel_Tracker;
@@ -45,6 +46,7 @@ use GreenPNG\Integrations\Ecosystem\Gr_Cf7_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Fluentforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Wpforms_Adapter;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
+use GreenPNG\Integrations\Webhook\Gr_Webhook_Dispatcher;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use GreenPNG\Rest\Gr_Dashboard_Controller;
 use GreenPNG\Rest\Gr_Export_Controller;
@@ -276,6 +278,7 @@ final class Gr_Plugin {
         Gr_Dch_Refresh::register();
         Gr_Meta_Capi::register();
         Gr_Ga4_Mp::register();
+        Gr_Webhook_Dispatcher::register();
 
         add_action( 'admin_init', array( Gr_Schema::class, 'maybe_upgrade' ) );
         add_action( 'init', array( $this, 'load_translations' ) );
@@ -316,6 +319,7 @@ final class Gr_Plugin {
         Gr_Settings_Page::register_hooks();
         Gr_Analytics_Page::register_hooks();
         Gr_Ip_Intel_Page::register_hooks();
+        Gr_Webhooks_Page::register_hooks();
 
         // Ecosystem adapters register only when their target plugin
         // actually boots on this site; each public-surface gate runs

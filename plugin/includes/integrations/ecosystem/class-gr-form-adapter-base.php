@@ -287,6 +287,24 @@ abstract class Gr_Form_Adapter_Base implements Adapter_Interface {
                     ),
                     true
                 );
+
+                // The lead moment rides the event bus (ADR-0016 D1's
+                // closed vocabulary has no 'lead' without it): the
+                // contact id and the source word, never the email —
+                // PII stays in the contact row, and any outbound
+                // copy carries nothing it did not already show on
+                // the reports.
+                gr_dispatch_event(
+                    'lead',
+                    array(
+                        'event_group' => 'crm',
+                        'visitor_id'  => $this->identity->visitor_id(),
+                        'session_id'  => $this->identity->session_id(),
+                        'contact_id'  => $contact_id,
+                        'source_type' => 'form',
+                        'source_id'   => static::get_id(),
+                    )
+                );
             }
         }
 

@@ -43,6 +43,9 @@ final class Gr_Http_Client {
     /** Service key: the datacenter-range refresh (no credentials, owner-clicked). */
     public const SERVICE_DCH_RANGES = 'dch_ranges';
 
+    /** Service key prefix: one webhook endpoint per key, per-endpoint wire discipline. */
+    public const SERVICE_WEBHOOK = 'webhook';
+
     /** Service not enabled with its credentials: nothing leaves the site. */
     public const ERR_NOT_CONFIGURED = 'gr_not_configured';
 
@@ -109,6 +112,27 @@ final class Gr_Http_Client {
         $args = array(
             'headers' => array( 'Content-Type' => 'application/json' ),
             'body'    => wp_json_encode( $payload ),
+        );
+
+        return self::request( $service, 'POST', $url, $args );
+    }
+
+    /**
+     * POST with caller-owned body bytes. The webhook delivery signs
+     * the exact body it sends, so the signature and the wire must
+     * share one byte string — this variant takes the body pre-encoded
+     * and never re-encodes it.
+     *
+     * @param string               $service Service key constant.
+     * @param string               $url     Endpoint URL.
+     * @param string               $body    Pre-encoded body bytes.
+     * @param array<string,string> $headers Extra request headers.
+     * @return array<string, mixed>|\WP_Error Success shape, or the failure.
+     */
+    public static function post_raw( string $service, string $url, string $body, array $headers = array() ) {
+        $args = array(
+            'headers' => array_merge( array( 'Content-Type' => 'application/json' ), $headers ),
+            'body'    => $body,
         );
 
         return self::request( $service, 'POST', $url, $args );
@@ -316,6 +340,14 @@ final class Gr_Http_Client {
         if ( self::SERVICE_DBIP === $service || self::SERVICE_DCH_RANGES === $service ) {
             // The data refreshes have no credentials; the only gate is
             // the owner's explicit click, which is the caller's job.
+            return true;
+        }
+
+        if ( 0 === strpos( $service, self::SERVICE_WEBHOOK . '_' ) ) {
+            // Webhook keys carry the endpoint id; the owner-configured,
+            // active endpoint is itself the gate — the delivery job
+            // refuses deleted, paused, and open-circuit endpoints long
+            // before this check.
             return true;
         }
 

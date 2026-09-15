@@ -51,14 +51,21 @@ if ( ! function_exists( 'add_option' ) ) {
 
 if ( ! function_exists( 'update_option' ) ) {
     /**
-     * Option update.
+     * Option update. The autoload parameter mirrors the core
+     * signature: passing it explicitly rewrites the flag, null
+     * leaves the stored one alone.
      *
-     * @param string $name  Option name.
-     * @param mixed  $value New value.
+     * @param string      $name     Option name.
+     * @param mixed       $value    New value.
+     * @param string|bool|null $autoload Autoload flag, or null to keep.
      * @return bool
      */
-    function update_option( $name, $value ) {
+    function update_option( $name, $value, $autoload = null ) {
         $GLOBALS['gr_stub_options']['data'][ $name ] = $value;
+
+        if ( null !== $autoload ) {
+            $GLOBALS['gr_stub_options']['autoload'][ $name ] = ( 'no' === $autoload || false === $autoload ) ? false : true;
+        }
 
         return true;
     }
@@ -204,6 +211,28 @@ if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
         }
 
         return (string) ( $response['body'] ?? '' );
+    }
+}
+
+if ( ! function_exists( 'wp_http_validate_url' ) ) {
+    /**
+     * URL shape check mirroring the real contract: the URL itself on
+     * acceptance, false on refusal.
+     *
+     * @param string $url Candidate URL.
+     * @return string|false
+     */
+    function wp_http_validate_url( $url ) {
+        $parts = parse_url( (string) $url );
+        if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+            return false;
+        }
+
+        if ( isset( $parts['scheme'] ) && ! in_array( $parts['scheme'], array( 'http', 'https' ), true ) ) {
+            return false;
+        }
+
+        return (string) $url;
     }
 }
 
@@ -557,9 +586,12 @@ if ( ! function_exists( 'current_time' ) ) {
      * anything else a date() format string on the same moment.
      *
      * @param string $type Time format type.
+     * @param bool   $gmt  True for GMT. The stub clock is UTC and the
+     *                     site offset stays zero, so both arms answer the
+     *                     same — tests only ever rely on fixed times.
      * @return string|int
      */
-    function current_time( $type ) {
+    function current_time( $type, $gmt = false ) {
         $ts = isset( $GLOBALS['gr_stub_ts'] )
             ? (int) $GLOBALS['gr_stub_ts']
             : (int) strtotime( ( $GLOBALS['gr_stub_now'] ?? '2026-09-10 00:00:00' ) . ' UTC' );

@@ -234,6 +234,18 @@ final class Gr_Admin_Menu {
             array( Gr_Ip_Intel_Page::class, 'render' )
         );
 
+        // Webhooks (docs/06 tree): owner-configured outbound
+        // notifications; the page registers its own admin_init write
+        // handler.
+        add_submenu_page(
+            self::SLUG,
+            __( 'Webhooks', 'greenpng' ),
+            __( 'Webhooks', 'greenpng' ),
+            'manage_options',
+            Gr_Webhooks_Page::SLUG,
+            array( Gr_Webhooks_Page::class, 'render' )
+        );
+
         // Tools section (docs/06 tree); read-only trail, server-side
         // pagination.
         add_submenu_page(

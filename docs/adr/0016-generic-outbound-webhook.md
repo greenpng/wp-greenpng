@@ -45,3 +45,11 @@
 - 负面/风险：投递历史无行级审计（端点级最近态替代——有界 option 纪律优先于可观测性细节，v1.2 可再议）；端点 ≤10 上限如实标注（站长多端点需求真实出现时再评）。
 - 合规：PII 零出网（hash-only）；https 强制；默认全关；出网仅显式配置端点。
 - 修订关联：`docs/06`（Webhooks 页规格）、`docs/12`（出网行）、`docs/05` §6（option 登记）、readme/POT 随实现同步。
+
+## 4. 实现注释（2026-09-15，V31/V32 落地）
+
+- **两梯级并立**：队列退避（60s/300s）与 `Gr_Http_Client` per-service backoff/熔断并行。线上未达成的拒收（`ERR_BACKOFF_WAIT`/`ERR_BREAKER_OPEN`——队列在 client 等待窗内开火）不烧队列梯级：按 client 自报 `retry_after` 重排且 attempt 不进（单测 WebhookDeliveryTest「提前触发」例钉死；:8091 真栈以 30s deferral 复现，attempt 保持）。
+- **签名体即线上体**：`post_raw` 接预编码 body 直发、永不重编（`json_encode` 单点持有 WPCS ignore——签名字节必须等于线上字节）；真栈三次投递 body md5 一致。
+- **per-endpoint 服务键** `webhook_<id>`：5s 超时与熔断互不连坐（一个死接收端不冷却另一个）；端点本身（owner 配置+active+非开路）即配置门，`configured()` 对该前缀永真。
+- **'lead' 事件入词表**（V31 补充）：表单适配器捕获成功后总线派发 crm 组 'lead'（contact_id + 来源，email 绝不入 payload）——此前联系人捕获无总线事件，词表随此闭合为 7 项；pageview/signal/cart_email 有意留外。
+- **真栈验证注记**：:8091 无 TLS → 接收端验签往返经 http（scheme 存储门由 `add()` 拒存 http 真栈实证）；接收端为临时 mu-plugin（验签 HMAC/±300s/记录载荷），验毕撤除、路由 404 复核。

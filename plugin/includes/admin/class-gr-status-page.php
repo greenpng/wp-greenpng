@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Core\Gr_Diagnostics;
 use GreenPNG\Core\Gr_Queue;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
+use GreenPNG\Integrations\Webhook\Gr_Webhook_Repository;
 use GreenPNG\Storage\Gr_Audit_Repository;
 use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use GreenPNG\Storage\Gr_Table_Stats;
@@ -188,6 +189,43 @@ final class Gr_Status_Page {
                 </p></div>
             <?php else : ?>
                 <p><?php echo esc_html__( 'No failed recovery sends on record.', 'greenpng' ); ?></p>
+            <?php endif; ?>
+
+            <h2><?php echo esc_html__( 'Webhook endpoints', 'greenpng' ); ?></h2>
+            <?php $endpoints = Gr_Webhook_Repository::all(); ?>
+            <?php if ( array() === $endpoints ) : ?>
+                <p><?php echo esc_html__( 'No webhook endpoints configured. Outbound notifications only ever go to endpoints added on the Webhooks page.', 'greenpng' ); ?></p>
+            <?php else : ?>
+                <table class="widefat striped">
+                    <thead><tr>
+                        <th scope="col"><?php echo esc_html__( 'Receiver', 'greenpng' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( 'State', 'greenpng' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( 'Last delivery', 'greenpng' ); ?></th>
+                    </tr></thead>
+                    <tbody>
+                        <?php foreach ( $endpoints as $endpoint ) : ?>
+                            <?php
+                            $circuit = 0 !== (int) $endpoint['circuit_open_since'];
+                            $paused  = 1 !== (int) $endpoint['active'];
+                            $host    = (string) wp_parse_url( (string) $endpoint['url'], PHP_URL_HOST );
+                            if ( $circuit ) {
+                                $state = __( 'Circuit open — deliveries paused', 'greenpng' );
+                            } elseif ( $paused ) {
+                                $state = __( 'Paused by the owner', 'greenpng' );
+                            } elseif ( (int) $endpoint['consecutive_failures'] > 0 ) {
+                                $state = sprintf( /* translators: %d: failing delivery streak. */ __( 'Retrying — %d failing delivery(s)', 'greenpng' ), (int) $endpoint['consecutive_failures'] );
+                            } else {
+                                $state = __( 'Delivering normally', 'greenpng' );
+                            }
+                            ?>
+                            <tr>
+                                <td><?php echo esc_html( $host ); ?></td>
+                                <td><?php echo esc_html( $state ); ?></td>
+                                <td><?php echo esc_html( '' === (string) $endpoint['last_delivery_at'] ? __( 'Never', 'greenpng' ) : (string) $endpoint['last_delivery_at'] . ' · ' . (string) $endpoint['last_status'] ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             <?php endif; ?>
 
             <h2><?php echo esc_html__( 'Ecosystem adapters', 'greenpng' ); ?></h2>

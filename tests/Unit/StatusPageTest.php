@@ -12,6 +12,7 @@ declare( strict_types = 1 );
 namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Admin\Gr_Status_Page;
+use GreenPNG\Integrations\Webhook\Gr_Webhook_Repository;
 use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use PHPUnit\Framework\TestCase;
 
@@ -77,5 +78,32 @@ final class StatusPageTest extends TestCase {
         // The page and the engine share one status word: whatever the
         // retry path parks, the status page must be able to see.
         self::assertSame( 'failed', Gr_Cart_Abandonment_Repository::STATUS_FAILED );
+    }
+
+    public function testWebhookSectionReadsTheEndpointStates(): void {
+        $error = '';
+        $id    = Gr_Webhook_Repository::add( 'https://receiver.example.test/hook', 'unit-test-secret-0123456789', array( 'conversion' ), true, $error );
+        self::assertGreaterThan( 0, $id, (string) $error );
+
+        // Delivering normally: the receiver host and the quiet word.
+        $html = $this->render();
+        self::assertStringContainsString( 'receiver.example.test', $html );
+        self::assertStringContainsString( 'Delivering normally', $html );
+        self::assertStringContainsString( 'Never', $html );
+
+        // An opened circuit surfaces as its own alarm word.
+        for ( $i = 0; $i < Gr_Webhook_Repository::CIRCUIT_THRESHOLD; $i++ ) {
+            Gr_Webhook_Repository::record_delivery( $id, false, 'HTTP 500' );
+        }
+        $html = $this->render();
+        self::assertStringContainsString( 'Circuit open', $html );
+
+        delete_option( Gr_Webhook_Repository::OPTION );
+    }
+
+    public function testWebhookSectionHonestEmptyState(): void {
+        $html = $this->render();
+
+        self::assertStringContainsString( 'No webhook endpoints configured', $html );
     }
 }
