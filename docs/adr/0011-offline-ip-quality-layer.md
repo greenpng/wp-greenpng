@@ -25,6 +25,7 @@
 
 - IP Intelligence 页新增「机房段更新」按钮：仅点击时拉取 AWS/Azure/Google 官方段表 JSON，合并进 packed 缓存（站点本地，autoload=no option 或文件缓存），显示最近拉取时间。零静默外呼（铁律 1 同 DB-IP 先例）；端点列入 readme 披露。
 - 该按钮解决「IP2Proxy LITE 更新需站主自行注册」的落差：不注册也有免认证的官方源可刷（覆盖最大宗云机房流量）；D1 随包底座覆盖长尾托管商。
+- **实施批注（2026-09-15，:8091 实弹后）**：①文件缓存落地为 uploads 目录 override 文件（temp+rename 原子发布，失败保旧数据）——优于 option（免 base64 开销、opcache 可编译）；②Azure 无稳定 JSON 直链，只有稳定下载页——刷新从页面 HTML 实时发现当日 ServiceTags JSON URL 后再拉，页与 JSON 两跳都计入「显式点击」授权；③批量数据下载的线预算为 120s（docs/07 §2 已同步：5s 只属 API 类——2.7MB 起的段表在 5s 预算下刷新必败，铁律 1 的「显式点击」授权面不变）；④诚实词表三态：`refreshed`（含逐源名单——部分源失败不沉掉其余源）、`failed/no_source`（零源应答，旧数据保全）、`failed/empty_pack`（有源应答但零段——拒绝晋升空包）。源「应答过」以 fetch 解析成功为准，应答但零段与 fetch 失败在审计上严格区分。
 
 ### D3 · Tor 出口列表：**拒绝进 v1.1**（并记录重启条件）
 

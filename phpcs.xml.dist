@@ -5,6 +5,11 @@
     <!-- Scan target: the shipped plugin only; dev tooling and tests live outside (AGENTS §3.3 runs this without a path argument). -->
     <file>plugin</file>
     <exclude-pattern>*/assets/vendor/*</exclude-pattern>
+    <!-- Generated datasets: plugin/assets/data holds machine-written
+         payloads only (GeoIP .bin builds, the packed cloud-range
+         array from tools/pack-dch.php). Hand-written code never lives
+         there, so the standard does not apply to the directory. -->
+    <exclude-pattern>*/assets/data/*</exclude-pattern>
 
     <arg name="extensions" value="php"/>
     <arg name="basepath" value="."/>

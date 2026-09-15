@@ -99,6 +99,7 @@ final class ListTablesTest extends TestCase {
                     'device_type'  => 'desktop',
                     'pageviews'    => '3',
                     'is_bot'       => '0',
+                    'ip_quality'   => 'hosting',
                 ),
             )
         );
@@ -107,6 +108,8 @@ final class ListTablesTest extends TestCase {
 
         self::assertStringContainsString( '>Visitor<', $html, 'The header row must render the column vocabulary.' );
         self::assertStringContainsString( '>Landing<', $html, 'The header row must render the column vocabulary.' );
+        self::assertStringContainsString( '>Hosting<', $html, 'The hosting column joins the vocabulary.' );
+        self::assertStringContainsString( '<td class="column-ip_quality">Yes</td>', $html, 'A datacenter session renders the shared Yes/No vocabulary.' );
         self::assertStringContainsString( '<td class="column-visitor_id"><span title="abcdef1234567890abcdef1234567890">abcdef12…</span></td>', $html, 'The short form renders with the full identity on the title.' );
         self::assertStringContainsString( '<td class="column-landing_path">/pricing/</td>', $html, 'The landing path cell renders as text.' );
         self::assertStringContainsString( '<td class="column-device_type">desktop</td>', $html, 'The device cell renders the code.' );
@@ -136,6 +139,7 @@ final class ListTablesTest extends TestCase {
 
         $html = $this->render( $table );
         self::assertStringContainsString( '<td class="column-is_bot">Yes</td>', $html, 'The bot verdict renders the same vocabulary as the fraud tab.' );
+        self::assertStringContainsString( '<td class="column-ip_quality">No</td>', $html, 'A residential session renders No without a verdict of its own.' );
 
         $empty = new Gr_Sessions_Table( array(), array() );
         self::assertStringContainsString( 'No visitor sessions recorded yet.', $this->render( $empty ) );

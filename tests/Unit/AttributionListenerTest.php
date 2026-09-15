@@ -225,4 +225,28 @@ final class AttributionListenerTest extends TestCase {
             $wpdb->inserts[1]['data']['visitor_id']
         );
     }
+
+    public function testTheIpQualityCategoryRidesTheConsentGate(): void {
+        global $wpdb;
+
+        // A cloud egress address inside the bundled dataset.
+        $_SERVER['REMOTE_ADDR'] = '3.5.140.1';
+
+        // Without consent the technical slide keeps the default empty
+        // category: nothing about the visitor is stored.
+        $this->listener()->handle();
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringNotContainsString( "'hosting'", $sql );
+
+        // With consent the landing category lands on the same upsert.
+        gr_stub_reset_options();
+        $_SERVER['REMOTE_ADDR']                 = '3.5.140.1';
+        $GLOBALS['gr_stub_consent']['marketing'] = true;
+
+        $this->listener()->handle();
+
+        $sql = implode( ' ', $wpdb->queries );
+        self::assertStringContainsString( 'ip_quality', $sql );
+        self::assertStringContainsString( "'hosting'", $sql );
+    }
 }

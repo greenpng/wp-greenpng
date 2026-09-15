@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GreenPNG\Core\Gr_Database;
+use GreenPNG\Core\Gr_Ip_Quality;
 
 /**
  * Read/write access to the gr_sessions table; repositories are the only
@@ -114,8 +115,8 @@ final class Gr_Session_Repository {
         $sql = $wpdb->prepare(
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input.
             "INSERT INTO {$table}
-                (visitor_id, session_id, user_id, channel, utm_source, utm_medium, utm_campaign, click_id, landing_path, referrer_host, device_type, ua_family, country_code, is_bot, bot_score, pageviews, started_at, last_active)
-            VALUES (%s, %s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s)
+                (visitor_id, session_id, user_id, channel, utm_source, utm_medium, utm_campaign, click_id, landing_path, referrer_host, device_type, ua_family, country_code, ip_quality, is_bot, bot_score, pageviews, started_at, last_active)
+            VALUES (%s, %s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s)
             ON DUPLICATE KEY UPDATE last_active = VALUES(last_active), pageviews = pageviews + 1",
             array(
                 $visitor_id,
@@ -131,6 +132,7 @@ final class Gr_Session_Repository {
                 (string) $row['device_type'],
                 (string) $row['ua_family'],
                 (string) $row['country_code'],
+                (string) $row['ip_quality'],
                 (int) $row['is_bot'],
                 (int) $row['bot_score'],
                 1,
@@ -280,7 +282,7 @@ final class Gr_Session_Repository {
         }
 
         $where  = array() === $clauses ? '' : 'WHERE ' . implode( ' AND ', $clauses );
-        $select = 'visitor_id, session_id, channel, utm_campaign, landing_path, referrer_host, device_type, country_code, is_bot, pageviews, started_at, last_active';
+        $select = 'visitor_id, session_id, channel, utm_campaign, landing_path, referrer_host, device_type, country_code, ip_quality, is_bot, pageviews, started_at, last_active';
 
         // With no filters the statement carries no placeholder, and
         // prepare() on a placeholder-less statement is a core
@@ -439,6 +441,72 @@ final class Gr_Session_Repository {
     }
 
     /**
+     * Campaign-level invalid-traffic report (ADR-0011 D6, docs/16 §3):
+     * per campaign, the session count, the sessions the probe
+     * concluded were bots, the sessions from known datacenter ranges,
+     * and the conversions the campaign credits. Two indexed
+     * aggregates instead of one visitor join: conversions have no
+     * visitor index, and the last-touch credit matches the
+     * attribution semantics the rest of the page already speaks.
+     *
+     * @param int $days  Look-back window in days, clamped 1..365.
+     * @param int $limit Row cap, most sessions first.
+     * @return array<int, array{campaign: string, sessions: int, bots: int, hosting: int, converted: int}>
+     */
+    public function invalid_traffic_by_campaign( int $days, int $limit = 30 ): array {
+        global $wpdb;
+
+        $days  = max( 1, min( $days, 365 ) );
+        $limit = max( 1, min( 500, $limit ) );
+        $since = gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS );
+
+        $sessions_table = Gr_Database::table( 'sessions' );
+        $converts_table = Gr_Database::table( 'conversions' );
+        $touches_table  = Gr_Database::table( 'touchpoints' );
+
+        $sql = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $sessions_table is a DDL-validated identifier from Gr_Database, not user input; the whole statement sits on this one string line on purpose, within the ignore's reach.
+            "SELECT s.utm_campaign AS campaign, COUNT(*) AS sessions, SUM(s.is_bot) AS bots, SUM(s.ip_quality = %s) AS hosting FROM {$sessions_table} s WHERE s.started_at >= %s GROUP BY s.utm_campaign ORDER BY sessions DESC, s.utm_campaign DESC LIMIT %d",
+            array(
+                Gr_Ip_Quality::CATEGORY_HOSTING,
+                $since,
+                $limit,
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report aggregate over the started index, never a front-end request.
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+        $rows = is_array( $rows ) ? $rows : array();
+
+        $converted = array();
+        $conv_sql  = $wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $converts_table and $touches_table are DDL-validated identifiers from Gr_Database, not user input; the whole statement sits on this one string line on purpose, within the ignore's reach.
+            "SELECT t.utm_campaign AS campaign, COUNT(DISTINCT c.id) AS converted FROM {$converts_table} c JOIN {$touches_table} t ON t.id = c.last_touch_id WHERE c.status = 'active' AND c.created_at >= %s AND t.utm_campaign <> '' GROUP BY t.utm_campaign",
+            $since
+        );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- prepared above; admin report aggregate over the created index and the touchpoint primary key.
+        $conv_rows = $wpdb->get_results( $conv_sql, ARRAY_A );
+        foreach ( is_array( $conv_rows ) ? $conv_rows : array() as $conv ) {
+            $converted[ (string) ( $conv['campaign'] ?? '' ) ] = (int) ( $conv['converted'] ?? 0 );
+        }
+
+        $out = array();
+        foreach ( $rows as $row ) {
+            $campaign = (string) ( $row['campaign'] ?? '' );
+            $out[]    = array(
+                'campaign'  => $campaign,
+                'sessions'  => (int) ( $row['sessions'] ?? 0 ),
+                'bots'      => (int) ( $row['bots'] ?? 0 ),
+                'hosting'   => (int) ( $row['hosting'] ?? 0 ),
+                'converted' => isset( $converted[ $campaign ] ) ? $converted[ $campaign ] : 0,
+            );
+        }
+
+        return $out;
+    }
+
+    /**
      * Traffic-quality verdict for one visitor: the bot conclusion of
      * their most recent session, or null when the visitor has no
      * sessions at all (no evidence either way — admin-created orders
@@ -554,6 +622,7 @@ final class Gr_Session_Repository {
             'device_type'   => 'desktop',
             'ua_family'     => '',
             'country_code'  => '',
+            'ip_quality'    => '',
             'is_bot'        => 0,
             'bot_score'     => 0,
         );

@@ -1,8 +1,9 @@
 <?php
 /**
- * Campaigns page (docs/13 U8, docs/06 §1 tree): four read-only tabs
+ * Campaigns page (docs/13 U8, docs/06 §1 tree): five read-only tabs
  * over the attribution tables — campaign volume, the UTM tuple
- * breakdown, click-id carriers, and the five-model comparison. The
+ * breakdown, click-id carriers, the five-model comparison, and the
+ * campaign quality (invalid-traffic) report. The
  * comparison reads the split recorded with each conversion binding
  * (the permanent snapshot), so credit never shifts when later
  * touches arrive; and every number on the page is computed from
@@ -20,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GreenPNG\Storage\Gr_Conversion_Repository;
+use GreenPNG\Storage\Gr_Session_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 
 /**
@@ -42,6 +44,9 @@ final class Gr_Campaigns_Page {
     /** Attribution comparison tab key. */
     public const TAB_MODELS = 'models';
 
+    /** Invalid-traffic tab key. */
+    public const TAB_INVALID = 'invalid';
+
     /**
      * Read window: the cookie window the attribution chain itself
      * uses, so the reports and the models speak about the same past.
@@ -49,6 +54,15 @@ final class Gr_Campaigns_Page {
      * @var int
      */
     private const WINDOW_DAYS = 30;
+
+    /**
+     * Invalid-traffic read window: longer than the cookie window on
+     * purpose — quality patterns in a campaign show up over months,
+     * not weeks (docs/16 §3 收口).
+     *
+     * @var int
+     */
+    private const INVALID_WINDOW_DAYS = 90;
 
     /**
      * Model column order, matching the calculate() vocabulary.
@@ -77,6 +91,7 @@ final class Gr_Campaigns_Page {
                     self::TAB_UTM       => __( 'UTM parameters', 'greenpng' ),
                     self::TAB_CLICKIDS  => __( 'Click IDs', 'greenpng' ),
                     self::TAB_MODELS    => __( 'Attribution models', 'greenpng' ),
+                    self::TAB_INVALID   => __( 'Invalid traffic', 'greenpng' ),
                 );
                 foreach ( $tabs as $key => $label ) :
                     $class = ( $key === $tab ) ? ' nav-tab-active' : '';
@@ -94,6 +109,8 @@ final class Gr_Campaigns_Page {
                 <?php self::render_clickids(); ?>
             <?php elseif ( self::TAB_MODELS === $tab ) : ?>
                 <?php self::render_models(); ?>
+            <?php elseif ( self::TAB_INVALID === $tab ) : ?>
+                <?php self::render_invalid(); ?>
             <?php else : ?>
                 <?php self::render_campaigns(); ?>
             <?php endif; ?>
@@ -415,6 +432,83 @@ final class Gr_Campaigns_Page {
         $decoded = json_decode( $json, true );
 
         return is_array( $decoded ) ? $decoded : array();
+    }
+
+    /**
+     * Invalid traffic per campaign (ADR-0011 D6): session volume, the
+     * probe's bot conclusions, the known-datacenter share, and the
+     * conversions the campaign credits — quality ratios as session
+     * shares, every number from recorded rows. The hosting column is
+     * a signal, never a verdict: nothing on this page feeds
+     * enforcement, and the bot column reads the probe's sticky
+     * conclusion, not the hosting label.
+     *
+     * @return void
+     */
+    private static function render_invalid(): void {
+        $rows = ( new Gr_Session_Repository() )->invalid_traffic_by_campaign( self::INVALID_WINDOW_DAYS, 30 );
+        ?>
+        <h2>
+        <?php
+        echo esc_html(
+            sprintf(
+                /* translators: %d: number of days. */
+                __( 'Campaign quality in the last %d days', 'greenpng' ),
+                self::INVALID_WINDOW_DAYS
+            )
+        );
+        ?>
+        </h2>
+        <p><?php echo esc_html__( 'Sessions are grouped by the campaign they entered with; entries without UTM parameters form their own row. Bot = the probe\'s recorded conclusion; hosting = the session\'s address sits in a known cloud-provider range — a reporting signal only, never an automatic verdict. Conversions are credited by last touch.', 'greenpng' ); ?></p>
+        <?php if ( array() === $rows ) : ?>
+            <p><?php echo esc_html__( 'No visitor sessions recorded yet.', 'greenpng' ); ?></p>
+        <?php else : ?>
+            <table class="widefat striped">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo esc_html__( 'Campaign', 'greenpng' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( 'Sessions', 'greenpng' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( 'Suspected bot', 'greenpng' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( 'Hosting range', 'greenpng' ); ?></th>
+                        <th scope="col"><?php echo esc_html__( 'Conversions', 'greenpng' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $rows as $row ) : ?>
+                        <?php
+                        // The repository return shape carries every
+                        // key, so the renderer reads it as-is.
+                        $campaign = $row['campaign'];
+                        $sessions = $row['sessions'];
+                        ?>
+                        <tr>
+                            <td><?php echo esc_html( '' === $campaign ? __( '(no campaign)', 'greenpng' ) : $campaign ); ?></td>
+                            <td><?php echo esc_html( (string) $sessions ); ?></td>
+                            <td><?php echo esc_html( self::share_cell( $row['bots'], $sessions ) ); ?></td>
+                            <td><?php echo esc_html( self::share_cell( $row['hosting'], $sessions ) ); ?></td>
+                            <td><?php echo esc_html( (string) $row['converted'] ); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php
+        endif;
+    }
+
+    /**
+     * Count with its share of the campaign's sessions; a zero share
+     * is a computed zero, stated as such.
+     *
+     * @param int $count    Partial count.
+     * @param int $sessions Campaign session total.
+     * @return string
+     */
+    private static function share_cell( int $count, int $sessions ): string {
+        if ( $sessions > 0 ) {
+            return sprintf( '%d (%.1f%%)', $count, $count / $sessions * 100.0 );
+        }
+
+        return (string) $count;
     }
 
     /**

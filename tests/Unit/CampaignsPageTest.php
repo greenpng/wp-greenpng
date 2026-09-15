@@ -344,4 +344,53 @@ final class CampaignsPageTest extends TestCase {
         }
         $this->assertContains( 'greenpng-dashboard:greenpng-campaigns', $slugs );
     }
+
+    public function testInvalidTabRendersSharesNotVerdicts(): void {
+        $GLOBALS['wpdb']->results = static function ( string $sql ): array {
+            if ( false !== strpos( $sql, 'SUM(s.is_bot)' ) ) {
+                return array(
+                    array(
+                        'campaign' => 'spring',
+                        'sessions' => '9',
+                        'bots'     => '3',
+                        'hosting'  => '2',
+                    ),
+                );
+            }
+
+            if ( false !== strpos( $sql, 'touchpoints' ) ) {
+                return array( array( 'campaign' => 'spring', 'converted' => '1' ) );
+            }
+
+            return array();
+        };
+
+        $html = $this->render_tab( Gr_Campaigns_Page::TAB_INVALID );
+
+        // The fifth tab is in the nav, the window is honest, and the
+        // disclosure says signal, not verdict.
+        $this->assertStringContainsString( 'tab=invalid', $html );
+        $this->assertStringContainsString( 'Campaign quality in the last 90 days', $html );
+        $this->assertStringContainsString( 'never an automatic verdict', $html );
+
+        // Shares, not raw counts: bots and hosting each render with
+        // their percentage of the campaign's sessions, and the
+        // last-touch conversion merge lands in its own column.
+        $this->assertStringContainsString( 'spring', $html );
+        $this->assertStringContainsString( '3 (33.3%)', $html );
+        $this->assertStringContainsString( '2 (22.2%)', $html );
+        $this->assertStringContainsString( 'Suspected bot', $html );
+        $this->assertStringContainsString( 'Hosting range', $html );
+    }
+
+    public function testInvalidTabEmptyStateNamesWhatIsMissing(): void {
+        $GLOBALS['wpdb']->results = static function (): array {
+            return array();
+        };
+
+        $html = $this->render_tab( Gr_Campaigns_Page::TAB_INVALID );
+
+        $this->assertStringContainsString( 'No visitor sessions recorded yet', $html );
+        $this->assertStringNotContainsString( 'widefat', $html );
+    }
 }

@@ -273,6 +273,7 @@ final class Gr_Plugin {
         Gr_Queue::boot();
         Gr_Daily_Aggregator::register();
         Gr_Geoip_Refresh::register();
+        Gr_Dch_Refresh::register();
         Gr_Meta_Capi::register();
         Gr_Ga4_Mp::register();
 

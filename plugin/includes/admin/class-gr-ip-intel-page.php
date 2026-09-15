@@ -19,8 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Core\Gr_Dch_Refresh;
 use GreenPNG\Core\Gr_Geoip;
 use GreenPNG\Core\Gr_Geoip_Refresh;
+use GreenPNG\Core\Gr_Ip_Quality;
 use GreenPNG\Storage\Gr_Audit_Repository;
 
 /**
@@ -40,6 +42,15 @@ final class Gr_Ip_Intel_Page {
     /** POST action: queue the data refresh. */
     public const ACTION_UPDATE = 'update';
 
+    /** Nonce action for the datacenter-range button. */
+    public const NONCE_ACTION_DCH = 'gr-ipintel-dch-update';
+
+    /** Nonce field name for the datacenter-range button. */
+    public const NONCE_FIELD_DCH = '_gr_ipintel_dch_nonce';
+
+    /** POST action: queue the datacenter-range refresh. */
+    public const ACTION_DCH = 'dch_update';
+
     /**
      * Registers the write arm; the menu entry lives in Gr_Admin_Menu.
      *
@@ -50,15 +61,20 @@ final class Gr_Ip_Intel_Page {
     }
 
     /**
-     * The gated update arm: capability and nonce both required, then
-     * one queue dispatch — the wire call itself happens inside the
-     * job, never in this request.
+     * The gated update arms: capability and nonce both required, then
+     * one queue dispatch each — the wire call itself happens inside
+     * the job, never in this request.
      *
      * @return void
      */
     public static function handle_actions(): void {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading which action was posted, before the capability and nonce gates that follow immediately.
-        if ( ! isset( $_POST['gr_ipintel_action'] ) || self::ACTION_UPDATE !== sanitize_key( wp_unslash( $_POST['gr_ipintel_action'] ) ) ) {
+        if ( ! isset( $_POST['gr_ipintel_action'] ) ) {
+            return;
+        }
+
+        $action = sanitize_key( wp_unslash( $_POST['gr_ipintel_action'] ) );
+        if ( self::ACTION_UPDATE !== $action && self::ACTION_DCH !== $action ) {
             return;
         }
 
@@ -66,14 +82,18 @@ final class Gr_Ip_Intel_Page {
             return;
         }
 
-        if ( ! check_admin_referer( self::NONCE_ACTION, self::NONCE_FIELD ) ) {
+        $nonce_ok = self::ACTION_UPDATE === $action
+            ? check_admin_referer( self::NONCE_ACTION, self::NONCE_FIELD )
+            : check_admin_referer( self::NONCE_ACTION_DCH, self::NONCE_FIELD_DCH );
+
+        if ( ! $nonce_ok ) {
             // Core's real check_admin_referer terminates here; the
             // stub records the verdict and returns, so nothing below
             // may run in either world.
             return;
         }
 
-        $queued = Gr_Geoip_Refresh::enqueue();
+        $queued = self::ACTION_UPDATE === $action ? Gr_Geoip_Refresh::enqueue() : Gr_Dch_Refresh::enqueue();
 
         // The click itself is the authorization for the outbound, so
         // it lands in the audit trail with the acting user; the diff
@@ -82,8 +102,8 @@ final class Gr_Ip_Intel_Page {
         $audit = new Gr_Audit_Repository();
         $audit->log(
             'update_requested',
-            'geoip_data',
-            'dbip_country',
+            self::ACTION_UPDATE === $action ? 'geoip_data' : 'ip_quality_data',
+            self::ACTION_UPDATE === $action ? 'dbip_country' : 'cloud_segments',
             array( 'queued' => 'no' ),
             array( 'queued' => $queued ? 'yes' : 'already_pending' ),
             get_current_user_id()
@@ -109,6 +129,10 @@ final class Gr_Ip_Intel_Page {
     public static function render(): void {
         $state   = Gr_Geoip::state();
         $pending = false !== get_transient( Gr_Geoip_Refresh::PENDING );
+
+        $dch         = Gr_Ip_Quality::describe();
+        $dch_source  = Gr_Ip_Quality::source();
+        $dch_pending = false !== get_transient( Gr_Dch_Refresh::PENDING );
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- the value is a display hint produced by this page's own PRG, never an action input.
         $result = isset( $_GET['gr_update'] ) ? sanitize_key( wp_unslash( $_GET['gr_update'] ) ) : '';
         ?>
@@ -174,6 +198,47 @@ final class Gr_Ip_Intel_Page {
                     <button type="submit" class="button button-primary" name="gr_ipintel_action" value="<?php echo esc_attr( self::ACTION_UPDATE ); ?>">
                         <?php echo esc_html__( 'Update country data now', 'greenpng' ); ?>
                     </button>
+                </form>
+            <?php endif; ?>
+
+            <h2><?php echo esc_html__( 'Datacenter ranges', 'greenpng' ); ?></h2>
+            <p><?php echo esc_html__( 'Sessions from known cloud-provider ranges are labelled "hosting" on the traffic reports. The label is a reporting signal only: a hosting address can be a corporate proxy, a compliant crawler, or a real person, so it never marks a session as a bot on its own.', 'greenpng' ); ?></p>
+
+            <?php if ( '' === $dch['built'] ) : ?>
+                <p><?php echo esc_html__( 'No local dataset found. Reinstalling the plugin restores the bundled copy.', 'greenpng' ); ?></p>
+            <?php else : ?>
+                <table class="widefat striped" style="max-width:520px;">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'Data origin', 'greenpng' ); ?></th>
+                            <td><?php echo esc_html( 'override' === $dch_source ? __( 'Owner-refreshed copy (uploads)', 'greenpng' ) : __( 'Bundled with the plugin', 'greenpng' ) ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'Data date', 'greenpng' ); ?></th>
+                            <td><?php echo esc_html( $dch['built'] ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'IPv4 ranges', 'greenpng' ); ?></th>
+                            <td><?php echo esc_html( number_format( (float) $dch['v4'] ) ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'IPv6 ranges', 'greenpng' ); ?></th>
+                            <td><?php echo esc_html( number_format( (float) $dch['v6'] ) ); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <p><?php echo esc_html__( 'The bundled list comes from the official AWS, Azure, and Google service segment tables plus IP2Proxy LITE DCH rows (CC BY-SA 4.0; register at lite.ip2location.com to fetch updated copies). The full attribution ships in the plugin\'s NOTICE file.', 'greenpng' ); ?></p>
+
+            <?php if ( $dch_pending ) : ?>
+                <p><?php echo esc_html__( 'A datacenter-range refresh is already queued; the button returns when it finishes.', 'greenpng' ); ?></p>
+            <?php else : ?>
+                <form method="post">
+                    <?php wp_nonce_field( self::NONCE_ACTION_DCH, self::NONCE_FIELD_DCH ); ?>
+                    <p><?php echo esc_html__( 'Clicking downloads the current official AWS, Azure, and Google segment tables on your explicit instruction; the merged copy lands in the uploads directory and a failed refresh keeps the current data. There is no automatic or scheduled update.', 'greenpng' ); ?></p>
+                    <button type="submit" class="button button-primary" name="gr_ipintel_action" value="<?php echo esc_attr( self::ACTION_DCH ); ?>">
+                        <?php echo esc_html__( 'Update datacenter ranges now', 'greenpng' ); ?></button>
                 </form>
             <?php endif; ?>
 

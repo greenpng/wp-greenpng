@@ -61,6 +61,7 @@ final class Gr_Sessions_Table extends \WP_List_Table {
             'landing_path' => __( 'Landing', 'greenpng' ),
             'device_type'  => __( 'Device', 'greenpng' ),
             'pageviews'    => __( 'Views', 'greenpng' ),
+            'ip_quality'   => __( 'Hosting', 'greenpng' ),
             'is_bot'       => __( 'Suspected bot', 'greenpng' ),
         );
     }
@@ -131,6 +132,15 @@ final class Gr_Sessions_Table extends \WP_List_Table {
     protected function column_default( $item, $column ) {
         if ( 'is_bot' === $column ) {
             echo esc_html( ! empty( $item['is_bot'] ) ? __( 'Yes', 'greenpng' ) : __( 'No', 'greenpng' ) );
+
+            return;
+        }
+
+        if ( 'ip_quality' === $column ) {
+            // The category word reads as a plain marker; the empty
+            // state is an honest "not known to be hosting", not a
+            // claim the address is residential.
+            echo esc_html( 'hosting' === (string) ( $item['ip_quality'] ?? '' ) ? __( 'Yes', 'greenpng' ) : __( 'No', 'greenpng' ) );
 
             return;
         }

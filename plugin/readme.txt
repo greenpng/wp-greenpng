@@ -73,6 +73,7 @@ This plugin performs no outbound requests by default. Each item below is opt-in 
 * **Google Analytics 4 (Measurement Protocol)** — Purpose: forward purchase events to your GA4 property. Sends: event name, event parameters (order value, currency, transaction id), and the client identifier from the visitor's own `_ga` cookie; no event is sent without that cookie. When: on paid orders, after marketing consent. The "Test connection" button in settings sends one validation request to Google's debug endpoint with a placeholder client identifier; the debug endpoint validates without ingesting, and the button is the only thing that ever triggers it. Privacy policy: https://policies.google.com/privacy
 * **Meta Conversions API** — Purpose: server-side conversion tracking. Sends: event name, order value and currency, and the SHA-256-hashed billing email; no raw identifiers, no IP address, no user agent. When: on paid orders, after marketing consent. The thank-you page also exposes the shared event id as `window.GreenPNGPurchaseEventId` so your existing browser pixel can deduplicate. Privacy policy: https://www.facebook.com/privacy/policy
 * **DB-IP Lite geolocation database update** — Purpose: refresh the bundled country-level IP database. Sends: a single HTTP request to db-ip.com, only when you click the update button in settings; no visitor data is sent. Receives: the country-level database file. Terms and attribution: https://db-ip.com/
+* **Cloud-provider datacenter range update** — Purpose: refresh the bundled list of AWS, Azure, and Google service ranges used to label "hosting" sessions in the traffic reports (a reporting signal only, never an automatic bot verdict). Sends: one HTTP request to each of the three providers' official public segment endpoints (ip-ranges.amazonaws.com, www.gstatic.com, and the Microsoft download page that points to the current ServiceTags file), only when you click the update button on the IP Intelligence page; no visitor data is sent. Receives: the official segment tables, merged into a local copy in your uploads directory.
 
 Planned for later versions and not present in 1.0: AbuseIPDB blocklist checks and search-engine spider IP-segment subscriptions. Both will be opt-in, off by default, and disclosed in this section when they land.
 
@@ -92,6 +93,8 @@ Planned for later versions and not present in 1.0: AbuseIPDB blocklist checks an
 This plugin bundles a country-level IP geolocation database from DB-IP (https://db-ip.com/), used under CC BY 4.0. The exact data date is stated in the NOTICE file inside the plugin package.
 
 The scanner user-agent detection rules bundled in assets/data/ are seeded from JayBizzle/Crawler-Detect (https://github.com/JayBizzle/Crawler-Detect), used under the MIT license, and maintained locally from that seed. The NOTICE file inside the plugin package states the license, source, and data date.
+
+The bundled datacenter range list is built from the official AWS, Azure, and Google service segment tables plus IP2Proxy LITE DCH rows (https://lite.ip2location.com/), the latter used under CC BY-SA 4.0; you can register at lite.ip2location.com yourself to fetch updated copies. The NOTICE file inside the plugin package states the sources, licenses, and data date.
 
 == Screenshots ==
 

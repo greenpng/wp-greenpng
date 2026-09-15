@@ -40,6 +40,9 @@ final class Gr_Http_Client {
     /** Service key: the DB-IP data refresh (no credentials, owner-clicked). */
     public const SERVICE_DBIP = 'dbip_update';
 
+    /** Service key: the datacenter-range refresh (no credentials, owner-clicked). */
+    public const SERVICE_DCH_RANGES = 'dch_ranges';
+
     /** Service not enabled with its credentials: nothing leaves the site. */
     public const ERR_NOT_CONFIGURED = 'gr_not_configured';
 
@@ -58,8 +61,16 @@ final class Gr_Http_Client {
     /** One attempt failed; retry_after in the error data is the reschedule delay. */
     public const ERR_FAILED = 'gr_http_failed';
 
-    /** Request ceiling for every service (docs/07 §2). */
+    /** Request ceiling for every API service (docs/07 §2). */
     private const TIMEOUT = 5;
+
+    /**
+     * Bulk-data downloads get their own wire ceiling: the official
+     * cloud segment tables are tens of megabytes, and a 5-second API
+     * budget would turn the owner-clicked refresh into a guaranteed
+     * failure. Same gate discipline, a size that fits the payload.
+     */
+    private const DOWNLOAD_CEILING = 120;
 
     /** Consecutive failures that open the breaker. */
     private const BREAKER_THRESHOLD = 3;
@@ -173,7 +184,8 @@ final class Gr_Http_Client {
             );
         }
 
-        $args['timeout'] = min( self::TIMEOUT, (int) ( $args['timeout'] ?? self::TIMEOUT ) );
+        $ceiling         = self::SERVICE_DBIP === $service || self::SERVICE_DCH_RANGES === $service ? self::DOWNLOAD_CEILING : self::TIMEOUT;
+        $args['timeout'] = min( $ceiling, (int) ( $args['timeout'] ?? $ceiling ) );
 
         if ( 'GET' === $method ) {
             $response = wp_safe_remote_get( $url, $args );
@@ -301,9 +313,9 @@ final class Gr_Http_Client {
      * @return bool
      */
     private static function configured( string $service ): bool {
-        if ( self::SERVICE_DBIP === $service ) {
-            // The data refresh has no credentials; the only gate is the
-            // owner's explicit click, which is the caller's job.
+        if ( self::SERVICE_DBIP === $service || self::SERVICE_DCH_RANGES === $service ) {
+            // The data refreshes have no credentials; the only gate is
+            // the owner's explicit click, which is the caller's job.
             return true;
         }
 

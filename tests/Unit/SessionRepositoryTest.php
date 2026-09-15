@@ -190,6 +190,11 @@ final class SessionRepositoryTest extends TestCase {
         // refuses to show: no IP column exists on the table, and the
         // user-agent family stays out of the list vocabulary.
         self::assertStringNotContainsString( 'ua_family', $page_sql );
+
+        // The hosting label has its own list column, so the read
+        // must carry it — a surface column without its select column
+        // renders a silent "No" for every row.
+        self::assertStringContainsString( 'ip_quality', $page_sql );
     }
 
     public function testPagedBuildsTheDateRangeAndPreparesBothBounds(): void {
@@ -305,5 +310,71 @@ final class SessionRepositoryTest extends TestCase {
         self::assertSame( array(), $split['devices'] );
         self::assertSame( 0, $split['sessions'] );
         self::assertSame( 0, $split['bots'] );
+    }
+
+    public function testTouchCarriesTheIpQualityLandingAttribute(): void {
+        global $wpdb;
+        $wpdb->query_result = 1;
+
+        $repository = new Gr_Session_Repository();
+        $affected   = $repository->touch(
+            'v' . str_repeat( 'a', 31 ),
+            'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+            array(
+                'ip_quality' => 'hosting',
+                'channel'    => 'organic',
+            )
+        );
+
+        self::assertSame( 1, $affected );
+
+        $sql = (string) end( $wpdb->queries );
+        // The landing category rides the INSERT arm only: it is a
+        // first-touch fact, never an update arm on later touches.
+        self::assertStringContainsString( 'ip_quality', $sql );
+        self::assertStringContainsString( "'hosting'", $sql );
+        self::assertStringNotContainsString( 'ip_quality = VALUES', $sql );
+    }
+
+    public function testInvalidTrafficByCampaignAggregatesInTwoIndexedReads(): void {
+        global $wpdb;
+
+        // The closure discriminates the sessions read from the
+        // conversions read so both queries can be stubbed at once.
+        $wpdb->results = function ( $sql ) {
+            if ( str_contains( (string) $sql, 'utm_campaign' ) && str_contains( (string) $sql, 'touchpoints' ) ) {
+                return array( array( 'campaign' => 'spring', 'converted' => '1' ) );
+            }
+
+            return array(
+                array( 'campaign' => 'spring', 'sessions' => '9', 'bots' => '3', 'hosting' => '2' ),
+                array( 'campaign' => 'summer', 'sessions' => '5', 'bots' => '0', 'hosting' => '1' ),
+            );
+        };
+
+        $rows = ( new Gr_Session_Repository() )->invalid_traffic_by_campaign( 90, 25 );
+
+        self::assertSame( 'spring', $rows[0]['campaign'] );
+        self::assertSame( 9, $rows[0]['sessions'] );
+        self::assertSame( 3, $rows[0]['bots'] );
+        self::assertSame( 2, $rows[0]['hosting'] );
+        // The conversion merge credits spring with one order.
+        self::assertSame( 1, $rows[0]['converted'] );
+        self::assertSame( 0, $rows[1]['converted'] );
+
+        // The stub logs the prepared SQL and the executed read, so
+        // the first entry is the sessions aggregate and the last is
+        // the conversions join.
+        $sql = array_map( 'strval', $wpdb->queries );
+        $first = (string) reset( $sql );
+        $last  = (string) end( $sql );
+        self::assertStringContainsString( 'GROUP BY s.utm_campaign', $first );
+        self::assertStringContainsString( 'SUM(s.is_bot)', $first );
+        self::assertStringContainsString( "ip_quality = 'hosting'", $first );
+        self::assertStringContainsString( 'ORDER BY sessions DESC', $first );
+        self::assertStringContainsString( 'LIMIT 25', $first );
+        self::assertStringContainsString( 'JOIN', $last );
+        self::assertStringContainsString( 'touchpoints', $last );
+        self::assertStringContainsString( 'last_touch_id', $last );
     }
 }

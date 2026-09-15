@@ -116,7 +116,9 @@ final class HttpClientTest extends TestCase {
         $this->assertSame( array( 'code' => 200, 'body' => 'csv' ), $result );
         $call = $GLOBALS['gr_stub_http_calls'][0];
         $this->assertSame( 'GET', $call['method'] );
-        $this->assertSame( 5, $call['args']['timeout'] );
+        // Bulk-data downloads ride their own wire ceiling, not the
+        // 5-second API budget (docs/07 §2).
+        $this->assertSame( 120, $call['args']['timeout'] );
         $this->assertArrayNotHasKey( 'body', $call['args'] );
     }
 

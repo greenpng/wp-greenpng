@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-15T08:36:09+00:00\n"
+"POT-Creation-Date: 2026-09-15T10:56:39+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -99,14 +99,16 @@ msgid "Added"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-table.php:90
-#: includes/admin/class-gr-sessions-table.php:133
+#: includes/admin/class-gr-sessions-table.php:134
+#: includes/admin/class-gr-sessions-table.php:143
 #: includes/admin/class-gr-status-page.php:137
 #: includes/admin/class-gr-traffic-page.php:284
 msgid "Yes"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-table.php:90
-#: includes/admin/class-gr-sessions-table.php:133
+#: includes/admin/class-gr-sessions-table.php:134
+#: includes/admin/class-gr-sessions-table.php:143
 #: includes/admin/class-gr-status-page.php:137
 #: includes/admin/class-gr-traffic-page.php:284
 msgid "No"
@@ -152,8 +154,8 @@ msgstr ""
 
 #: includes/admin/class-gr-admin-menu.php:140
 #: includes/admin/class-gr-admin-menu.php:141
-#: includes/admin/class-gr-campaigns-page.php:70
-#: includes/admin/class-gr-campaigns-page.php:76
+#: includes/admin/class-gr-campaigns-page.php:84
+#: includes/admin/class-gr-campaigns-page.php:90
 msgid "Campaigns"
 msgstr ""
 
@@ -203,7 +205,7 @@ msgstr ""
 
 #: includes/admin/class-gr-admin-menu.php:230
 #: includes/admin/class-gr-admin-menu.php:231
-#: includes/admin/class-gr-ip-intel-page.php:116
+#: includes/admin/class-gr-ip-intel-page.php:140
 msgid "IP Intelligence"
 msgstr ""
 
@@ -538,8 +540,8 @@ msgstr ""
 
 #: includes/admin/class-gr-bot-signals-page.php:94
 #: includes/admin/class-gr-bot-signals-page.php:120
-#: includes/admin/class-gr-campaigns-page.php:136
-#: includes/admin/class-gr-campaigns-page.php:241
+#: includes/admin/class-gr-campaigns-page.php:153
+#: includes/admin/class-gr-campaigns-page.php:258
 #: includes/admin/class-gr-contact-profile-page.php:276
 #: includes/admin/class-gr-contacts-table.php:61
 #: includes/admin/class-gr-login-protection-page.php:205
@@ -590,6 +592,7 @@ msgid "Score band"
 msgstr ""
 
 #: includes/admin/class-gr-bot-signals-page.php:157
+#: includes/admin/class-gr-campaigns-page.php:470
 #: includes/admin/class-gr-contact-profile-page.php:378
 #: includes/admin/class-gr-dashboard-page.php:107
 #: includes/admin/class-gr-dashboard-page.php:135
@@ -613,155 +616,199 @@ msgstr ""
 msgid "%s%%"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:77
+#: includes/admin/class-gr-campaigns-page.php:91
 msgid "UTM parameters"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:78
+#: includes/admin/class-gr-campaigns-page.php:92
 msgid "Click IDs"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:79
+#: includes/admin/class-gr-campaigns-page.php:93
 msgid "Attribution models"
 msgstr ""
 
+#: includes/admin/class-gr-campaigns-page.php:94
+msgid "Invalid traffic"
+msgstr ""
+
 #. translators: %d: number of days.
-#: includes/admin/class-gr-campaigns-page.php:117
+#: includes/admin/class-gr-campaigns-page.php:134
 #, php-format
 msgid "Campaign entries in the last %d days"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:124
+#: includes/admin/class-gr-campaigns-page.php:141
 msgid "No campaign entries recorded yet. A row appears when a visit lands with a utm_campaign parameter."
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:129
-#: includes/admin/class-gr-campaigns-page.php:187
-#: includes/admin/class-gr-campaigns-page.php:353
+#: includes/admin/class-gr-campaigns-page.php:146
+#: includes/admin/class-gr-campaigns-page.php:204
+#: includes/admin/class-gr-campaigns-page.php:370
+#: includes/admin/class-gr-campaigns-page.php:469
 msgid "Campaign"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:130
-#: includes/admin/class-gr-campaigns-page.php:238
+#: includes/admin/class-gr-campaigns-page.php:147
+#: includes/admin/class-gr-campaigns-page.php:255
 #: includes/admin/class-gr-sessions-table.php:60
 msgid "Channel"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:131
-#: includes/admin/class-gr-campaigns-page.php:185
+#: includes/admin/class-gr-campaigns-page.php:148
+#: includes/admin/class-gr-campaigns-page.php:202
 #: includes/admin/class-gr-contact-profile-page.php:346
 #: includes/admin/class-gr-funnels-page.php:1176
 msgid "Source"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:132
-#: includes/admin/class-gr-campaigns-page.php:186
+#: includes/admin/class-gr-campaigns-page.php:149
+#: includes/admin/class-gr-campaigns-page.php:203
 msgid "Medium"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:133
-#: includes/admin/class-gr-campaigns-page.php:190
-#: includes/admin/class-gr-campaigns-page.php:239
+#: includes/admin/class-gr-campaigns-page.php:150
+#: includes/admin/class-gr-campaigns-page.php:207
+#: includes/admin/class-gr-campaigns-page.php:256
 msgid "Entries"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:134
-#: includes/admin/class-gr-campaigns-page.php:191
-#: includes/admin/class-gr-campaigns-page.php:240
+#: includes/admin/class-gr-campaigns-page.php:151
+#: includes/admin/class-gr-campaigns-page.php:208
+#: includes/admin/class-gr-campaigns-page.php:257
 #: includes/admin/class-gr-dashboard-page.php:136
 #: includes/rest/class-gr-dashboard-controller.php:77
 msgid "Visitors"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:135
+#: includes/admin/class-gr-campaigns-page.php:152
 #: includes/admin/class-gr-contact-profile-page.php:272
 #: includes/privacy/class-gr-privacy-api.php:334
 msgid "First seen"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:154
+#: includes/admin/class-gr-campaigns-page.php:171
 msgid "Entries are campaign landings, not pageviews; a visitor counted once per campaign row."
 msgstr ""
 
 #. translators: %d: number of days.
-#: includes/admin/class-gr-campaigns-page.php:173
+#: includes/admin/class-gr-campaigns-page.php:190
 #, php-format
 msgid "UTM parameter combinations in the last %d days"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:180
+#: includes/admin/class-gr-campaigns-page.php:197
 msgid "No UTM parameters recorded yet."
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:188
+#: includes/admin/class-gr-campaigns-page.php:205
 msgid "Term"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:189
+#: includes/admin/class-gr-campaigns-page.php:206
 msgid "Content"
 msgstr ""
 
 #. translators: %d: number of days.
-#: includes/admin/class-gr-campaigns-page.php:225
+#: includes/admin/class-gr-campaigns-page.php:242
 #, php-format
 msgid "Click IDs in the last %d days"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:232
+#: includes/admin/class-gr-campaigns-page.php:249
 msgid "No click IDs recorded yet. A row appears when a visit lands with gclid, fbclid, or another click parameter."
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:237
+#: includes/admin/class-gr-campaigns-page.php:254
 msgid "Click ID"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:274
+#: includes/admin/class-gr-campaigns-page.php:291
 msgid "Model comparison over recorded conversions"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:276
+#: includes/admin/class-gr-campaigns-page.php:293
 msgid "No conversions recorded yet. The comparison fills from real orders and form conversions as they arrive."
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:354
+#: includes/admin/class-gr-campaigns-page.php:371
 msgid "Currency"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:374
+#: includes/admin/class-gr-campaigns-page.php:391
 msgid "Each cell is the credit the model gave that campaign across recorded conversions; every model column sums to the same total conversion amount."
 msgstr ""
 
 #. translators: %s: number of conversions.
-#: includes/admin/class-gr-campaigns-page.php:380
+#: includes/admin/class-gr-campaigns-page.php:397
 #, php-format
 msgid "%s conversion(s) arrived without campaign touchpoints and carry no model credit."
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:396
+#: includes/admin/class-gr-campaigns-page.php:413
 msgid "First touch"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:397
+#: includes/admin/class-gr-campaigns-page.php:414
 msgid "Last touch"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:398
+#: includes/admin/class-gr-campaigns-page.php:415
 msgid "Linear"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:399
+#: includes/admin/class-gr-campaigns-page.php:416
 msgid "Position-based"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:400
+#: includes/admin/class-gr-campaigns-page.php:417
 msgid "Time-decay"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:433
+#. translators: %d: number of days.
+#: includes/admin/class-gr-campaigns-page.php:456
+#, php-format
+msgid "Campaign quality in the last %d days"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:462
+msgid "Sessions are grouped by the campaign they entered with; entries without UTM parameters form their own row. Bot = the probe's recorded conclusion; hosting = the session's address sits in a known cloud-provider range — a reporting signal only, never an automatic verdict. Conversions are credited by last touch."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:464
+#: includes/admin/class-gr-sessions-table.php:157
+msgid "No visitor sessions recorded yet."
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:471
+#: includes/admin/class-gr-sessions-table.php:65
+#: includes/admin/class-gr-traffic-page.php:270
+#: includes/crm/class-gr-scoring-engine.php:136
+msgid "Suspected bot"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:472
+msgid "Hosting range"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:473
+#: includes/admin/class-gr-contact-profile-page.php:341
+#: includes/admin/class-gr-dashboard-page.php:138
+#: includes/admin/class-gr-funnels-page.php:745
+#: includes/admin/class-gr-funnels-page.php:1177
+#: includes/rest/class-gr-dashboard-controller.php:79
+msgid "Conversions"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:485
+msgid "(no campaign)"
+msgstr ""
+
+#: includes/admin/class-gr-campaigns-page.php:527
 msgid "(deleted touchpoint)"
 msgstr ""
 
-#: includes/admin/class-gr-campaigns-page.php:437
+#: includes/admin/class-gr-campaigns-page.php:531
 msgid "(no campaign name)"
 msgstr ""
 
@@ -880,14 +927,6 @@ msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:318
 msgid "No events recorded for this visitor."
-msgstr ""
-
-#: includes/admin/class-gr-contact-profile-page.php:341
-#: includes/admin/class-gr-dashboard-page.php:138
-#: includes/admin/class-gr-funnels-page.php:745
-#: includes/admin/class-gr-funnels-page.php:1177
-#: includes/rest/class-gr-dashboard-controller.php:79
-msgid "Conversions"
 msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:347
@@ -1084,8 +1123,8 @@ msgid "No country data yet."
 msgstr ""
 
 #: includes/admin/class-gr-dashboard-page.php:201
-#: includes/admin/class-gr-sessions-table.php:99
-#: includes/admin/class-gr-sessions-table.php:160
+#: includes/admin/class-gr-sessions-table.php:100
+#: includes/admin/class-gr-sessions-table.php:170
 msgid "Unknown"
 msgstr ""
 
@@ -1480,96 +1519,130 @@ msgstr ""
 msgid "Completed journeys"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:119
+#: includes/admin/class-gr-ip-intel-page.php:143
 msgid "Data refresh queued. The version below updates once the download completes."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:121
+#: includes/admin/class-gr-ip-intel-page.php:145
 msgid "A data refresh is already queued."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:124
+#: includes/admin/class-gr-ip-intel-page.php:148
 msgid "Country database (DB-IP)"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:125
+#: includes/admin/class-gr-ip-intel-page.php:149
 msgid "Country-level lookups run entirely on this site against the bundled DB-IP Lite database; no lookup ever leaves the server."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:128
+#: includes/admin/class-gr-ip-intel-page.php:152
 msgid "No local database found. Reinstalling the plugin restores the bundled copy."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:133
+#: includes/admin/class-gr-ip-intel-page.php:157
+#: includes/admin/class-gr-ip-intel-page.php:213
 msgid "Data origin"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:134
+#: includes/admin/class-gr-ip-intel-page.php:158
+#: includes/admin/class-gr-ip-intel-page.php:214
 msgid "Owner-refreshed copy (uploads)"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:134
+#: includes/admin/class-gr-ip-intel-page.php:158
+#: includes/admin/class-gr-ip-intel-page.php:214
 msgid "Bundled with the plugin"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:137
+#: includes/admin/class-gr-ip-intel-page.php:161
+#: includes/admin/class-gr-ip-intel-page.php:217
 msgid "Data date"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:141
+#: includes/admin/class-gr-ip-intel-page.php:165
+#: includes/admin/class-gr-ip-intel-page.php:221
 msgid "IPv4 ranges"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:145
+#: includes/admin/class-gr-ip-intel-page.php:169
+#: includes/admin/class-gr-ip-intel-page.php:225
 msgid "IPv6 ranges"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:149
+#: includes/admin/class-gr-ip-intel-page.php:173
 msgid "Countries"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:153
+#: includes/admin/class-gr-ip-intel-page.php:177
 msgid "Generated"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:160
+#: includes/admin/class-gr-ip-intel-page.php:184
 #: includes/admin/class-gr-settings-page.php:344
 msgid "Attribution"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:162
+#: includes/admin/class-gr-ip-intel-page.php:186
 msgid "Country data by DB-IP, licensed under CC BY 4.0. The full attribution and data date ship in the plugin's NOTICE file."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:163
+#: includes/admin/class-gr-ip-intel-page.php:187
 msgid "View the license terms"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:165
+#: includes/admin/class-gr-ip-intel-page.php:189
 msgid "A refresh downloads from db-ip.com into the uploads directory; it never modifies the plugin directory, and a failed refresh keeps the current data."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:167
+#: includes/admin/class-gr-ip-intel-page.php:191
 msgid "Update now"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:169
+#: includes/admin/class-gr-ip-intel-page.php:193
 msgid "A refresh is already queued; the button returns when it finishes."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:173
+#: includes/admin/class-gr-ip-intel-page.php:197
 msgid "Clicking sends one download request to db-ip.com on your explicit instruction. There is no automatic or scheduled update."
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:175
+#: includes/admin/class-gr-ip-intel-page.php:199
 msgid "Update country data now"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:180
+#: includes/admin/class-gr-ip-intel-page.php:204
+msgid "Datacenter ranges"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:205
+msgid "Sessions from known cloud-provider ranges are labelled \"hosting\" on the traffic reports. The label is a reporting signal only: a hosting address can be a corporate proxy, a compliant crawler, or a real person, so it never marks a session as a bot on its own."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:208
+msgid "No local dataset found. Reinstalling the plugin restores the bundled copy."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:232
+msgid "The bundled list comes from the official AWS, Azure, and Google service segment tables plus IP2Proxy LITE DCH rows (CC BY-SA 4.0; register at lite.ip2location.com to fetch updated copies). The full attribution ships in the plugin's NOTICE file."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:235
+msgid "A datacenter-range refresh is already queued; the button returns when it finishes."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:239
+msgid "Clicking downloads the current official AWS, Azure, and Google segment tables on your explicit instruction; the merged copy lands in the uploads directory and a failed refresh keeps the current data. There is no automatic or scheduled update."
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:241
+msgid "Update datacenter ranges now"
+msgstr ""
+
+#: includes/admin/class-gr-ip-intel-page.php:245
 msgid "AbuseIPDB (threat intelligence)"
 msgstr ""
 
-#: includes/admin/class-gr-ip-intel-page.php:181
+#: includes/admin/class-gr-ip-intel-page.php:246
 msgid "AbuseIPDB reputation checks ship with v1.2, default off, and only with your own API key."
 msgstr ""
 
@@ -1718,17 +1791,11 @@ msgid "Views"
 msgstr ""
 
 #: includes/admin/class-gr-sessions-table.php:64
-#: includes/admin/class-gr-traffic-page.php:270
-#: includes/crm/class-gr-scoring-engine.php:136
-msgid "Suspected bot"
-msgstr ""
-
-#: includes/admin/class-gr-sessions-table.php:147
-msgid "No visitor sessions recorded yet."
+msgid "Hosting"
 msgstr ""
 
 #. translators: %s: human-readable time difference, e.g. "5 mins".
-#: includes/admin/class-gr-sessions-table.php:174
+#: includes/admin/class-gr-sessions-table.php:184
 #, php-format
 msgid "%s ago"
 msgstr ""

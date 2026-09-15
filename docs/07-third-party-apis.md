@@ -36,7 +36,9 @@
 
 ```php
 GreenPNG\Core\Http_Client::post('meta_capi', $endpoint, $payload);
-// 每个服务有独立配置：timeout≤5s、熔断（连续 3 次失败断开 300s）、
+// 每个服务有独立配置：timeout≤5s（API 类；两个站长显式点击的批量数据下载服务
+// ——dbip_update/dch_ranges——为 120s 线预算，官方段表数以 MB 计）、
+// 熔断（连续 3 次失败断开 300s）、
 // 429 读 Retry-After、失败退避重试（30s/2m/15m，3 次后放弃并记审计）
 ```
 

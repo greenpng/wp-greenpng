@@ -15,6 +15,7 @@ namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Admin\Gr_Admin_Menu;
 use GreenPNG\Admin\Gr_Ip_Intel_Page;
+use GreenPNG\Core\Gr_Dch_Refresh;
 use GreenPNG\Core\Gr_Geoip_Refresh;
 use GreenPNG\Core\Gr_Plugin;
 use PHPUnit\Framework\TestCase;
@@ -108,7 +109,10 @@ final class IpIntelPageTest extends TestCase {
         $html = (string) ob_get_clean();
 
         $this->assertStringContainsString( 'already queued', $html );
-        $this->assertStringNotContainsString( 'name="gr_ipintel_action"', $html );
+        // The country-data button is what disappears; the datacenter
+        // section keeps its own arm.
+        $this->assertStringNotContainsString( 'value="' . Gr_Ip_Intel_Page::ACTION_UPDATE . '"', $html );
+        $this->assertStringContainsString( 'value="' . Gr_Ip_Intel_Page::ACTION_DCH . '"', $html );
     }
 
     public function testPrgNoticesRenderForBothOutcomes(): void {
@@ -220,5 +224,91 @@ final class IpIntelPageTest extends TestCase {
         $this->assertStringNotContainsString( 'wp_safe_remote_', $source );
         $this->assertStringNotContainsString( 'curl_', $source );
         $this->assertStringNotContainsString( 'fsockopen', $source );
+    }
+
+    public function testRenderShowsTheDatacenterRangeSectionAndItsOwnButton(): void {
+        ob_start();
+        Gr_Ip_Intel_Page::render();
+        $html = (string) ob_get_clean();
+
+        // The section reads the real bundled data set.
+        $this->assertStringContainsString( 'Datacenter ranges', $html );
+        $this->assertStringContainsString( '2026-09-15', $html );
+        $this->assertStringContainsString( '1,029', $html );
+        $this->assertStringContainsString( '2,193', $html );
+
+        // The signal-not-verdict disclosure and the source
+        // attribution, including the IP2Proxy license and register
+        // pointer.
+        $this->assertStringContainsString( 'never marks a session as a bot on its own', $html );
+        $this->assertStringContainsString( 'AWS, Azure, and Google', $html );
+        $this->assertStringContainsString( 'IP2Proxy LITE', $html );
+        $this->assertStringContainsString( 'CC BY-SA 4.0', $html );
+        $this->assertStringContainsString( 'lite.ip2location.com', $html );
+
+        // The datacenter button rides its own nonce and its own
+        // action value on the shared action field.
+        $this->assertStringContainsString( 'name="' . Gr_Ip_Intel_Page::NONCE_FIELD_DCH . '"', $html );
+        $this->assertStringContainsString( 'value="' . Gr_Ip_Intel_Page::ACTION_DCH . '"', $html );
+        $this->assertStringContainsString( 'no automatic or scheduled update', $html );
+    }
+
+    public function testPendingDatacenterRefreshSwapsOnlyItsOwnButton(): void {
+        set_transient( Gr_Dch_Refresh::PENDING, time(), 3600 );
+
+        ob_start();
+        Gr_Ip_Intel_Page::render();
+        $html = (string) ob_get_clean();
+
+        // The datacenter button is gone with its state line up...
+        $this->assertStringContainsString( 'A datacenter-range refresh is already queued', $html );
+        $this->assertStringNotContainsString( 'value="' . Gr_Ip_Intel_Page::ACTION_DCH . '"', $html );
+
+        // ...while the country-data button stands untouched.
+        $this->assertStringContainsString( 'value="' . Gr_Ip_Intel_Page::ACTION_UPDATE . '"', $html );
+    }
+
+    public function testValidDatacenterClickEnqueuesItsJobAndAuditsTheDataObject(): void {
+        $_POST = array(
+            'gr_ipintel_action' => Gr_Ip_Intel_Page::ACTION_DCH,
+            Gr_Ip_Intel_Page::NONCE_FIELD_DCH => 'gr-stub-nonce-' . md5( Gr_Ip_Intel_Page::NONCE_ACTION_DCH ),
+        );
+        $_REQUEST                 = $_POST;
+        $GLOBALS['gr_stub_caps']   = array( 'manage_options' );
+        $GLOBALS['gr_stub_user_id'] = 7;
+
+        Gr_Ip_Intel_Page::handle_actions();
+
+        // The datacenter queue job, not the GeoIP one.
+        $this->assertCount( 1, $GLOBALS['gr_stub_cron'] );
+        $this->assertSame( Gr_Dch_Refresh::HOOK, $GLOBALS['gr_stub_cron'][0]['hook'] );
+        $this->assertNotFalse( get_transient( Gr_Dch_Refresh::PENDING ) );
+        $this->assertFalse( get_transient( Gr_Geoip_Refresh::PENDING ) );
+
+        // The audit row names the data object the click refreshes.
+        $rows = $this->audit_rows();
+        $this->assertCount( 1, $rows );
+        $this->assertSame( 'update_requested', $rows[0]['data']['action'] );
+        $this->assertSame( 'ip_quality_data', $rows[0]['data']['object_type'] );
+        $this->assertSame( 'cloud_segments', $rows[0]['data']['object_id'] );
+        $this->assertStringContainsString( 'gr_update=queued', $this->redirected_to() );
+    }
+
+    public function testAForgedDatacenterNonceNeverDispatches(): void {
+        $_POST = array(
+            'gr_ipintel_action' => Gr_Ip_Intel_Page::ACTION_DCH,
+            Gr_Ip_Intel_Page::NONCE_FIELD_DCH => 'forged',
+        );
+        $_REQUEST                 = $_POST;
+        $GLOBALS['gr_stub_caps']   = array( 'manage_options' );
+        $GLOBALS['gr_stub_user_id'] = 7;
+
+        Gr_Ip_Intel_Page::handle_actions();
+
+        // The GeoIP nonce does not unlock the datacenter arm either.
+        $this->assertSame( array(), $GLOBALS['gr_stub_cron'] );
+        $this->assertSame( array(), $GLOBALS['gr_stub_redirects'] );
+        $this->assertSame( array(), $this->audit_rows() );
+        $this->assertFalse( get_transient( Gr_Dch_Refresh::PENDING ) );
     }
 }

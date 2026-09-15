@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GreenPNG\Core\Gr_Geoip;
+use GreenPNG\Core\Gr_Ip_Quality;
 use GreenPNG\Core\Gr_Request;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Privacy\Gr_Consent;
@@ -105,14 +106,19 @@ final class Gr_Attribution_Listener {
         $host   = $this->referrer_host();
         $parsed = Gr_Attribution_Params::apply_referrer( $parsed, $host );
 
-        // The country code is a landing attribute, so it rides the
-        // consent gate like every other one (docs/07 §1); without
-        // consent the technical slide stays attribute-free and the
-        // dashboard country chart keeps its Unknown bucket. GeoIP
-        // is the purely local DB-IP lookup, one binary search.
+        // The country code and the datacenter category are landing
+        // attributes, so both ride the consent gate like every other
+        // one (docs/07 §1); without consent the technical slide stays
+        // attribute-free and the dashboard country chart keeps its
+        // Unknown bucket. GeoIP is the purely local DB-IP lookup; the
+        // hosting category is the in-memory packed-range search
+        // (ADR-0011 D4) — zero SQL either way, and the write lands on
+        // the same upsert the touch already runs.
         $landing = array();
         if ( $consent ) {
-            $landing['country_code'] = Gr_Geoip::country( gr_get_client_ip() );
+            $client_ip               = gr_get_client_ip();
+            $landing['country_code'] = Gr_Geoip::country( $client_ip );
+            $landing['ip_quality']   = Gr_Ip_Quality::category( $client_ip );
         }
 
         if ( $consent && Gr_Attribution_Params::is_campaign_entry( $parsed ) ) {

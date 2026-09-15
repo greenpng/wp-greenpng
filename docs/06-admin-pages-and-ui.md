@@ -18,7 +18,7 @@ greenpng （顶级菜单，dashicons-chart-area，位置 30）
 │   ├── Login Protection     登录保护             [标签: 爆破审计 | 会话管理]
 │   └── Bot & Device Signals 爬虫与设备信号       [标签: 爬虫验证 | 设备信号(opt-in, v1.3)]
 ├── Marketing
-│   ├── Campaigns            营销战役与归因       [标签: 战役 | UTM | 点击ID | 归因模型]
+│   ├── Campaigns            营销战役与归因       [标签: 战役 | UTM | 点击ID | 归因模型 | 无效流量]
 │   ├── URL Builder          链接构建器
 │   └── Funnels & Goals      漏斗与目标           [标签: A/B(v1.0) | 漏斗(v1.1) | 步骤流失(v1.1) | 目标(v1.1)]
 ├── Audience
@@ -28,7 +28,7 @@ greenpng （顶级菜单，dashicons-chart-area，位置 30）
 │   └── Behavior Insights    行为洞察             [标签: 停留/滚动 | 怒点/死点]
 ├── Integrations
 │   ├── Analytics & CAPI     分析回传（GA4/Meta/TikTok/Matomo，全部默认关）
-│   ├── IP Intelligence      IP 情报（GeoIP 管理 | AbuseIPDB（默认关））
+│   ├── IP Intelligence      IP 情报（GeoIP 管理 | 数据中心段（随包 + 站长显式刷新） | AbuseIPDB（默认关））
 │   ├── Webhooks             出网 Webhook
 │   └── Plugin Ecosystem     生态桥接（WooCommerce/表单插件 + 自定义嗅探）
 └── Tools
