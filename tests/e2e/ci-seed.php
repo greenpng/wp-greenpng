@@ -19,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use GreenPNG\Storage\Gr_Contact_Repository;
+use GreenPNG\Storage\Gr_Daily_Aggregator;
+
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- wp-cli eval-file context, no HTTP request involved.
 $task = isset( $args, $args[0] ) ? (string) $args[0] : '';
 
@@ -159,6 +162,71 @@ switch ( $task ) {
 		global $wpdb;
 		$table2 = $wpdb->prefix . 'gr_security_logs';
 		echo (string) (int) $wpdb->get_var( "SELECT SUM(hit_count) FROM {$table2} WHERE rule_id = 'scanner_ua'" );
+		break;
+
+	case 'seed-contact':
+		// One CRM contact through the real capture path: hashed email
+		// + encrypted envelope, a custom tag, a fixed score, and an
+		// RFM segment word from the engine's closed vocabulary.
+		$repo = new Gr_Contact_Repository();
+		$id   = $repo->capture( 'e2e-contact@example.test', 'E2E', 'Contact', '' );
+		if ( $id < 1 ) {
+			fwrite( STDERR, 'contact capture failed' );
+			exit( 1 );
+		}
+		$repo->attach_tag( $id, 'e2e-tag', 'E2E tag' );
+		$repo->set_score( $id, 37 );
+		$repo->set_segment_and_ltv( $id, 'champions', 123.45 );
+		echo 'contact ' . $id;
+		break;
+
+	case 'purge-contact':
+		// The disposable CI site has no admin surface for deleting a
+		// contact, and the fixture is the spec's alone: the row, its
+		// tag bindings, and the fixture tag leave through SQL.
+		global $wpdb;
+		$fixture_id = ( new Gr_Contact_Repository() )->id_for_email( 'e2e-contact@example.test' );
+		if ( $fixture_id > 0 ) {
+			$wpdb->delete( $wpdb->prefix . 'gr_contact_tags', array( 'contact_id' => $fixture_id ) );
+			$wpdb->delete( $wpdb->prefix . 'gr_contacts', array( 'id' => $fixture_id ) );
+		}
+		$wpdb->delete( $wpdb->prefix . 'gr_tags', array( 'slug' => 'e2e-tag' ) );
+		echo 'purged';
+		break;
+
+	case 'seed-behavior':
+		// Four behavior events on the bus (the collect endpoint's
+		// inner payloads, so the drill-down lists and the aggregate
+		// tiles read the real shapes), then the day's aggregation so
+		// the KPI tiles have their numbers without waiting for the
+		// nightly pass.
+		gr_dispatch_event( 'dwell', array( 'event_group' => 'behavior', 'bucket' => '60-180', 'path' => '/', 'visitor_id' => 'e2efixture' ) );
+		gr_dispatch_event( 'scroll_depth', array( 'event_group' => 'behavior', 'milestone' => 75, 'path' => '/', 'visitor_id' => 'e2efixture' ) );
+		gr_dispatch_event( 'rage_click', array( 'event_group' => 'behavior', 'clicks' => 7, 'locator' => 'button#buy-now', 'path' => '/', 'visitor_id' => 'e2efixture' ) );
+		gr_dispatch_event( 'dead_click', array( 'event_group' => 'behavior', 'locator' => 'div.hero', 'path' => '/', 'visitor_id' => 'e2efixture' ) );
+		$rows = Gr_Daily_Aggregator::aggregate_date( gmdate( 'Y-m-d' ) );
+		echo 'aggregated ' . (string) $rows;
+		break;
+
+	case 'purge-behavior':
+		// The four fixture events leave by their in-payload fixture
+		// marker (the events row carries the identity service's own
+		// visitor id, which a wp-cli run does not share), and the
+		// day's aggregate is recomputed afterwards — the same pass
+		// the nightly job would run.
+		global $wpdb;
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}gr_events WHERE event_name IN (%s, %s, %s, %s) AND payload_json LIKE %s",
+				'dwell',
+				'scroll_depth',
+				'rage_click',
+				'dead_click',
+				'%"e2efixture"%'
+			)
+		);
+		Gr_Daily_Aggregator::aggregate_date( gmdate( 'Y-m-d' ) );
+		echo 'purged';
 		break;
 
 	default:

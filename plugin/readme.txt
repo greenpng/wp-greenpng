@@ -4,7 +4,7 @@ Tags: security, analytics, attribution, crm
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,16 @@ The bundled datacenter range list is built from the official AWS, Azure, and Goo
 7. Contacts — the captured-lead list with masked emails, lead scores, and RFM segments; profiles open inline with an audited email reveal.
 
 == Changelog ==
+
+= 1.1.0 =
+* Refunds and cancellations now reverse their conversions: revenue reads the net after refunds, and the affected day recomputes on its own.
+* Traffic & Security gained a visitor-sessions list (channel, landing, device, bot verdict) with date and search filters, and sessions, audit log, and access rules export as CSV.
+* A behavior module (off by default, consent-gated on top) reports dwell buckets, scroll milestones, rage clicks, and dead clicks, with an insights page for engagement and friction.
+* The CRM now keeps contacts captured from form submissions (consent-gated, hashed and encrypted emails, masked in the admin), lead scoring with a points table you edit, and RFM segments refreshed nightly.
+* Funnels got definition forms, a step-loss staircase, goals by source, and native A/B experiment creation with significance testing.
+* Cart-abandonment recovery (off by default): an honest opt-in checkbox on the classic checkout, one recovery email through your own wp_mail after the delay you set, with failed deliveries visible on the status page.
+* The IP Intelligence page shows datacenter ranges (bundled AWS, Azure, and Google lists plus IP2Proxy LITE, refreshed only when you click), sessions gained a Hosting column, and Campaigns gained an invalid-traffic tab with bot and hosting shares.
+* Outbound webhooks: register your own https endpoints, subscribe them to conversion, lead, and behavior events, and verify deliveries by HMAC-SHA256 signature with retries and per-endpoint circuits surfaced on the status page.
 
 = 1.0.1 =
 * The client probe's bot score and verdict now land on the session row, so the bot reports and the outbound traffic-quality gate read real conclusions instead of the default.

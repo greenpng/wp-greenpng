@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       GreenPNG
  * Description:       Traffic security and anti-bot signals, marketing attribution, conversion funnels, A/B testing, CRM scoring, and local analytics. All local, no cloud, no telemetry.
- * Version:           1.0.1
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            GreenPNG
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'GR_VERSION' ) ) {
-    define( 'GR_VERSION', '1.0.1' );
+    define( 'GR_VERSION', '1.1.0' );
     define( 'GR_PLUGIN_FILE', __FILE__ );
     define( 'GR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
     define( 'GR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

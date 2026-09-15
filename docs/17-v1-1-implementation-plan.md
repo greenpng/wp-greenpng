@@ -104,9 +104,9 @@
 
 | # | 短名 | 状态 | 交付物 | 实测 | 规范 |
 | :--- | :--- | :---: | :--- | :--- | :--- |
-| V33 | e2e 页覆盖 | ⬜ | D10 收口：新页（Contacts/Profile/Scoring/Behavior/Webhooks）+ 既有未覆盖页 spec 化 + ci-seed 扩展；e2e 全绿 | — | docs/11，ISS-08 D10 |
-| V34 | 文档与版本 | ⬜ | docs/05/06/12/README 同步 + iss 无涉核验 + POT 全量 + `./tools/bump-version.sh 1.1.0` + readme changelog | — | 08 清单 |
-| V35 | 发布 | ⬜ | 四检查 + PHPStan L6 全绿；docs/17 实测列回填；push/tag 按站主授权执行 | — | ADR-0008（CI） |
+| V33 | e2e 页覆盖 | ✅ | 5 新 spec（11-contacts：真 capture 路径种子 → List 掩码 `e2****st`+score 37+champions、Open profile 行内、Tags/RFM 标签、purge-contact 复原；12-scoring：整组编辑器改 points→'Rules saved' PRG→回写原值复原；13-behavior：四事件总线种子+当日聚合 → engagement 瓦非零+60-180、friction `button#buy-now`/`div.hero`、purge-behavior 按 payload 标记删+重聚合；14-webhooks：页面 http 拒存通知+零行、https 掩码 `e2****fg` 入表、状态页 host 行、toggle→Paused、delete→空态文案、secret 全文零出现断言；15-ipintel-campaigns-sessions：DCH 节+数据日期 2026-09-15+IP2Proxy 文案、invalid 标签两态断言（表或诚实空态）、sessions Hosting 列头）；ci-seed +4 任务（seed-contact/purge-contact/seed-behavior/purge-behavior——payload 内嵌 PHP 字面量纪律）；helpers slug +7 页 | 套件 17 tests / 15 files 本机 `--list` 加载全过 + ci-seed 语法 0 + 断言锚点逐条对源核验（.postbox/.gr-kpi-value、'Save rules'、'Open profile' 行动作、invalid 空态无表→两态式、拒词通知文案 'must be https'、掩码前2后2）；**e2e 实跑在 CI 轮**（.github/workflows/e2e-playwright.yml——本机无 Docker（docker: command not found），wp-env 无法起；环境注记如实记入）| docs/11，ISS-08 D10 |
+| V34 | 文档与版本 | ✅ | docs/05 §6 gr_webhooks 登记 autoload=no、docs/06 Webhooks 树位（build 期已有，核验 ✓）、docs/12 出网行（已有，核验 ✓）、ADR-0016 §4 实现注释（两梯级 deferral、签名体即线上体、per-endpoint 服务键、'lead' 入词表、真栈注记）、readme External services +第 4 条（自有端点、无第三方）+FAQ 出网答句 +1.1.0 changelog 8 条；POT 全量再生 ×2（Phase 8 后 2,868 行；bump 后 Project-Id-Version GreenPNG 1.1.0）；`./tools/bump-version.sh 1.1.0`（header/GR_VERSION/Stable tag 三处同步）；iss 无涉核验：同事 ISS-11 为 Phase 1~5 进度审计（A+ 结论、无 v1.1 阻塞项、后续路线即 Phase 6~9 本轮已完）——只读、未提交、v1.1 实现无涉其引用 | POT Project-Id-Version 1.1.0 实核；bump 后三处版本一致实核；readme changelog 按八阶段逐条对应 V1~V32 交付物 | 08 清单 |
+| V35 | 发布 | ⬜ | 四检查 + PHPStan L6 全绿；docs/17 实测列回填；push/tag 按站主授权执行 | 本轮四检查 + PHPStan 于 bump 后复跑全绿（见下行 V33 环境注记同批）；**push/tag 待站主授权——d45214d 未推送** | ADR-0008（CI） |
 
 ## 4. 预算与门禁锚点（实现时逐项核）
 

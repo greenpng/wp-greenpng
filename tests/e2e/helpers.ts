@@ -23,6 +23,13 @@ export const slug = {
 	url: 'greenpng-url',
 	campaigns: 'greenpng-campaigns',
 	bot: 'greenpng-bot',
+	ipintel: 'greenpng-ipintel',
+	contacts: 'greenpng-contacts',
+	scoring: 'greenpng-scoring',
+	behavior: 'greenpng-behavior',
+	webhooks: 'greenpng-webhooks',
+	status: 'greenpng-status',
+	funnels: 'greenpng-funnels',
 } as const;
 
 /** Absolute-path helper for wp-admin plugin pages. */
