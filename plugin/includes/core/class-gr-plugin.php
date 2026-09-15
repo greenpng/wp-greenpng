@@ -20,6 +20,8 @@ use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Attribution_Listener;
 use GreenPNG\Attribution\Gr_Identity;
 use GreenPNG\Behavior\Gr_Behavior;
+use GreenPNG\Cart\Gr_Cart_Checkout;
+use GreenPNG\Cart\Gr_Cart_Recovery;
 use GreenPNG\CRM\Gr_Rfm_Engine;
 use GreenPNG\CRM\Gr_Scoring_Engine;
 use GreenPNG\Admin\Gr_Access_Rules_Page;
@@ -285,6 +287,8 @@ final class Gr_Plugin {
         Gr_Behavior::register_hooks();
         Gr_Ab_Shortcode::register();
         Gr_Funnel_Tracker::register_hooks();
+        Gr_Cart_Checkout::register_hooks();
+        Gr_Cart_Recovery::register_hooks();
         add_action( 'template_redirect', array( $this->listener, 'handle' ), 10, 0 );
         $this->inspector->register_hooks();
         Gr_Scanner_Ua::register_detector();

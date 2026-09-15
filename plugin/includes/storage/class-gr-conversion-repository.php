@@ -113,6 +113,34 @@ final class Gr_Conversion_Repository {
     }
 
     /**
+     * Whether a session already owns a bound conversion: the cart
+     * recovery check's second gate (ADR-0015 D2) — a session that
+     * converted was not abandoned, whatever the checkout looked like.
+     * Queue context, so the front-end query budget does not apply.
+     *
+     * @param string $session_id Session id.
+     * @return int Bound row id, 0 when the session never converted.
+     */
+    public function bound_for_session( string $session_id ): int {
+        global $wpdb;
+
+        if ( '' === $session_id ) {
+            return 0;
+        }
+
+        $table = Gr_Database::table( 'conversions' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- queue-context existence probe for one session's conversions, a handful of rows per site-day at most.
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is a DDL-validated identifier from Gr_Database, not user input; it sits on this first string line on purpose, within the ignore's reach.
+                "SELECT id FROM {$table} WHERE session_id = %s LIMIT 1",
+                substr( $session_id, 0, 36 )
+            )
+        );
+    }
+
+    /**
      * Newest bound conversions with the split they were recorded
      * with: the attribution comparison reads the snapshot that rode
      * with the binding, never a recomputation over today's chain

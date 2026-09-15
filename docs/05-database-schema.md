@@ -2,7 +2,7 @@
 
 > **唯一真源**：greenpng 的全部数据表以本文件为准。参考项目的 5/13/14/15 张表互相矛盾（见 `01` §5.1），本文件终结这种不一致。
 > **硬约束**：建表/改表只允许在激活与版本升级例程中通过 `dbDelta()` 执行；索引字符串列 ≤191 字符；一律 `$wpdb->get_charset_collate()`；运行时零 DDL。
-> **修订记录**：2026-09-09 依据 ADR-0007——安全日志完整 IP；身份双轨（visitor_id 主 + 每日盐回退）；补三处索引；明确 MySQL-only 方言。2026-09-10 S5 实测——整数列补显示宽度、字段行逗号分隔（dbDelta 幂等纪律，见 §3 引注）。2026-09-13 DB_VERSION 2（ADR-0010/0011/0013）——`gr_conversions` 增 `status`/`reversed_at`（冲销软标）；`gr_contacts` 增 `visitor_id`+KEY（cookie 轨联结）；`gr_sessions` 增 `ip_quality`（机房段类别词）；零新表。
+> **修订记录**：2026-09-09 依据 ADR-0007——安全日志完整 IP；身份双轨（visitor_id 主 + 每日盐回退）；补三处索引；明确 MySQL-only 方言。2026-09-10 S5 实测——整数列补显示宽度、字段行逗号分隔（dbDelta 幂等纪律，见 §3 引注）。2026-09-13 DB_VERSION 2（ADR-0010/0011/0013）——`gr_conversions` 增 `status`/`reversed_at`（冲销软标）；`gr_contacts` 增 `visitor_id`+KEY（cookie 轨联结）；`gr_sessions` 增 `ip_quality`（机房段类别词）；零新表。2026-09-15 DB_VERSION 3（ADR-0015）——`gr_cart_abandonments` 增 `consent`（捕获时点同意快照）；零新表；状态机词表见 §3.5。
 
 ---
 
@@ -162,6 +162,22 @@ CREATE TABLE {$wpdb->prefix}gr_conversions (
 | `sessions_by_device` | 设备类型 | `gr_sessions` GROUP BY device_type | COUNT |
 | `sessions_by_bot` | `human`/`bot` | `gr_sessions` GROUP BY is_bot | COUNT |
 | `security_hits` | rule_id | `gr_security_logs` SUM(hit_count)（折叠行困于单小时窗，last_seen 即命中日） | SUM |
+
+### 3.5 `gr_cart_abandonments` 状态机（2026-09-15，DB_VERSION 3，ADR-0015）
+
+`gr_cart_abandonments` 自 S5 落库，v1.1 起有读写方。行键 = `session_id`（upsert 折叠：车内容随最新快照、**首邮箱胜出**——邮箱列一经写入永不重写、令牌签发一次永不重写）；邮箱双轨（`email_hash` 供联结与退订比对 / `email_enc` 仅供发信单点解密）；`cart_json` 只存行项四元组（product_id/variation_id/quantity/name），无地址无支付细节。DB_VERSION 3 增 `consent TINYINT(1)`——捕获时点的同意快照，发信闸的唯一直接依据。
+
+**状态词表与迁移纪律**（全部为守卫 UPDATE——WHERE 带现状，受影响行数即裁决）：
+
+| 状态 | 语义 | 迁移 |
+| :--- | :--- | :--- |
+| `captured` | 邮箱（与车）在册，**未发信**——等待延迟检查，也是发信失败的诚实回退态 | 出生态；`revert_abandoned()`（发信失败）回退至此 |
+| `abandoned` | 检查五闸全过、互斥翻转已赢——**发信权已取得** | `mark_abandoned()`：仅 captured 可翻（双检查竞速恰一胜者） |
+| `attempted` | 恢复链接被点击、车已回填（点击≠挽回） | `mark_attempted()`：abandoned/attempted（幂等再点） |
+| `recovered` | 绑定转化回写——挽回的是订单，不是信（信发没发、点没点都不问） | `mark_recovered()`：按 email_hash 关闭**全部开态**（captured/abandoned/attempted/failed） |
+| `failed` | 两次投递拒绝（或信封不可解）——停机可见，状态页有信号 | `mark_failed()`：`IN (captured, abandoned)`——captured 入列是解密失败停机（pre-mutex 无可重试之事），abandoned 入列是第二次发信拒绝 |
+
+互斥与重试的闭环（ADR-0015 D2 实装修正，:8091 实测揭出）：互斥翻转先于发信；发信失败 ⇒ **先回退 captured**（滞留 abandoned 会让「仍 captured」闸把 6 小时重试永远拒在门外、failed 不可达——行必须如实回「未发信」态），重试全闸重跑后再赢一次互斥；二次拒绝 ⇒ failed + 状态页警告。attempted/recovered/failed 永不被 failed 或 abandoned 覆写——人的结局不受投递层翻案。
 
 ## 4. 版本升级机制
 

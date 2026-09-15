@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Cart\Gr_Cart_Recovery;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Security\Gr_Access_Rules;
 use GreenPNG\Storage\Gr_Audit_Repository;
@@ -160,6 +161,9 @@ final class Gr_Settings_Page {
             'attribution_enabled',
             'attribution_cookie_days',
             'attribution_default_model',
+            'cart_recovery_enabled',
+            'cart_recovery_delay',
+            'cart_recovery_subject',
         );
 
         $out = array();
@@ -167,6 +171,9 @@ final class Gr_Settings_Page {
             $out[ $key ] = $settings->get( $key );
         }
         $out['delete_data_on_uninstall'] = get_option( Gr_Uninstall::DELETE_FLAG_OPTION, '0' );
+        // The mail body template is an option this page can move, so
+        // it rides the audit diff like every other movable value.
+        $out[ Gr_Cart_Recovery::TEMPLATE_OPTION ] = get_option( Gr_Cart_Recovery::TEMPLATE_OPTION, '' );
 
         return $out;
     }
@@ -252,7 +259,8 @@ final class Gr_Settings_Page {
     }
 
     /**
-     * Attribution tab: enablement, cookie window, default model.
+     * Attribution tab: enablement, cookie window, default model, and
+     * the cart-recovery controls (ADR-0015 D4).
      *
      * @return void
      */
@@ -268,6 +276,40 @@ final class Gr_Settings_Page {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); the value is whitelist-checked below.
         $model = isset( $_POST['attribution_default_model'] ) ? sanitize_key( (string) wp_unslash( $_POST['attribution_default_model'] ) ) : 'last';
         $settings->set( 'attribution_default_model', in_array( $model, self::MODELS, true ) ? $model : 'last' );
+
+        // Cart recovery: the master ask. Off means no checkbox on
+        // checkout, no capture, no mail — the whole feature, one arm.
+        $settings->set( 'cart_recovery_enabled', self::checkbox( 'cart_recovery_enabled' ) );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in may_write(); absint coerces before the clamp.
+        $delay = isset( $_POST['cart_recovery_delay'] ) ? absint( (int) wp_unslash( $_POST['cart_recovery_delay'] ) ) : 15;
+        $settings->set( 'cart_recovery_delay', max( Gr_Cart_Recovery::DELAY_MIN, min( Gr_Cart_Recovery::DELAY_MAX, $delay ) ) );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); sanitize_text_field runs below.
+        $subject = isset( $_POST['cart_recovery_subject'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['cart_recovery_subject'] ) ) : '';
+        $subject = substr( $subject, 0, 191 );
+        $settings->set( 'cart_recovery_subject', '' !== $subject ? $subject : Gr_Settings::defaults()['cart_recovery_subject'] );
+
+        // The mail body: owner markup through wp_kses_post, bounded,
+        // and only stored when both links survive — a recovery mail
+        // without its recovery and unsubscribe links cannot do its
+        // job, so an invalid template falls back to the built-in
+        // default rather than reaching a mailbox.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- nonce verified in may_write(); wp_kses_post runs below.
+        $template = isset( $_POST['cart_recovery_template'] ) ? (string) wp_unslash( $_POST['cart_recovery_template'] ) : '';
+        $template = substr( wp_kses_post( $template ), 0, Gr_Cart_Recovery::TEMPLATE_MAX );
+
+        if ( Gr_Cart_Recovery::template_is_valid( $template ) ) {
+            if ( '' !== get_option( Gr_Cart_Recovery::TEMPLATE_OPTION, '' ) ) {
+                update_option( Gr_Cart_Recovery::TEMPLATE_OPTION, $template );
+            } else {
+                add_option( Gr_Cart_Recovery::TEMPLATE_OPTION, $template, '', 'no' );
+            }
+        } else {
+            // Veto to the default: an absent option reads as the
+            // built-in default on every render.
+            delete_option( Gr_Cart_Recovery::TEMPLATE_OPTION );
+        }
     }
 
     /**
@@ -482,6 +524,50 @@ final class Gr_Settings_Page {
                                     <?php endforeach; ?>
                                 </select>
                                 <?php echo esc_html__( 'Reports compare all five models; this is the highlighted default.', 'greenpng' ); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php echo esc_html__( 'Cart recovery', 'greenpng' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="cart_recovery_enabled" value="1" <?php checked( 1, (int) $settings->get( 'cart_recovery_enabled' ) ); ?> />
+                                    <?php echo esc_html__( 'Offer shoppers a recovery link by mail when a consented checkout is left behind (off by default; the mail rides this site\'s own wp_mail, never a third-party service).', 'greenpng' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="gr-cart-delay"><?php echo esc_html__( 'Recovery delay', 'greenpng' ); ?></label></th>
+                            <td>
+                                <input type="number" name="cart_recovery_delay" id="gr-cart-delay" class="small-text" min="<?php echo esc_attr( (string) Gr_Cart_Recovery::DELAY_MIN ); ?>" max="<?php echo esc_attr( (string) Gr_Cart_Recovery::DELAY_MAX ); ?>"
+                                    value="<?php echo esc_attr( (string) (int) $settings->get( 'cart_recovery_delay' ) ); ?>" />
+                                <?php echo esc_html__( 'minutes after capture before the abandonment check runs (5 to 120, default 15).', 'greenpng' ); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="gr-cart-subject"><?php echo esc_html__( 'Recovery mail subject', 'greenpng' ); ?></label></th>
+                            <td>
+                                <input type="text" name="cart_recovery_subject" id="gr-cart-subject" class="regular-text"
+                                    value="<?php echo esc_attr( (string) $settings->get( 'cart_recovery_subject' ) ); ?>" />
+                                <p class="description"><?php echo esc_html__( '{site} becomes the site name; empty falls back to the default subject.', 'greenpng' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="gr-cart-template"><?php echo esc_html__( 'Recovery mail body', 'greenpng' ); ?></label></th>
+                            <td>
+                                <textarea name="cart_recovery_template" id="gr-cart-template" class="large-text code" rows="6" cols="50"><?php echo esc_textarea( (string) get_option( Gr_Cart_Recovery::TEMPLATE_OPTION, '' ) ); ?></textarea>
+                                <p class="description">
+                                    <?php
+                                    echo esc_html(
+                                        sprintf(
+                                            /* translators: 1: required link placeholders, 2: available placeholders, 3: length ceiling. */
+                                            __( 'Both links are required: %1$s. Also available: %2$s. At most %3$d characters; empty or invalid falls back to the built-in default. Basic markup only.', 'greenpng' ),
+                                            '{recover_url} {unsubscribe}',
+                                            '{site} {items} {total}',
+                                            Gr_Cart_Recovery::TEMPLATE_MAX
+                                        )
+                                    );
+                                    ?>
+                                </p>
                             </td>
                         </tr>
                     <?php endif; ?>

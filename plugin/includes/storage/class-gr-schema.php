@@ -24,8 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Gr_Schema {
 
-    /** Bump once per schema change; migrations step one version at a time. v2 adds the refund-reversal, contact-linkage and IP-quality columns (ADR-0010/0011/0013). */
-    public const DB_VERSION = 2;
+    /** Bump once per schema change; migrations step one version at a time. v2 adds the refund-reversal, contact-linkage and IP-quality columns (ADR-0010/0011/0013); v3 adds the cart-recovery consent snapshot (ADR-0015). */
+    public const DB_VERSION = 3;
 
     /** Option key holding the installed schema version (autoload=no). */
     public const VERSION_OPTION = 'gr_db_version';
@@ -323,6 +323,7 @@ final class Gr_Schema {
                     'cart_json MEDIUMTEXT NULL',
                     'total DECIMAL(12,2) NOT NULL DEFAULT 0.00',
                     'currency CHAR(3) NOT NULL DEFAULT \'USD\'',
+                    'consent TINYINT(1) NOT NULL DEFAULT 0',
                     'status VARCHAR(16) NOT NULL DEFAULT \'captured\'',
                     'recovery_token CHAR(64) NOT NULL DEFAULT \'\'',
                     'order_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0',

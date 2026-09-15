@@ -155,7 +155,7 @@ final class SchemaTest extends TestCase {
     }
 
     public function testVersionConstants(): void {
-        self::assertSame( 2, Gr_Schema::DB_VERSION );
+        self::assertSame( 3, Gr_Schema::DB_VERSION );
         self::assertSame( 'gr_db_version', Gr_Schema::VERSION_OPTION );
     }
 
@@ -174,6 +174,19 @@ final class SchemaTest extends TestCase {
         self::assertStringContainsString( 'KEY visitor (visitor_id)', $by_table['gr_contacts'] );
 
         self::assertStringContainsString( "ip_quality VARCHAR(16) NOT NULL DEFAULT ''", $by_table['gr_sessions'] );
+    }
+
+    /**
+     * DB_VERSION 3 adds the cart-recovery consent snapshot column
+     * (ADR-0015 D2 gate 4): additive only, defaulting to the closed
+     * arm — a row that never recorded a yes never mails.
+     */
+    public function testVersionThreeColumnsAreRegistered(): void {
+        $by_table = $this->statements_by_table();
+
+        self::assertStringContainsString( 'consent TINYINT(1) NOT NULL DEFAULT 0', $by_table['gr_cart_abandonments'] );
+        self::assertStringContainsString( "status VARCHAR(16) NOT NULL DEFAULT 'captured'", $by_table['gr_cart_abandonments'] );
+        self::assertStringContainsString( 'KEY recovery_token (recovery_token)', $by_table['gr_cart_abandonments'] );
     }
 
     public function testStoreVersionCreatesAutoloadNoAndUpdatesInPlace(): void {

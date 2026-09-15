@@ -34,7 +34,7 @@ greenpng （顶级菜单，dashicons-chart-area，位置 30）
 └── Tools
     ├── Audit Log            操作审计
     ├── Data Retention       数据保留与瘦身（仅本地，无任何"云端模式"）
-    └── Status & Diagnostics 状态与诊断导出（含队列后端显示）
+    └── Status & Diagnostics 状态与诊断导出（含队列后端显示 + 弃购挽回 failed 信号）
 ```
 
 ### 页面数对照与版本交付
@@ -48,7 +48,7 @@ greenpng （顶级菜单，dashicons-chart-area，位置 30）
 | :--- | :--- |
 | General | 隐私默认（同意模式回落开关、DNT/Sec-GPC 尊重）、数据保留入口、卸载行为选项 |
 | Security | 安全总开关（熔断）、可信代理 CIDR、安全日志匿名化开关（默认关=完整 IP，开启明示封禁降级）、**探针开关**（默认开）、拦截档位 |
-| Attribution | cookie 窗口（默认 30 天）、默认归因模型、无 cookie 回退口径说明（如实标注不跨天） |
+| Attribution | cookie 窗口（默认 30 天）、默认归因模型、无 cookie 回退口径说明（如实标注不跨天）、**弃购挽回四控件**（enable 默认关 / delay 5..120 分钟钳 / 主题 / 模板 ≤2000 字且双链接缺一不可，ADR-0015——管理面仅此控件组 + 状态页 failed 信号，无独立挽回页） |
 
 ## 2. UI 技术规范（强制）
 

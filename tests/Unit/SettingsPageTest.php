@@ -13,6 +13,7 @@ declare( strict_types = 1 );
 namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Admin\Gr_Settings_Page;
+use GreenPNG\Cart\Gr_Cart_Recovery;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Storage\Gr_Uninstall;
@@ -302,7 +303,6 @@ final class SettingsPageTest extends TestCase {
         // can write is a dial the owner cannot turn. Keys owned by
         // other pages are the documented exceptions.
         $owned_elsewhere = array( 'retention_days', 'retention_rows', 'capi_meta_enabled', 'capi_ga4_enabled' );
-
         $method   = new \ReflectionMethod( Gr_Settings_Page::class, 'snapshot' );
         if ( PHP_VERSION_ID < 80100 ) {
             // No effect (and no complaint) from 8.1 on; still required
@@ -327,5 +327,82 @@ final class SettingsPageTest extends TestCase {
             $missing,
             'settings keys with no admin writer: ' . implode( ', ', $missing )
         );
+    }
+
+    public function testAttributionTabRendersTheCartRecoveryControls(): void {
+        $_GET = array( 'tab' => 'attribution' );
+
+        ob_start();
+        Gr_Settings_Page::render();
+        $html = (string) ob_get_clean();
+
+        foreach ( array( 'cart_recovery_enabled', 'cart_recovery_delay', 'cart_recovery_subject', 'cart_recovery_template' ) as $field ) {
+            $this->assertStringContainsString( 'name="' . $field . '"', $html );
+        }
+
+        // The defaults are visible as values, not mysteries.
+        $this->assertStringContainsString( 'value="15"', $html );
+        $this->assertStringContainsString( 'Your cart at {site}', $html );
+        $this->assertStringContainsString( '{recover_url}', $html );
+        $this->assertStringContainsString( '{unsubscribe}', $html );
+    }
+
+    public function testCartRecoverySaveClampsTheDelayAndFallsBackOnAnEmptySubject(): void {
+        $this->post( 'attribution' );
+        $_POST['attribution_enabled']     = '1';
+        $_POST['cart_recovery_enabled']   = '1';
+        $_POST['cart_recovery_delay']     = '2';
+        $_POST['cart_recovery_subject']   = '';
+
+        Gr_Settings_Page::handle_actions();
+
+        $settings = new Gr_Settings();
+        $this->assertSame( 1, (int) $settings->get( 'cart_recovery_enabled' ) );
+        $this->assertSame( 5, (int) $settings->get( 'cart_recovery_delay' ) );
+        $this->assertSame( 'Your cart at {site}', (string) $settings->get( 'cart_recovery_subject' ) );
+
+        // The upper clamp rides the same arm.
+        $this->post( 'attribution' );
+        $_POST['attribution_enabled']   = '1';
+        $_POST['cart_recovery_delay']   = '9999';
+        $_POST['cart_recovery_subject'] = 'Come back!';
+        Gr_Settings_Page::handle_actions();
+        $this->assertSame( 120, (int) $settings->get( 'cart_recovery_delay' ) );
+        $this->assertSame( 'Come back!', (string) $settings->get( 'cart_recovery_subject' ) );
+    }
+
+    public function testTemplateSaveStoresValidMarkupAsAutoloadNo(): void {
+        $this->post( 'attribution' );
+        $_POST['attribution_enabled'] = '1';
+        $_POST['cart_recovery_template'] = '<p>Hi {site}</p><a href="{recover_url}">back</a><a href="{unsubscribe}">out</a><script>alert(1)</script>';
+
+        Gr_Settings_Page::handle_actions();
+
+        $stored = get_option( Gr_Cart_Recovery::TEMPLATE_OPTION, '' );
+        $this->assertStringContainsString( '{recover_url}', $stored );
+        $this->assertStringContainsString( '{unsubscribe}', $stored );
+        // wp_kses_post strips the script: the owner writes markup, not
+        // code that runs in mail clients.
+        $this->assertStringNotContainsString( '<script', $stored );
+        $this->assertSame( 'no', $GLOBALS['gr_stub_options']['autoload'][ Gr_Cart_Recovery::TEMPLATE_OPTION ] );
+    }
+
+    public function testALinklessTemplateIsVetoedToTheDefault(): void {
+        // A previously stored custom template: the veto must clear it,
+        // because an absent option reads as the built-in default.
+        update_option( Gr_Cart_Recovery::TEMPLATE_OPTION, '<p>old custom</p><a href="{recover_url}">only one link</a>', '', 'no' );
+
+        $this->post( 'attribution' );
+        $_POST['attribution_enabled'] = '1';
+        $_POST['cart_recovery_template'] = 'no links at all';
+
+        Gr_Settings_Page::handle_actions();
+
+        $this->assertFalse( get_option( Gr_Cart_Recovery::TEMPLATE_OPTION, false ) );
+
+        // The save still audited: the template moved from custom to
+        // default, and the diff says so.
+        $rows = $this->audit_rows();
+        $this->assertCount( 1, $rows );
     }
 }

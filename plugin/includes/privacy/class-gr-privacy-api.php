@@ -29,6 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use GreenPNG\Core\Gr_Database;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
+use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Funnel_Repository;
 use GreenPNG\Storage\Gr_Session_Repository;
@@ -50,6 +51,9 @@ final class Gr_Privacy_Api {
 
     /** Exporter key: CRM contacts. */
     public const EXPORTER_CONTACTS = 'greenpng-contacts';
+
+    /** Exporter key: cart recovery rows. */
+    public const EXPORTER_CARTS = 'greenpng-cart-recovery';
 
     /**
      * Hook registration.
@@ -85,6 +89,10 @@ final class Gr_Privacy_Api {
             'exporter_friendly_name' => __( 'greenpng CRM contact', 'greenpng' ),
             'callback'               => array( __CLASS__, 'export_contact' ),
         );
+        $exporters[] = array(
+            'exporter_friendly_name' => __( 'greenpng cart recovery', 'greenpng' ),
+            'callback'               => array( __CLASS__, 'export_cart_rows' ),
+        );
 
         return $exporters;
     }
@@ -115,6 +123,10 @@ final class Gr_Privacy_Api {
         $erasers[] = array(
             'eraser_friendly_name' => __( 'greenpng CRM contact', 'greenpng' ),
             'callback'             => array( __CLASS__, 'erase_contact' ),
+        );
+        $erasers[] = array(
+            'eraser_friendly_name' => __( 'greenpng cart recovery', 'greenpng' ),
+            'callback'             => array( __CLASS__, 'erase_cart_rows' ),
         );
 
         return $erasers;
@@ -471,6 +483,99 @@ final class Gr_Privacy_Api {
     }
 
     /**
+     * Cart recovery rows exporter: the person's checkout snapshots —
+     * status, items, total, timestamps. Like the contact exporter,
+     * the hash and the encrypted envelope never ride into an export
+     * item; the person knows their own address already.
+     *
+     * @param string $email Requester email.
+     * @param int    $page  Unused; a hash lookup is one page.
+     * @return array<string, mixed>
+     */
+    public static function export_cart_rows( string $email, int $page = 1 ) {
+        $out = array(
+            'data' => array(),
+            'done' => true,
+        );
+
+        if ( '' === $email || $page > 1 ) {
+            return $out;
+        }
+
+        $rows = ( new Gr_Cart_Abandonment_Repository() )->rows_for_email_hash( Gr_Secrets::hash_pii_sha256( $email ) );
+
+        foreach ( $rows as $row ) {
+            $out['data'][] = array(
+                'group'     => __( 'greenpng cart recovery', 'greenpng' ),
+                'item_key'  => self::EXPORTER_CARTS . '-' . (string) ( $row['id'] ?? '0' ),
+                'item_name' => __( 'Cart snapshot', 'greenpng' ),
+                'data'      => array(
+                    array(
+                        'name'  => __( 'Status', 'greenpng' ),
+                        'value' => (string) ( $row['status'] ?? '' ),
+                    ),
+                    array(
+                        'name'  => __( 'Cart items', 'greenpng' ),
+                        'value' => (string) ( $row['cart_json'] ?? '' ),
+                    ),
+                    array(
+                        'name'  => __( 'Total', 'greenpng' ),
+                        'value' => (string) ( $row['currency'] ?? '' ) . ' ' . (string) ( $row['total'] ?? '' ),
+                    ),
+                    array(
+                        'name'  => __( 'Captured at', 'greenpng' ),
+                        'value' => (string) ( $row['captured_at'] ?? '' ),
+                    ),
+                    array(
+                        'name'  => __( 'Abandoned at', 'greenpng' ),
+                        'value' => (string) ( $row['abandoned_at'] ?? '' ),
+                    ),
+                    array(
+                        'name'  => __( 'Recovered at', 'greenpng' ),
+                        'value' => (string) ( $row['recovered_at'] ?? '' ),
+                    ),
+                ),
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * Cart recovery rows eraser: keyed directly by the email hash
+     * the rows carry, so no visitor chain is needed. The never-again
+     * list entry stays — an erasure removes the person's data, and a
+     * hash that prevents future mail is the person's standing choice,
+     * not their record.
+     *
+     * @param string $email Requester email.
+     * @return array<string, mixed>
+     */
+    public static function erase_cart_rows( string $email ) {
+        $out = array(
+            'items_removed'  => 0,
+            'items_retained' => 0,
+            'messages'       => array(),
+            'done'           => true,
+        );
+
+        if ( '' === $email ) {
+            return $out;
+        }
+
+        $out['items_removed'] = ( new Gr_Cart_Abandonment_Repository() )->erase_for_email_hash( Gr_Secrets::hash_pii_sha256( $email ) );
+
+        $out['messages'][] = sprintf(
+            /* translators: 1: number of rows removed, 2: data family name. */
+            __( '%1$s rows removed from %2$s.', 'greenpng' ),
+            (int) $out['items_removed'],
+            __( 'greenpng cart recovery', 'greenpng' )
+        );
+
+        return $out;
+    }
+
+    /**
      * Suggested privacy-policy content for the site owner: what the
      * plugin collects, on what basis, and for how long.
      *
@@ -480,12 +585,13 @@ final class Gr_Privacy_Api {
         wp_add_privacy_policy_content(
             'greenpng',
             sprintf(
-                '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p><p>%s</p><p>%s</p>',
+                '<h3>%s</h3><p>%s</p><p>%s</p><p>%s</p><p>%s</p><p>%s</p><p>%s</p>',
                 esc_html__( 'greenpng analytics', 'greenpng' ),
                 esc_html__( 'Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time.', 'greenpng' ),
                 esc_html__( 'Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings.', 'greenpng' ),
                 esc_html__( 'Contact details submitted through the site\'s forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal.', 'greenpng' ),
                 esc_html__( 'Funnel journeys record which steps of a site-owner-defined journey a consented session reached. They carry session and visitor identifiers only, never email or IP, and follow the same 30-day retention as the events they derive from.', 'greenpng' ),
+                esc_html__( 'If the site owner enables cart recovery, the billing email you typed at checkout (with your explicit opt-in at the checkout form, and only with marketing consent) is stored encrypted together with the cart contents, so this site can email you a link to finish an abandoned purchase. Every recovery mail carries an unsubscribe link; unsubscribing is permanent for this site. These records follow the cart-abandonment retention (90 days by default) and are covered by the export and erasure tools below.', 'greenpng' ),
                 esc_html__( 'Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin\'s marketing tables.', 'greenpng' )
             )
         );

@@ -17,6 +17,13 @@
  * checkpoint) and a prefetch refusal — a prefetched page is not a
  * visit, so it must not count behavior.
  *
+ * The cart recovery capture (ADR-0015) rides it too, under
+ * 'cart_email': the checkout watcher's checked-box offer of the
+ * billing email. It never dispatches into the event stream — the
+ * address must not ride payload_json — it writes the abandonment row
+ * directly, behind the feature switch, marketing consent, and the
+ * opt-in flag.
+ *
  * @package GreenPNG
  */
 
@@ -28,9 +35,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use GreenPNG\Cart\Gr_Cart_Recovery;
 use GreenPNG\Core\Gr_Rate_Limiter;
 use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Privacy\Gr_Consent;
+use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -61,8 +70,9 @@ final class Gr_Collect_Controller {
      * rejected either way (docs/10 §5).
      */
     private const EVENTS = array(
-        'pageview' => 'web',
-        'signal'   => 'probe',
+        'pageview'   => 'web',
+        'signal'     => 'probe',
+        'cart_email' => 'cart',
     );
 
     /**
@@ -86,6 +96,8 @@ final class Gr_Collect_Controller {
         'milestone',
         'clicks',
         'locator',
+        'email',
+        'cart_opt_in',
     );
 
     /**
@@ -297,6 +309,54 @@ final class Gr_Collect_Controller {
 
         $identity = gr()->identity();
 
+        // The checkout email capture (ADR-0015 D1): a cart_email body
+        // is transport for the abandonment row, not for the event
+        // stream — the email must never ride payload_json, so nothing
+        // is dispatched here. The row is the record; the response
+        // carries its id.
+        if ( 'cart_email' === $name ) {
+            if ( 1 !== (int) gr()->settings()->get( 'cart_recovery_enabled' ) ) {
+                return new WP_Error(
+                    'gr_collect_cart',
+                    __( 'Cart recovery is disabled.', 'greenpng' ),
+                    array( 'status' => 400 )
+                );
+            }
+
+            if ( ! Gr_Consent::allows( 'marketing' ) ) {
+                return new WP_Error(
+                    'gr_collect_consent',
+                    __( 'Cart capture requires marketing consent.', 'greenpng' ),
+                    array( 'status' => 400 )
+                );
+            }
+
+            $snapshot = self::cart_snapshot();
+            $cart_row = ( new Gr_Cart_Abandonment_Repository() )->capture(
+                (string) $identity->session_id(),
+                (string) $params['email'],
+                $snapshot['items'],
+                (float) $snapshot['total'],
+                (string) $snapshot['currency'],
+                true,
+                0
+            );
+
+            // The one delayed check per row (ADR-0015 D2): no loop
+            // scan ever re-reads the table.
+            Gr_Cart_Recovery::schedule( $cart_row );
+
+            gr()->sessions()->touch( $identity->visitor_id(), $identity->session_id() );
+            nocache_headers();
+
+            return rest_ensure_response(
+                array(
+                    'stored' => $cart_row > 0,
+                    'id'     => $cart_row,
+                )
+            );
+        }
+
         // The batch envelope: validate every inner event, then store
         // each on its own row. A violation anywhere rejects the whole
         // batch — partial acceptance would tell the client less than
@@ -442,6 +502,51 @@ final class Gr_Collect_Controller {
             return new WP_Error( 'gr_collect_event_id', __( 'Event id too long.', 'greenpng' ), array( 'status' => 400 ) );
         }
 
+        // The checkout email capture's own whitelist: the email and
+        // the opt-in flag, nothing else. The address is validated as
+        // an address, and the flag only ever travels as the integer
+        // one — a missing or zero flag is an unchecked box, which is
+        // a refusal, not a downgrade.
+        if ( 'cart_email' === $name ) {
+            $body    = $params;
+            $unknown = array_diff( array_keys( $body ), array( 'token', 'name', 'email', 'cart_opt_in' ) );
+            if ( array() !== $unknown ) {
+                return new WP_Error(
+                    'gr_collect_field',
+                    __( 'Unknown collect field.', 'greenpng' ),
+                    array(
+                        'status' => 400,
+                        'field'  => (string) reset( $unknown ),
+                    )
+                );
+            }
+
+            if ( ! isset( $params['email'] ) || ! is_string( $params['email'] ) || ! is_email( (string) $params['email'] ) ) {
+                return new WP_Error( 'gr_collect_email', __( 'A valid email is required.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+
+            if ( ! isset( $params['cart_opt_in'] ) || ! is_int( $params['cart_opt_in'] ) || 1 !== $params['cart_opt_in'] ) {
+                return new WP_Error( 'gr_collect_opt_in', __( 'Cart capture requires the opt-in flag.', 'greenpng' ), array( 'status' => 400 ) );
+            }
+
+            return null;
+        }
+
+        // No other event may carry the capture fields: the email is
+        // admitted to the route for this one purpose and nothing else,
+        // or a tampered client could park an address inside any
+        // payload that lands in the event stream.
+        if ( isset( $params['email'] ) || isset( $params['cart_opt_in'] ) ) {
+            return new WP_Error(
+                'gr_collect_field',
+                __( 'Unknown collect field.', 'greenpng' ),
+                array(
+                    'status' => 400,
+                    'field'  => isset( $params['email'] ) ? 'email' : 'cart_opt_in',
+                )
+            );
+        }
+
         if ( 'behavior' === $name ) {
             if ( ! isset( $params['events'] ) || ! is_array( $params['events'] ) ) {
                 return new WP_Error( 'gr_collect_batch', __( 'Behavior batches carry an events array.', 'greenpng' ), array( 'status' => 400 ) );
@@ -541,6 +646,71 @@ final class Gr_Collect_Controller {
     }
 
     /**
+     * The checkout cart as line items, read through the target's own
+     * public API. REST requests do not load the cart session by
+     * themselves, so wc_load_cart() — the target's public loader for
+     * exactly this situation — arms it from the request's own cookies.
+     * When the cart cannot be read (no target, no loader, a broken
+     * store), the capture still records the email: the order path
+     * folds real line items into the same row later, and an abandoned
+     * checkout without a cart is still an abandoned checkout.
+     *
+     * @return array{items: array<int, array<string, int|string>>, total: float, currency: string}
+     */
+    private static function cart_snapshot(): array {
+        $out = array(
+            'items'    => array(),
+            'total'    => 0.0,
+            'currency' => 'USD',
+        );
+
+        if ( ! class_exists( 'WooCommerce', false ) || ! function_exists( 'wc_load_cart' ) ) {
+            return $out;
+        }
+
+        try {
+            wc_load_cart();
+
+            $cart = function_exists( 'WC' ) && is_object( WC() ) && isset( WC()->cart ) ? WC()->cart : null;
+            if ( ! is_object( $cart ) || ! method_exists( $cart, 'get_cart' ) ) {
+                return $out;
+            }
+
+            // Cart item arrays carry public, stable keys; the product
+            // object rides under 'data' and its name getter is the
+            // display name a recovery mail would show.
+            foreach ( (array) $cart->get_cart() as $item ) {
+                if ( ! is_array( $item ) ) {
+                    continue;
+                }
+
+                $product = isset( $item['data'] ) && is_object( $item['data'] ) ? $item['data'] : null;
+
+                $out['items'][] = array(
+                    'product_id'   => isset( $item['product_id'] ) ? (int) $item['product_id'] : 0,
+                    'variation_id' => isset( $item['variation_id'] ) ? (int) $item['variation_id'] : 0,
+                    'quantity'     => isset( $item['quantity'] ) ? (int) $item['quantity'] : 0,
+                    'name'         => ( null !== $product && method_exists( $product, 'get_name' ) ) ? (string) $product->get_name() : '',
+                );
+            }
+
+            if ( method_exists( $cart, 'get_total' ) ) {
+                $out['total'] = (float) $cart->get_total( 'edit' );
+            }
+        } catch ( \Throwable $error ) {
+            do_action( 'gr_adapter_error', 'cart_capture', $error );
+
+            return $out;
+        }
+
+        if ( function_exists( 'get_woocommerce_currency' ) ) {
+            $out['currency'] = (string) get_woocommerce_currency();
+        }
+
+        return $out;
+    }
+
+    /**
      * Locator re-sanitization server-side: tag, optional id or class
      * mark, at most 64 characters — the structural vocabulary the
      * client builds, with everything outside it clipped away.
@@ -620,6 +790,12 @@ final class Gr_Collect_Controller {
                 'maximum' => 100,
             ),
             'locator'           => array( 'type' => 'string' ),
+            'email'             => array( 'type' => 'string' ),
+            'cart_opt_in'       => array(
+                'type'    => 'integer',
+                'minimum' => 0,
+                'maximum' => 1,
+            ),
         );
     }
 }

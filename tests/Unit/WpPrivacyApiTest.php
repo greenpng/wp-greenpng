@@ -161,7 +161,7 @@ final class WpPrivacyApiTest extends TestCase {
     public function testExporterRegistryAddsFourFamilies(): void {
         $exporters = Gr_Privacy_Api::register_exporters( array( array( 'callback' => 'core' ) ) );
 
-        self::assertCount( 5, $exporters );
+        self::assertCount( 6, $exporters );
         $names = array();
         foreach ( $exporters as $exporter ) {
             if ( isset( $exporter['callback'] ) && is_array( $exporter['callback'] ) ) {
@@ -172,12 +172,13 @@ final class WpPrivacyApiTest extends TestCase {
         self::assertContains( 'export_touchpoints', $names );
         self::assertContains( 'export_conversions', $names );
         self::assertContains( 'export_contact', $names );
+        self::assertContains( 'export_cart_rows', $names );
     }
 
     public function testEraserRegistryAddsFiveFamilies(): void {
         $erasers = Gr_Privacy_Api::register_erasers( array() );
 
-        self::assertCount( 5, $erasers );
+        self::assertCount( 6, $erasers );
         foreach ( $erasers as $eraser ) {
             self::assertArrayHasKey( 'eraser_friendly_name', $eraser );
             self::assertArrayHasKey( 'callback', $eraser );
@@ -424,6 +425,71 @@ final class WpPrivacyApiTest extends TestCase {
         self::assertStringContainsString( 'client probe', $text );
         self::assertStringContainsString( 'no fingerprint data', $text );
         self::assertStringContainsString( 'export and erasure', $text );
+        self::assertStringContainsString( 'cart recovery', $text );
+        self::assertStringContainsString( 'unsubscribe', $text );
+    }
+
+    public function testCartRowsExporterCarriesTheSnapshotWithoutSecretMaterial(): void {
+        $GLOBALS['wpdb']->results = array(
+            array(
+                'id'          => '31',
+                'status'      => 'recovered',
+                'cart_json'   => '[{"product_id":10,"quantity":2,"name":"Widget"}]',
+                'total'       => '25.50',
+                'currency'    => 'USD',
+                'captured_at' => '2026-09-14 09:00:00',
+                'abandoned_at' => '2026-09-14 09:20:00',
+                'recovered_at' => '2026-09-14 10:05:00',
+            ),
+        );
+
+        $result = Gr_Privacy_Api::export_cart_rows( 'person@example.com', 1 );
+
+        self::assertTrue( $result['done'] );
+        self::assertCount( 1, $result['data'] );
+        $item = $result['data'][0];
+        self::assertStringStartsWith( Gr_Privacy_Api::EXPORTER_CARTS . '-', (string) $item['item_key'] );
+
+        $fields = array();
+        foreach ( $item['data'] as $pair ) {
+            $fields[ (string) $pair['name'] ] = (string) $pair['value'];
+        }
+        self::assertSame( 'recovered', $fields['Status'] );
+        self::assertStringContainsString( 'Widget', $fields['Cart items'] );
+        self::assertSame( 'USD 25.50', $fields['Total'] );
+
+        // The lookup and the read never select the secret columns.
+        foreach ( $GLOBALS['wpdb']->queries as $query ) {
+            self::assertStringNotContainsString( 'email_enc', (string) $query );
+        }
+
+        // Later pages answer done immediately, and an empty email
+        // honestly reports no data.
+        self::assertSame( array(), Gr_Privacy_Api::export_cart_rows( 'person@example.com', 2 )['data'] );
+        self::assertSame( array(), Gr_Privacy_Api::export_cart_rows( '', 1 )['data'] );
+    }
+
+    public function testCartRowsEraserDeletesByTheEmailHash(): void {
+        $GLOBALS['wpdb']->results      = array();
+        $GLOBALS['wpdb']->query_result = 2;
+
+        $result = Gr_Privacy_Api::erase_cart_rows( 'person@example.com' );
+
+        self::assertSame( 2, (int) $result['items_removed'] );
+        self::assertTrue( $result['done'] );
+        self::assertStringContainsString( 'cart recovery', (string) $result['messages'][0] );
+
+        $deleted = '';
+        foreach ( $GLOBALS['wpdb']->queries as $query ) {
+            if ( 0 === strpos( (string) $query, 'DELETE FROM wp_gr_cart_abandonments' ) ) {
+                $deleted = (string) $query;
+            }
+        }
+        self::assertStringContainsString( "'" . hash( 'sha256', 'person@example.com' ) . "'", $deleted );
+
+        // An empty email erases nothing and says so.
+        $empty = Gr_Privacy_Api::erase_cart_rows( '' );
+        self::assertSame( 0, (int) $empty['items_removed'] );
     }
 
     public function testPluginWiringRegistersThePrivacyFilters(): void {

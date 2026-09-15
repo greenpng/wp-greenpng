@@ -26,8 +26,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Cart\Gr_Cart_Recovery;
+use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Integrations\Adapter_Interface;
 use GreenPNG\Privacy\Gr_Consent;
+use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use WC_Order;
 
 /**
@@ -137,6 +140,7 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         $this->guarded(
             function () use ( $id ): void {
                 $this->capture_visitor( $id );
+                $this->capture_cart_row( $id );
             }
         );
     }
@@ -154,6 +158,7 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         $this->guarded(
             function () use ( $id ): void {
                 $this->capture_visitor( $id );
+                $this->capture_cart_row( $id );
             }
         );
     }
@@ -256,6 +261,94 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
     }
 
     /**
+     * The order path of cart capture (ADR-0015 D1): an order born
+     * pending under a consented email is an abandonment waiting to be
+     * decided — the delayed check owns the verdict. In-transit orders
+     * (on-hold at birth, a bank transfer by design) never capture,
+     * and paid births are not abandonments at all. The row folds with
+     * any blur capture from the same checkout session, its line
+     * items winning as the freshest cart state.
+     *
+     * @param int $order_id Order id.
+     * @return void
+     */
+    private function capture_cart_row( int $order_id ): void {
+        if ( 1 !== (int) gr()->settings()->get( 'cart_recovery_enabled' ) ) {
+            return;
+        }
+
+        $order = wc_get_order( $order_id );
+        if ( ! $order instanceof WC_Order ) {
+            return;
+        }
+
+        // The consent snapshot this adapter wrote (or is about to
+        // write) at checkout is the whole basis: recovery mail without
+        // the shopper's recorded yes is not a feature this plugin has.
+        if ( '1' !== (string) $order->get_meta( self::CONSENT_META ) && ! Gr_Consent::allows( 'marketing' ) ) {
+            return;
+        }
+
+        if ( ! $order->has_status( 'pending' ) ) {
+            return;
+        }
+
+        $email = (string) $order->get_billing_email();
+        if ( '' === $email ) {
+            return;
+        }
+
+        // get_items() defaults to product lines only, and a product
+        // line always carries the four public getters the snapshot
+        // reads — no defensive dance needed for the target's own
+        // typed objects.
+        $items = array();
+        foreach ( $order->get_items() as $item ) {
+            $items[] = array(
+                'product_id'   => (int) $item->get_product_id(),
+                'variation_id' => (int) $item->get_variation_id(),
+                'quantity'     => (int) $item->get_quantity(),
+                'name'         => (string) $item->get_name(),
+            );
+        }
+
+        $row_id = ( new Gr_Cart_Abandonment_Repository() )->capture(
+            (string) $this->identity->session_id(),
+            $email,
+            $items,
+            (float) $order->get_total(),
+            (string) $order->get_currency(),
+            true,
+            $order_id
+        );
+
+        if ( $row_id > 0 ) {
+            Gr_Cart_Recovery::schedule( $row_id );
+        }
+    }
+
+    /**
+     * The recovery writeback: a bound conversion under the email
+     * closes the abandonment story, whether the mail was sent,
+     * clicked, or never delivered at all — the order is the recovery
+     * (ADR-0015 D3).
+     *
+     * @param WC_Order $order The converting order.
+     * @return void
+     */
+    private function recover_writeback( WC_Order $order ): void {
+        $email = (string) $order->get_billing_email();
+        if ( '' === $email ) {
+            return;
+        }
+
+        ( new Gr_Cart_Abandonment_Repository() )->mark_recovered(
+            Gr_Secrets::hash_pii_sha256( $email ),
+            (int) $order->get_id()
+        );
+    }
+
+    /**
      * Binds the paid order to its captured visitor. The meta lock and
      * the gr_conversions UNIQUE key are the two idempotency lines
      * (docs/05 §3.3): whichever trips first, a replayed
@@ -299,6 +392,8 @@ final class Gr_Woocommerce_Adapter implements Adapter_Interface {
         if ( $bound > 0 ) {
             $order->update_meta_data( self::ATTRIBUTED_META, '1' );
             $order->save();
+
+            $this->recover_writeback( $order );
         }
     }
 

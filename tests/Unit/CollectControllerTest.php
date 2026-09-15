@@ -14,6 +14,7 @@ namespace GreenPNG\Tests\Unit;
 use GreenPNG\Behavior\Gr_Behavior;
 use GreenPNG\Core\Gr_Event;
 use GreenPNG\Core\Gr_Settings;
+use GreenPNG\Core\Gr_Secrets;
 use GreenPNG\Rest\Gr_Collect_Controller;
 use PHPUnit\Framework\TestCase;
 use WP_Error;
@@ -732,5 +733,150 @@ final class CollectControllerTest extends TestCase {
         self::assertStringNotContainsString( '>', $stored );
         self::assertStringNotContainsString( '"', $stored );
         self::assertLessThanOrEqual( 64, strlen( $stored ) );
+    }
+
+    /**
+     * Arms the cart capture: the owner's switch plus marketing consent.
+     *
+     * @return void
+     */
+    private function arm_cart(): void {
+        ( new Gr_Settings() )->set( 'cart_recovery_enabled', 1 );
+        $GLOBALS['gr_stub_consent']['marketing'] = true;
+    }
+
+    public function testCartEmailCapturesIntoTheAbandonmentTableNotTheStream(): void {
+        $this->arm_cart();
+        $GLOBALS['wpdb']->results = array();
+
+        $result = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'       => Gr_Collect_Controller::token(),
+                    'name'        => 'cart_email',
+                    'email'       => 'Shopper@Example.com',
+                    'cart_opt_in' => 1,
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_REST_Response::class, $result );
+        $data = $result->get_data();
+        self::assertTrue( $data['stored'] );
+        self::assertGreaterThan( 0, (int) $data['id'] );
+
+        // The abandonment row, not the event stream: the address must
+        // never ride payload_json (ADR-0015 D1).
+        $cart_inserts = array();
+        $event_inserts = 0;
+        foreach ( $GLOBALS['wpdb']->inserts as $insert ) {
+            if ( 'wp_gr_cart_abandonments' === $insert['table'] ) {
+                $cart_inserts[] = $insert['data'];
+            } elseif ( 'wp_gr_events' === $insert['table'] ) {
+                ++$event_inserts;
+            }
+        }
+        self::assertCount( 1, $cart_inserts );
+        self::assertSame( 0, $event_inserts );
+        self::assertSame(
+            Gr_Secrets::hash_pii_sha256( 'Shopper@Example.com' ),
+            $cart_inserts[0]['email_hash']
+        );
+        self::assertSame( 'captured', $cart_inserts[0]['status'] );
+        self::assertSame( 1, (int) $cart_inserts[0]['consent'] );
+        self::assertMatchesRegularExpression( '/^[0-9a-f]{64}$/', (string) $cart_inserts[0]['recovery_token'] );
+
+        // One delayed check per row, at the default delay. The queue
+        // rides the real clock, so the delay asserts as a window.
+        self::assertCount( 1, $GLOBALS['gr_stub_cron'] );
+        self::assertSame( 'gr_cart_recover_check', $GLOBALS['gr_stub_cron'][0]['hook'] );
+        self::assertSame( array( (int) $data['id'] ), $GLOBALS['gr_stub_cron'][0]['args'] );
+        self::assertLessThanOrEqual( 2, abs( (int) $GLOBALS['gr_stub_cron'][0]['timestamp'] - ( time() + 900 ) ) );
+    }
+
+    public function testCartEmailRefusalsCoverEveryGate(): void {
+        $cases = array(
+            'feature off'   => array( 'gr_collect_cart', array(), array( 'email' => 'a@example.com', 'cart_opt_in' => 1 ) ),
+            'no consent'    => array( 'gr_collect_consent', array( 'enabled' => true ), array( 'email' => 'a@example.com', 'cart_opt_in' => 1 ) ),
+            'junk address'  => array( 'gr_collect_email', array( 'enabled' => true, 'consent' => true ), array( 'email' => 'not-an-address', 'cart_opt_in' => 1 ) ),
+            'no opt-in'     => array( 'gr_collect_opt_in', array( 'enabled' => true, 'consent' => true ), array( 'email' => 'a@example.com' ) ),
+            'zero opt-in'   => array( 'gr_collect_opt_in', array( 'enabled' => true, 'consent' => true ), array( 'email' => 'a@example.com', 'cart_opt_in' => 0 ) ),
+            'extra field'   => array( 'gr_collect_field', array( 'enabled' => true, 'consent' => true ), array( 'email' => 'a@example.com', 'cart_opt_in' => 1, 'path' => '/checkout' ) ),
+        );
+
+        foreach ( $cases as $case ) {
+            gr_stub_reset_options();
+            if ( ! empty( $case[1]['enabled'] ) ) {
+                ( new Gr_Settings() )->set( 'cart_recovery_enabled', 1 );
+            }
+            if ( ! empty( $case[1]['consent'] ) ) {
+                $GLOBALS['gr_stub_consent']['marketing'] = true;
+            }
+
+            $result = ( new Gr_Collect_Controller() )->handle(
+                $this->request( array_merge( array( 'token' => Gr_Collect_Controller::token(), 'name' => 'cart_email' ), $case[2] ) )
+            );
+
+            self::assertInstanceOf( WP_Error::class, $result, 'Cart capture must be refused: ' . wp_json_encode( $case ) );
+            self::assertSame( $case[0], $result->get_error_code() );
+            self::assertSame( array(), $GLOBALS['wpdb']->inserts );
+        }
+    }
+
+    public function testNoOtherEventMayCarryTheCaptureFields(): void {
+        $controller = new Gr_Collect_Controller();
+
+        $result = $controller->handle(
+            $this->request(
+                array(
+                    'token' => Gr_Collect_Controller::token(),
+                    'name'  => 'pageview',
+                    'path'  => '/',
+                    'email' => 'sneaky@example.com',
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_Error::class, $result );
+        self::assertSame( 'gr_collect_field', $result->get_error_code() );
+        self::assertSame( 'email', $result->get_error_data()['field'] );
+    }
+
+    public function testCartEmailFoldsIntoTheSessionRowOnRecapture(): void {
+        $this->arm_cart();
+
+        $GLOBALS['wpdb']->results = array(
+            array( 'id' => '7', 'email_hash' => 'existing' ),
+        );
+
+        $result = ( new Gr_Collect_Controller() )->handle(
+            $this->request(
+                array(
+                    'token'       => Gr_Collect_Controller::token(),
+                    'name'        => 'cart_email',
+                    'email'       => 'a@example.com',
+                    'cart_opt_in' => 1,
+                )
+            )
+        );
+
+        self::assertInstanceOf( WP_REST_Response::class, $result );
+        self::assertSame( 7, (int) $result->get_data()['id'] );
+
+        // The fold is an UPDATE of the existing row, never a second
+        // row. The session touch that follows reorders the query log,
+        // so the assertion filters rather than reads the tail.
+        $tables = array();
+        foreach ( $GLOBALS['wpdb']->inserts as $insert ) {
+            $tables[] = $insert['table'];
+        }
+        self::assertNotContains( 'wp_gr_cart_abandonments', $tables );
+        $folds = array_filter(
+            $GLOBALS['wpdb']->queries,
+            static function ( $sql ): bool {
+                return is_string( $sql ) && 0 === strpos( $sql, 'UPDATE wp_gr_cart_abandonments' );
+            }
+        );
+        self::assertNotSame( array(), $folds );
     }
 }

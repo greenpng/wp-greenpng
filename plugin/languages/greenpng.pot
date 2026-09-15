@@ -3,13 +3,13 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: GreenPNG 1.0.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/plugin\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/greenpng\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-15T06:14:37+00:00\n"
+"POT-Creation-Date: 2026-09-15T08:36:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: greenpng\n"
@@ -100,14 +100,14 @@ msgstr ""
 
 #: includes/admin/class-gr-access-rules-table.php:90
 #: includes/admin/class-gr-sessions-table.php:133
-#: includes/admin/class-gr-status-page.php:136
+#: includes/admin/class-gr-status-page.php:137
 #: includes/admin/class-gr-traffic-page.php:284
 msgid "Yes"
 msgstr ""
 
 #: includes/admin/class-gr-access-rules-table.php:90
 #: includes/admin/class-gr-sessions-table.php:133
-#: includes/admin/class-gr-status-page.php:136
+#: includes/admin/class-gr-status-page.php:137
 #: includes/admin/class-gr-traffic-page.php:284
 msgid "No"
 msgstr ""
@@ -123,7 +123,7 @@ msgstr ""
 
 #: includes/admin/class-gr-admin-menu.php:78
 #: includes/admin/class-gr-admin-menu.php:79
-#: includes/admin/class-gr-settings-page.php:290
+#: includes/admin/class-gr-settings-page.php:332
 msgid "Settings"
 msgstr ""
 
@@ -221,7 +221,7 @@ msgstr ""
 
 #: includes/admin/class-gr-admin-menu.php:263
 #: includes/admin/class-gr-admin-menu.php:264
-#: includes/admin/class-gr-status-page.php:126
+#: includes/admin/class-gr-status-page.php:127
 msgid "Status & Diagnostics"
 msgstr ""
 
@@ -545,7 +545,7 @@ msgstr ""
 #: includes/admin/class-gr-login-protection-page.php:205
 #: includes/admin/class-gr-login-protection-page.php:262
 #: includes/admin/class-gr-traffic-page.php:151
-#: includes/privacy/class-gr-privacy-api.php:326
+#: includes/privacy/class-gr-privacy-api.php:338
 msgid "Last seen"
 msgstr ""
 
@@ -675,7 +675,7 @@ msgstr ""
 
 #: includes/admin/class-gr-campaigns-page.php:135
 #: includes/admin/class-gr-contact-profile-page.php:272
-#: includes/privacy/class-gr-privacy-api.php:322
+#: includes/privacy/class-gr-privacy-api.php:334
 msgid "First seen"
 msgstr ""
 
@@ -802,7 +802,7 @@ msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:218
 #: includes/admin/class-gr-contacts-table.php:58
-#: includes/privacy/class-gr-privacy-api.php:310
+#: includes/privacy/class-gr-privacy-api.php:322
 msgid "Lead score"
 msgstr ""
 
@@ -895,7 +895,8 @@ msgid "Amount"
 msgstr ""
 
 #: includes/admin/class-gr-contact-profile-page.php:348
-#: includes/admin/class-gr-status-page.php:177
+#: includes/admin/class-gr-status-page.php:197
+#: includes/privacy/class-gr-privacy-api.php:514
 msgid "Status"
 msgstr ""
 
@@ -938,7 +939,7 @@ msgstr ""
 
 #: includes/admin/class-gr-contacts-page.php:132
 #: includes/admin/class-gr-contacts-table.php:59
-#: includes/privacy/class-gr-privacy-api.php:318
+#: includes/privacy/class-gr-privacy-api.php:330
 msgid "RFM segment"
 msgstr ""
 
@@ -1097,7 +1098,7 @@ msgid "Two independent rails, whichever fires first: an age in days, and a row c
 msgstr ""
 
 #: includes/admin/class-gr-data-retention-page.php:203
-#: includes/admin/class-gr-status-page.php:198
+#: includes/admin/class-gr-status-page.php:218
 msgid "Table"
 msgstr ""
 
@@ -1532,7 +1533,7 @@ msgid "Generated"
 msgstr ""
 
 #: includes/admin/class-gr-ip-intel-page.php:160
-#: includes/admin/class-gr-settings-page.php:302
+#: includes/admin/class-gr-settings-page.php:344
 msgid "Attribution"
 msgstr ""
 
@@ -1732,271 +1733,317 @@ msgstr ""
 msgid "%s ago"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:294
+#: includes/admin/class-gr-settings-page.php:336
 msgid "Settings saved."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:300
+#: includes/admin/class-gr-settings-page.php:342
 msgid "General"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:301
+#: includes/admin/class-gr-settings-page.php:343
 msgid "Security"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:321
+#: includes/admin/class-gr-settings-page.php:363
 msgid "Anonymize marketing IPs"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:325
+#: includes/admin/class-gr-settings-page.php:367
 msgid "Store marketing-track addresses anonymized (on by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:330
+#: includes/admin/class-gr-settings-page.php:372
 msgid "Consent fallback"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:334
+#: includes/admin/class-gr-settings-page.php:376
 msgid "Track marketing data when no Consent API is present (off by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:339
+#: includes/admin/class-gr-settings-page.php:381
 msgid "Data retention"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:341
+#: includes/admin/class-gr-settings-page.php:383
 msgid "Open the Data Retention page"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:345
+#: includes/admin/class-gr-settings-page.php:387
 msgid "Delete data on uninstall"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:349
+#: includes/admin/class-gr-settings-page.php:391
 msgid "Remove every plugin table and option when the plugin is uninstalled (off by default: data belongs to the site owner)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:355
+#: includes/admin/class-gr-settings-page.php:397
 msgid "Security engine"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:359
+#: includes/admin/class-gr-settings-page.php:401
 msgid "Master switch for every traffic-security engine (on by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:364
+#: includes/admin/class-gr-settings-page.php:406
 msgid "Action mode"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:367
+#: includes/admin/class-gr-settings-page.php:409
 msgid "Log only (default)"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:368
+#: includes/admin/class-gr-settings-page.php:410
 msgid "Log and block"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:373
+#: includes/admin/class-gr-settings-page.php:415
 msgid "Anonymize security logs"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:377
+#: includes/admin/class-gr-settings-page.php:419
 msgid "Store security-log addresses anonymized (off by default: full addresses on the legitimate-interest track; degrades ban precision)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:382
+#: includes/admin/class-gr-settings-page.php:424
 msgid "Trust proxy headers"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:386
+#: includes/admin/class-gr-settings-page.php:428
 msgid "Read forwarded-for headers only from the trusted proxies below (off by default: REMOTE_ADDR only)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:391
+#: includes/admin/class-gr-settings-page.php:433
 msgid "Trusted proxies"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:395
+#: includes/admin/class-gr-settings-page.php:437
 msgid "Comma-separated addresses or CIDR ranges, at most 20."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:399
+#: includes/admin/class-gr-settings-page.php:441
 msgid "Client probe"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:403
+#: includes/admin/class-gr-settings-page.php:445
 msgid "Collect client safety signals (on by default; disclosed in the readme)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:408
+#: includes/admin/class-gr-settings-page.php:450
 msgid "Behavior signals"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:412
+#: includes/admin/class-gr-settings-page.php:454
 msgid "Collect dwell time, scroll depth, rage and dead clicks for consenting visitors only (off by default; marketing consent required)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:417
+#: includes/admin/class-gr-settings-page.php:459
 msgid "Bot verdict threshold"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:421
+#: includes/admin/class-gr-settings-page.php:463
 msgid "probe score (1 to 100, default 70: two corroborating signals). At or above it a session is treated as a bot and its conversions are not forwarded to analytics."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:425
+#: includes/admin/class-gr-settings-page.php:467
 msgid "Login failure threshold"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:429
+#: includes/admin/class-gr-settings-page.php:471
 msgid "failed sign-ins before the address locks out (2 to 100, default 5)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:433
+#: includes/admin/class-gr-settings-page.php:475
 msgid "Lockout base duration"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:437
+#: includes/admin/class-gr-settings-page.php:479
 msgid "seconds; each round doubles, capped at 24 hours (default 300)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:441
+#: includes/admin/class-gr-settings-page.php:483
 msgid "Honeypot traps"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:445
+#: includes/admin/class-gr-settings-page.php:487
 msgid "Add hidden trap fields to the login and registration forms (off by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:450
+#: includes/admin/class-gr-settings-page.php:492
 msgid "Blackhole trap"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:454
+#: includes/admin/class-gr-settings-page.php:496
 msgid "Declare a disallowed trap path in robots.txt and answer crawls of it (off by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:460
+#: includes/admin/class-gr-settings-page.php:502
 msgid "Attribution engine"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:464
+#: includes/admin/class-gr-settings-page.php:506
 msgid "Record touchpoints and bind conversions (on by default)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:469
+#: includes/admin/class-gr-settings-page.php:511
 msgid "Cookie window"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:473
+#: includes/admin/class-gr-settings-page.php:515
 msgid "days (1 to 365, default 30)."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:477
+#: includes/admin/class-gr-settings-page.php:519
 msgid "Default model"
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:484
+#: includes/admin/class-gr-settings-page.php:526
 msgid "Reports compare all five models; this is the highlighted default."
 msgstr ""
 
-#: includes/admin/class-gr-settings-page.php:489
+#: includes/admin/class-gr-settings-page.php:530
+#: includes/admin/class-gr-status-page.php:174
+msgid "Cart recovery"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:534
+msgid "Offer shoppers a recovery link by mail when a consented checkout is left behind (off by default; the mail rides this site's own wp_mail, never a third-party service)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:539
+msgid "Recovery delay"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:543
+msgid "minutes after capture before the abandonment check runs (5 to 120, default 15)."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:547
+msgid "Recovery mail subject"
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:551
+msgid "{site} becomes the site name; empty falls back to the default subject."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:555
+msgid "Recovery mail body"
+msgstr ""
+
+#. translators: 1: required link placeholders, 2: available placeholders, 3: length ceiling.
+#: includes/admin/class-gr-settings-page.php:563
+#, php-format
+msgid "Both links are required: %1$s. Also available: %2$s. At most %3$d characters; empty or invalid falls back to the built-in default. Basic markup only."
+msgstr ""
+
+#: includes/admin/class-gr-settings-page.php:575
 msgid "Save settings"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:129
+#: includes/admin/class-gr-status-page.php:130
 msgid "Environment"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:132
+#: includes/admin/class-gr-status-page.php:133
 msgid "Plugin version"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:133
+#: includes/admin/class-gr-status-page.php:134
 msgid "PHP"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:134
+#: includes/admin/class-gr-status-page.php:135
 msgid "WordPress"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:135
+#: includes/admin/class-gr-status-page.php:136
 msgid "Database"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:136
+#: includes/admin/class-gr-status-page.php:137
 msgid "Multisite"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:140
+#: includes/admin/class-gr-status-page.php:141
 msgid "Queue"
 msgstr ""
 
 #. translators: %s: queue backend name.
-#: includes/admin/class-gr-status-page.php:146
+#: includes/admin/class-gr-status-page.php:147
 #, php-format
 msgid "Backend: %s"
 msgstr ""
 
 #. translators: %s: UTC timestamp.
-#: includes/admin/class-gr-status-page.php:157
+#: includes/admin/class-gr-status-page.php:158
 #, php-format
 msgid "next daily pass at %s (server UTC)."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:163
+#: includes/admin/class-gr-status-page.php:164
 msgid "no daily pass scheduled yet."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:168
+#: includes/admin/class-gr-status-page.php:169
 msgid "On low-traffic sites WP-Cron only fires when a visitor arrives. Point a real system cron at the WP-CLI entry to keep maintenance on a fixed clock:"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:173
+#. translators: 1: number of failed mails, 2: timestamp of the newest attempt.
+#: includes/admin/class-gr-status-page.php:182
+#, php-format
+msgid "%1$s recovery mail(s) could not be delivered (newest attempt: %2$s). Check this site's mail delivery; the rows stay marked failed until retention removes them."
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:190
+msgid "No failed recovery sends on record."
+msgstr ""
+
+#: includes/admin/class-gr-status-page.php:193
 msgid "Ecosystem adapters"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:176
+#: includes/admin/class-gr-status-page.php:196
 msgid "Bridge"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:186
+#: includes/admin/class-gr-status-page.php:206
 msgid "Mounted"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:187
+#: includes/admin/class-gr-status-page.php:207
 msgid "Not installed"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:195
+#: includes/admin/class-gr-status-page.php:215
 msgid "Table capacity"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:199
+#: includes/admin/class-gr-status-page.php:219
 msgid "Rows (estimate)"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:200
+#: includes/admin/class-gr-status-page.php:220
 msgid "Data"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:201
+#: includes/admin/class-gr-status-page.php:221
 msgid "Index"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:202
+#: includes/admin/class-gr-status-page.php:222
+#: includes/privacy/class-gr-privacy-api.php:522
 msgid "Total"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:217
+#: includes/admin/class-gr-status-page.php:237
 msgid "Diagnostics export"
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:218
+#: includes/admin/class-gr-status-page.php:238
 msgid "A JSON snapshot of everything on this page: versions, queue posture, adapter mounts, table capacity. It carries no credentials, no addresses, and no content data."
 msgstr ""
 
-#: includes/admin/class-gr-status-page.php:222
+#: includes/admin/class-gr-status-page.php:242
 msgid "Download diagnostics"
 msgstr ""
 
@@ -2122,6 +2169,42 @@ msgstr ""
 msgid "Copy the link into your ad or newsletter; visits landing on it are attributed to this campaign."
 msgstr ""
 
+#: includes/cart/class-gr-cart-checkout.php:106
+msgid "Send me a link to finish this purchase if I do not complete checkout."
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:302
+msgid "You left items in your cart at {site}."
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:304
+msgid "Finish your purchase"
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:305
+msgid "Prefer no emails like this?"
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:305
+msgid "Unsubscribe"
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:314
+msgid "Your cart at {site}"
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:490
+msgid "Unsubscribed from recovery mail"
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:508
+msgid "Unsubscribed"
+msgstr ""
+
+#: includes/cart/class-gr-cart-recovery.php:510
+msgid "You will not receive cart recovery emails from this site again."
+msgstr ""
+
 #: includes/core/class-gr-cli.php:58
 msgid "Skipped: another maintenance run holds the lock and started less than 5 minutes ago."
 msgstr ""
@@ -2168,169 +2251,219 @@ msgstr ""
 msgid "Form submission: %s"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:73
-#: includes/privacy/class-gr-privacy-api.php:100
-#: includes/privacy/class-gr-privacy-api.php:187
-#: includes/privacy/class-gr-privacy-api.php:345
+#: includes/privacy/class-gr-privacy-api.php:77
+#: includes/privacy/class-gr-privacy-api.php:108
+#: includes/privacy/class-gr-privacy-api.php:199
+#: includes/privacy/class-gr-privacy-api.php:357
 msgid "greenpng sessions"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:77
-#: includes/privacy/class-gr-privacy-api.php:104
-#: includes/privacy/class-gr-privacy-api.php:222
-#: includes/privacy/class-gr-privacy-api.php:375
-msgid "greenpng touchpoints"
-msgstr ""
-
 #: includes/privacy/class-gr-privacy-api.php:81
-#: includes/privacy/class-gr-privacy-api.php:108
-#: includes/privacy/class-gr-privacy-api.php:251
-#: includes/privacy/class-gr-privacy-api.php:392
-msgid "greenpng conversions"
+#: includes/privacy/class-gr-privacy-api.php:112
+#: includes/privacy/class-gr-privacy-api.php:234
+#: includes/privacy/class-gr-privacy-api.php:387
+msgid "greenpng touchpoints"
 msgstr ""
 
 #: includes/privacy/class-gr-privacy-api.php:85
 #: includes/privacy/class-gr-privacy-api.php:116
-#: includes/privacy/class-gr-privacy-api.php:297
+#: includes/privacy/class-gr-privacy-api.php:263
+#: includes/privacy/class-gr-privacy-api.php:404
+msgid "greenpng conversions"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:89
+#: includes/privacy/class-gr-privacy-api.php:124
+#: includes/privacy/class-gr-privacy-api.php:309
 msgid "greenpng CRM contact"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:112
-#: includes/privacy/class-gr-privacy-api.php:361
+#: includes/privacy/class-gr-privacy-api.php:93
+#: includes/privacy/class-gr-privacy-api.php:128
+#: includes/privacy/class-gr-privacy-api.php:509
+#: includes/privacy/class-gr-privacy-api.php:572
+msgid "greenpng cart recovery"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:120
+#: includes/privacy/class-gr-privacy-api.php:373
 msgid "greenpng funnel journeys"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:299
+#: includes/privacy/class-gr-privacy-api.php:311
 msgid "CRM contact"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:302
+#: includes/privacy/class-gr-privacy-api.php:314
 msgid "First name"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:306
+#: includes/privacy/class-gr-privacy-api.php:318
 msgid "Last name"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:314
+#: includes/privacy/class-gr-privacy-api.php:326
 msgid "Lifetime value"
 msgstr ""
 
 #. translators: %s: number of items removed.
-#: includes/privacy/class-gr-privacy-api.php:465
+#: includes/privacy/class-gr-privacy-api.php:477
 #, php-format
 msgid "%s items removed from the CRM contact and order bindings."
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:484
-msgid "greenpng analytics"
+#: includes/privacy/class-gr-privacy-api.php:511
+msgid "Cart snapshot"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:485
-msgid "Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time."
+#: includes/privacy/class-gr-privacy-api.php:518
+msgid "Cart items"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:486
-msgid "Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings."
+#: includes/privacy/class-gr-privacy-api.php:526
+msgid "Captured at"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:487
-msgid "Contact details submitted through the site's forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal."
+#: includes/privacy/class-gr-privacy-api.php:530
+msgid "Abandoned at"
 msgstr ""
 
-#: includes/privacy/class-gr-privacy-api.php:488
-msgid "Funnel journeys record which steps of a site-owner-defined journey a consented session reached. They carry session and visitor identifiers only, never email or IP, and follow the same 30-day retention as the events they derive from."
-msgstr ""
-
-#: includes/privacy/class-gr-privacy-api.php:489
-msgid "Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin's marketing tables."
+#: includes/privacy/class-gr-privacy-api.php:534
+msgid "Recovered at"
 msgstr ""
 
 #. translators: 1: number of rows removed, 2: data family name.
-#: includes/privacy/class-gr-privacy-api.php:572
+#: includes/privacy/class-gr-privacy-api.php:570
+#: includes/privacy/class-gr-privacy-api.php:678
 #, php-format
 msgid "%1$s rows removed from %2$s."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:192
+#: includes/privacy/class-gr-privacy-api.php:589
+msgid "greenpng analytics"
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:590
+msgid "Marketing analytics (visits, campaign attribution, conversion tracking) store anonymized IP addresses (IPv4 /24, IPv6 /48) and a visitor identifier, only after marketing consent through the WordPress Consent API. Consent can be withdrawn at any time."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:591
+msgid "Security logs keep complete IP addresses for a short retention period on a legitimate-interest basis (protection against bots and abuse, GDPR Recital 49), masked in the admin display, and can be switched to anonymized storage. A lightweight client probe reports automation conclusions (a bot score and automation flags) under the same basis, with no fingerprint data and no persistent identifiers; it can be switched off in the plugin settings."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:592
+msgid "Contact details submitted through the site's forms (name and email) are stored encrypted, together with a lead score and a customer segment derived from consented activity. Emails are shown masked in the admin and appear in plaintext only behind an audited reveal."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:593
+msgid "Funnel journeys record which steps of a site-owner-defined journey a consented session reached. They carry session and visitor identifiers only, never email or IP, and follow the same 30-day retention as the events they derive from."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:594
+msgid "If the site owner enables cart recovery, the billing email you typed at checkout (with your explicit opt-in at the checkout form, and only with marketing consent) is stored encrypted together with the cart contents, so this site can email you a link to finish an abandoned purchase. Every recovery mail carries an unsubscribe link; unsubscribing is permanent for this site. These records follow the cart-abandonment retention (90 days by default) and are covered by the export and erasure tools below."
+msgstr ""
+
+#: includes/privacy/class-gr-privacy-api.php:595
+msgid "Data leaves this site only for the outbound services the site owner configured (GA4, Meta), never automatically and never without visitor consent. The WordPress personal data export and erasure tools cover this plugin's marketing tables."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:204
 msgid "Invalid collect token."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:210
+#: includes/rest/class-gr-collect-controller.php:222
 msgid "Too many collect requests."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:218
+#: includes/rest/class-gr-collect-controller.php:230
 msgid "Collect payload too large."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:242
+#: includes/rest/class-gr-collect-controller.php:254
 msgid "Unknown event name."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:256
-#: includes/rest/class-gr-collect-controller.php:503
+#: includes/rest/class-gr-collect-controller.php:268
+#: includes/rest/class-gr-collect-controller.php:516
+#: includes/rest/class-gr-collect-controller.php:542
+#: includes/rest/class-gr-collect-controller.php:608
 msgid "Unknown collect field."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:267
+#: includes/rest/class-gr-collect-controller.php:279
 msgid "Client signals are disabled."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:279
+#: includes/rest/class-gr-collect-controller.php:291
 msgid "Behavior events require marketing consent."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:287
+#: includes/rest/class-gr-collect-controller.php:299
 msgid "Prefetched pages do not count behavior."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:309
+#: includes/rest/class-gr-collect-controller.php:321
+msgid "Cart recovery is disabled."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:329
+msgid "Cart capture requires marketing consent."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:369
 msgid "Malformed behavior batch."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:315
+#: includes/rest/class-gr-collect-controller.php:375
 msgid "Behavior batch too large."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:438
-#: includes/rest/class-gr-collect-controller.php:512
+#: includes/rest/class-gr-collect-controller.php:498
+#: includes/rest/class-gr-collect-controller.php:617
 msgid "Path too long."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:442
+#: includes/rest/class-gr-collect-controller.php:502
 msgid "Event id too long."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:447
-msgid "Behavior batches carry an events array."
-msgstr ""
-
-#: includes/rest/class-gr-collect-controller.php:464
-msgid "bot_score is required for signals."
-msgstr ""
-
-#: includes/rest/class-gr-collect-controller.php:469
-msgid "Signal flags must be booleans."
-msgstr ""
-
-#: includes/rest/class-gr-collect-controller.php:490
-msgid "Unknown behavior event name."
-msgstr ""
-
-#: includes/rest/class-gr-collect-controller.php:517
-msgid "Dwell bucket outside the vocabulary."
-msgstr ""
-
-#: includes/rest/class-gr-collect-controller.php:523
-msgid "Scroll milestone outside the vocabulary."
+#: includes/rest/class-gr-collect-controller.php:525
+msgid "A valid email is required."
 msgstr ""
 
 #: includes/rest/class-gr-collect-controller.php:529
+msgid "Cart capture requires the opt-in flag."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:552
+msgid "Behavior batches carry an events array."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:569
+msgid "bot_score is required for signals."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:574
+msgid "Signal flags must be booleans."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:595
+msgid "Unknown behavior event name."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:622
+msgid "Dwell bucket outside the vocabulary."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:628
+msgid "Scroll milestone outside the vocabulary."
+msgstr ""
+
+#: includes/rest/class-gr-collect-controller.php:634
 msgid "Rage click count outside the plausible range."
 msgstr ""
 
-#: includes/rest/class-gr-collect-controller.php:536
+#: includes/rest/class-gr-collect-controller.php:641
 msgid "Locator outside the structural charset."
 msgstr ""
 

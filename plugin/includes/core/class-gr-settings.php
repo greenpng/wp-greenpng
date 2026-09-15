@@ -88,6 +88,16 @@ final class Gr_Settings {
             'attribution_cookie_days'    => 30,
             'attribution_default_model'  => 'last',
 
+            // Cart recovery (ADR-0015): off by default — the checkbox
+            // on checkout is an ask, and it only appears when the owner
+            // asks first. Delay is minutes, clamped 5..120 at every
+            // read; the mail body template lives in its own
+            // autoload=no option, not here, because it is content, not
+            // a switch.
+            'cart_recovery_enabled'      => 0,
+            'cart_recovery_delay'        => 15,
+            'cart_recovery_subject'      => 'Your cart at {site}',
+
             // Outbound analytics (docs/13 U15, docs/07 §5): both
             // default off, opt-in only. The toggles live here; the
             // credentials never do — they ride Gr_Secrets options.

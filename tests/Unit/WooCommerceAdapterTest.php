@@ -13,10 +13,12 @@ namespace GreenPNG\Tests\Unit;
 
 use GreenPNG\Attribution\Gr_Attribution_Service;
 use GreenPNG\Attribution\Gr_Identity;
+use GreenPNG\Cart\Gr_Cart_Recovery;
 use GreenPNG\Core\Gr_Meta_Capi;
 use GreenPNG\Core\Gr_Plugin;
 use GreenPNG\Core\Gr_Settings;
 use GreenPNG\Integrations\Ecosystem\Gr_Woocommerce_Adapter;
+use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use GreenPNG\Storage\Gr_Conversion_Repository;
 use GreenPNG\Storage\Gr_Touchpoint_Repository;
 use PHPUnit\Framework\TestCase;
@@ -497,5 +499,294 @@ final class WooCommerceAdapterTest extends TestCase {
             }
         );
         self::assertCount( count( $binding_queries ), $after );
+    }
+
+    /**
+     * One line item in the order-path capture's read shape.
+     *
+     * @return \WC_Order_Item_Product
+     */
+    private function line_item(): \WC_Order_Item_Product {
+        $item = new \WC_Order_Item_Product();
+        $item->item_name        = 'Widget';
+        $item->item_quantity    = 2;
+        $item->item_product_id  = 10;
+        $item->item_variation_id = 0;
+
+        return $item;
+    }
+
+    public function testPendingOrderWithConsentSnapshotCapturesACartRow(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        ( new Gr_Settings() )->set( 'cart_recovery_enabled', 1 );
+
+        $order = $this->order( 520 );
+        $order->billing_email = 'Order@Path.example.com';
+        // The checkout snapshot is the basis: no live consent needed.
+        $order->update_meta_data( Gr_Woocommerce_Adapter::CONSENT_META, '1' );
+        $order->items = array( $this->line_item() );
+
+        $wpdb->results    = array();
+        $wpdb->insert_id  = 0;
+        $GLOBALS['gr_stub_cron'] = array();
+
+        $GLOBALS['gr_adapter']->capture_classic( 520, array() );
+
+        $cart_inserts = array();
+        foreach ( $wpdb->inserts as $insert ) {
+            if ( 'wp_gr_cart_abandonments' === $insert['table'] ) {
+                $cart_inserts[] = $insert['data'];
+            }
+        }
+        self::assertCount( 1, $cart_inserts );
+        $data = $cart_inserts[0];
+        self::assertSame(
+            \GreenPNG\Core\Gr_Secrets::hash_pii_sha256( 'Order@Path.example.com' ),
+            $data['email_hash']
+        );
+        self::assertSame( 520, (int) $data['order_id'] );
+        self::assertSame( 1, (int) $data['consent'] );
+
+        $items = json_decode( (string) $data['cart_json'], true );
+        self::assertSame( 10, (int) $items[0]['product_id'] );
+        self::assertSame( 2, (int) $items[0]['quantity'] );
+        self::assertSame( 'Widget', $items[0]['name'] );
+
+        // The one delayed check per captured row.
+        self::assertCount( 1, $GLOBALS['gr_stub_cron'] );
+        self::assertSame( 'gr_cart_recover_check', $GLOBALS['gr_stub_cron'][0]['hook'] );
+    }
+
+    public function testTheSameCaptureRidesTheStoreApiMount(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        ( new Gr_Settings() )->set( 'cart_recovery_enabled', 1 );
+        $GLOBALS['gr_stub_consent']['marketing'] = true;
+
+        $order = $this->order( 521 );
+        $order->billing_email = 'blocks@example.com';
+        $order->items = array( $this->line_item() );
+
+        $wpdb->results    = array();
+        $wpdb->insert_id  = 0;
+
+        $GLOBALS['gr_adapter']->capture_store_api( $order, null );
+
+        $tables = array();
+        foreach ( $wpdb->inserts as $insert ) {
+            $tables[] = $insert['table'];
+        }
+        self::assertContains( 'wp_gr_cart_abandonments', $tables );
+    }
+
+    public function testOrderPathRefusesWithoutConsentFeatureOrPendingBirth(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $cases = array(
+            'feature off' => array( false, 'pending', '' ),
+            'no consent'  => array( true, 'pending', '' ),
+            'on-hold birth' => array( true, 'on-hold', '1' ),
+            'paid birth'  => array( true, 'processing', '1' ),
+        );
+
+        foreach ( $cases as $case ) {
+            gr_stub_reset_options();
+            if ( $case[0] ) {
+                ( new Gr_Settings() )->set( 'cart_recovery_enabled', 1 );
+            }
+
+            $order = $this->order( 522 );
+            $order->billing_email = 'someone@example.com';
+            $order->status = (string) $case[1];
+            if ( '' !== (string) $case[2] ) {
+                $order->update_meta_data( Gr_Woocommerce_Adapter::CONSENT_META, (string) $case[2] );
+            }
+            $order->items = array( $this->line_item() );
+
+            $wpdb->results   = array();
+            $wpdb->inserts   = array();
+            $wpdb->insert_id = 0;
+
+            $GLOBALS['gr_adapter']->capture_classic( 522, array() );
+
+            $tables = array();
+            foreach ( $wpdb->inserts as $insert ) {
+                $tables[] = $insert['table'];
+            }
+            self::assertNotContains( 'wp_gr_cart_abandonments', $tables, 'Order-path capture must refuse: ' . wp_json_encode( $case ) );
+        }
+    }
+
+    public function testABoundConversionClosesTheCartRowAsRecovered(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $visitor = $this->arm_cookie_track();
+        $order   = $this->order( 525 );
+        $order->billing_email = 'Recover@Example.com';
+
+        $GLOBALS['gr_adapter']->register_hooks();
+
+        $wpdb->results   = array();
+        $wpdb->insert_id = 41;
+        $wpdb->query_result = 1;
+
+        do_action( 'woocommerce_payment_complete', 525 );
+
+        self::assertSame( '1', $order->get_meta( Gr_Woocommerce_Adapter::ATTRIBUTED_META ) );
+
+        $recovered = array_filter(
+            $wpdb->queries,
+            static function ( $sql ): bool {
+                return false !== strpos( (string) $sql, 'UPDATE wp_gr_cart_abandonments' )
+                    && false !== strpos( (string) $sql, "'recovered'" );
+            }
+        );
+        self::assertNotSame( array(), $recovered );
+        $sql = implode( ' ', $recovered );
+        self::assertStringContainsString( \GreenPNG\Core\Gr_Secrets::hash_pii_sha256( 'Recover@Example.com' ), $sql );
+        self::assertStringContainsString( '525', $sql );
+    }
+
+    /**
+     * One abandonment row as the repository would have stored it, for
+     * the recovery paths that read the table through the engine.
+     *
+     * @param array<string, mixed> $overrides Column overrides.
+     * @return array<string, mixed>
+     */
+    private function cart_row( array $overrides = array() ): array {
+        $email = 'shopper@example.com';
+
+        return array_merge(
+            array(
+                'id'             => 5,
+                'session_id'     => '11111111-2222-4333-8444-555555555555',
+                'email_hash'     => \GreenPNG\Core\Gr_Secrets::hash_pii_sha256( $email ),
+                'email_enc'      => \GreenPNG\Core\Gr_Secrets::encrypt( $email ),
+                'cart_json'      => (string) wp_json_encode(
+                    array(
+                        array( 'product_id' => 10, 'variation_id' => 0, 'quantity' => 2, 'name' => 'Widget' ),
+                        array( 'product_id' => 11, 'variation_id' => 3, 'quantity' => 1, 'name' => 'Gizmo' ),
+                    )
+                ),
+                'total'          => '25.50',
+                'currency'       => 'USD',
+                'consent'        => 1,
+                'status'         => Gr_Cart_Abandonment_Repository::STATUS_CAPTURED,
+                'recovery_token' => str_repeat( 'b', 64 ),
+                'order_id'       => 0,
+                'captured_at'    => '2026-09-15 09:00:00',
+                'abandoned_at'   => null,
+                'recovered_at'   => null,
+            ),
+            $overrides
+        );
+    }
+
+    /**
+     * Serves the cart row for id 5 through the canned store.
+     *
+     * @param array<string, mixed> $row Row to serve.
+     * @return void
+     */
+    private function serve_cart_row( array $row ): void {
+        $GLOBALS['wpdb']->results = static function ( string $sql ) use ( $row ) {
+            if ( false !== strpos( $sql, 'wp_gr_cart_abandonments WHERE id' ) ) {
+                return array( $row );
+            }
+
+            return array();
+        };
+    }
+
+    public function testTheRecoveryCheckRefusesWhenTheEmailSettledAnyOrder(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $row = $this->cart_row();
+        $this->serve_cart_row( $row );
+        $wpdb->var_result   = '0';
+        $wpdb->query_result = 1;
+        $GLOBALS['gr_stub_mails'] = array();
+
+        $paid = new \WC_Order( 9001 );
+        $paid->billing_email = 'shopper@example.com';
+        $paid->status        = 'processing';
+        $GLOBALS['gr_stub_wc_orders'][9001] = $paid;
+
+        Gr_Cart_Recovery::check_row( 5 );
+
+        self::assertSame( array(), $GLOBALS['gr_stub_mails'] );
+
+        // In-transit counts as settled too: a bank transfer on hold is
+        // a person mid-purchase (ADR-0015 D1's exclusion).
+        $paid->status = 'on-hold';
+        Gr_Cart_Recovery::check_row( 5 );
+        self::assertSame( array(), $GLOBALS['gr_stub_mails'] );
+
+        // The row's own order, once paid, closes the same gate.
+        $own = $this->cart_row( array( 'order_id' => 9002 ) );
+        $this->serve_cart_row( $own );
+        $settled = new \WC_Order( 9002 );
+        $settled->billing_email = 'shopper@example.com';
+        $settled->status        = 'completed';
+        $GLOBALS['gr_stub_wc_orders'][9002] = $settled;
+        $GLOBALS['gr_stub_wc_orders'][9001] = null;
+
+        Gr_Cart_Recovery::check_row( 5 );
+        self::assertSame( array(), $GLOBALS['gr_stub_mails'] );
+    }
+
+    public function testLinkRedemptionRestoresTheStoredCartAndMarksTheAttempt(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $wpdb->query_result = 1;
+
+        self::assertTrue( Gr_Cart_Recovery::redeem_row( $this->cart_row() ) );
+
+        $cart = $GLOBALS['gr_stub_wc']->cart;
+        self::assertSame( 1, $cart->emptied );
+        self::assertCount( 2, $cart->added );
+        self::assertSame( 10, $cart->added[0]['product_id'] );
+        self::assertSame( 2, $cart->added[0]['quantity'] );
+        self::assertSame( 3, $cart->added[1]['variation_id'] );
+        self::assertStringContainsString( "SET status = 'attempted'", end( $wpdb->queries ) );
+    }
+
+    public function testLinkRedemptionWithNothingRestorableIsAnHonestRefusal(): void {
+        global $wpdb;
+
+        if ( ! class_exists( 'WooCommerce', false ) ) {
+            eval( 'final class WooCommerce {}' );
+        }
+
+        $wpdb->queries = array();
+
+        self::assertFalse( Gr_Cart_Recovery::redeem_row( $this->cart_row( array( 'cart_json' => '' ) ) ) );
+        self::assertSame( array(), $wpdb->queries );
     }
 }

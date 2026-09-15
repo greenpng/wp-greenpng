@@ -240,6 +240,36 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_kses_post' ) ) {
+    /**
+     * Markup filtering stand-in with the post-context contract the
+     * plugin relies on: script/style bodies vanish, inline event
+     * handlers vanish, and the common structural tags survive.
+     *
+     * @param string $content Markup.
+     * @return string
+     */
+    function wp_kses_post( $content ) {
+        $clean = (string) preg_replace( '/<(script|style)[^>]*>.*?<\/(script|style)>/si', '', (string) $content );
+        $clean = (string) preg_replace( '/\son[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean );
+
+        return $clean;
+    }
+}
+
+if ( ! function_exists( 'esc_textarea' ) ) {
+    /**
+     * Textarea escaping stand-in, mirroring core's htmlspecialchars
+     * wrapper for element content.
+     *
+     * @param string $text Text.
+     * @return string
+     */
+    function esc_textarea( $text ) {
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
 if ( ! function_exists( 'wp_has_consent' ) ) {
     /**
      * Consent lookup stand-in backed by $GLOBALS['gr_stub_consent'].
@@ -306,6 +336,14 @@ if ( ! function_exists( 'gr_stub_reset_options' ) ) {
         $GLOBALS['gr_stub_privacy_policy']    = array();
         $GLOBALS['gr_stub_cache']             = array();
         $GLOBALS['gr_stub_wc_orders']         = array();
+        $GLOBALS['gr_stub_mails']             = array();
+        $GLOBALS['gr_stub_mail_result']       = true;
+        $GLOBALS['gr_stub_status_headers']    = array();
+        $GLOBALS['gr_stub_woo_currency']      = 'USD';
+        $GLOBALS['gr_stub_checkout_url']      = 'https://example.com/checkout';
+        $GLOBALS['gr_stub_is_checkout']       = false;
+        $GLOBALS['gr_stub_wc']                = new Gr_Stub_Wc();
+        $GLOBALS['gr_stub_wc']->cart          = new Gr_Stub_Wc_Cart();
         $GLOBALS['gr_stub_enqueued_scripts']  = array();
         $GLOBALS['gr_stub_registered_scripts'] = array();
         $GLOBALS['gr_stub_registered_styles'] = array();
@@ -1084,6 +1122,58 @@ if ( ! function_exists( 'absint' ) ) {
      */
     function absint( $value ) {
         return abs( (int) $value );
+    }
+}
+if ( ! function_exists( 'is_email' ) ) {
+    /**
+     * Core's address validator: the address back when valid, false
+     * when not. Deliberately permissive like core — the strict shape
+     * rules live with the caller.
+     *
+     * @param mixed $email Candidate address.
+     * @return string|false
+     */
+    function is_email( $email ) {
+        $value = is_string( $email ) ? trim( $email ) : '';
+
+        return false !== filter_var( $value, FILTER_VALIDATE_EMAIL ) ? $value : false;
+    }
+}
+if ( ! function_exists( 'wp_mail' ) ) {
+    /**
+     * Mail stand-in: records the call and answers with the canned
+     * gr_stub_mail_result (true by default), so delivery-failure
+     * paths can be steered per test.
+     *
+     * @param string                        $to      Recipient.
+     * @param string                        $subject Subject line.
+     * @param string                        $message Body.
+     * @param string|array<string, string>  $headers Headers.
+     * @return bool
+     */
+    function wp_mail( $to, $subject, $message, $headers = array() ) {
+        $GLOBALS['gr_stub_mails'][] = array(
+            'to'      => (string) $to,
+            'subject' => (string) $subject,
+            'message' => (string) $message,
+            'headers' => $headers,
+        );
+
+        return (bool) ( $GLOBALS['gr_stub_mail_result'] ?? true );
+    }
+}
+
+if ( ! function_exists( 'status_header' ) ) {
+    /**
+     * Status header stand-in: records the code, never touches a real
+     * response in the test runner.
+     *
+     * @param int    $code        HTTP status code.
+     * @param string $description Optional description (ignored).
+     * @return void
+     */
+    function status_header( $code, $description = '' ) {
+        $GLOBALS['gr_stub_status_headers'][] = (int) $code;
     }
 }
 

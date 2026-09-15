@@ -21,6 +21,7 @@ use GreenPNG\Core\Gr_Diagnostics;
 use GreenPNG\Core\Gr_Queue;
 use GreenPNG\Integrations\Gr_Ecosystem_Detector;
 use GreenPNG\Storage\Gr_Audit_Repository;
+use GreenPNG\Storage\Gr_Cart_Abandonment_Repository;
 use GreenPNG\Storage\Gr_Table_Stats;
 
 /**
@@ -168,6 +169,25 @@ final class Gr_Status_Page {
                     <?php echo esc_html__( 'On low-traffic sites WP-Cron only fires when a visitor arrives. Point a real system cron at the WP-CLI entry to keep maintenance on a fixed clock:', 'greenpng' ); ?>
                     <code>wp greenpng maintenance</code>
                 </p></div>
+            <?php endif; ?>
+
+            <h2><?php echo esc_html__( 'Cart recovery', 'greenpng' ); ?></h2>
+            <?php $failed = ( new Gr_Cart_Abandonment_Repository() )->failed_summary(); ?>
+            <?php if ( (int) $failed['count'] > 0 ) : ?>
+                <div class="notice notice-warning inline"><p>
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: 1: number of failed mails, 2: timestamp of the newest attempt. */
+                            __( '%1$s recovery mail(s) could not be delivered (newest attempt: %2$s). Check this site\'s mail delivery; the rows stay marked failed until retention removes them.', 'greenpng' ),
+                            (int) $failed['count'],
+                            '' !== (string) $failed['last'] ? (string) $failed['last'] : '—'
+                        )
+                    );
+                    ?>
+                </p></div>
+            <?php else : ?>
+                <p><?php echo esc_html__( 'No failed recovery sends on record.', 'greenpng' ); ?></p>
             <?php endif; ?>
 
             <h2><?php echo esc_html__( 'Ecosystem adapters', 'greenpng' ); ?></h2>
