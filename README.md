@@ -6,7 +6,7 @@ Free, open-source, fully self-contained operations suite for independent WordPre
 - **Marketing attribution** — first/last-touch attribution with consent gating, URL builder, campaign tracking.
 - **Conversion funnels** — funnel definition and session progression.
 - **Behavior & CRM scoring** — contacts, tags, scoring from on-site behavior.
-- **Ecosystem integrations** — WooCommerce, Contact Form 7, WPForms, Fluent Forms, and more, hooked only through each target's public APIs/hooks.
+- **Ecosystem integrations** — WooCommerce, Contact Form 7, WPForms, Fluent Forms, and more, hooked only through each target's public APIs/hooks. Plus signed outbound webhooks (HMAC-SHA256, four headers, retry ladder, per-endpoint circuit breaker) to endpoints you own — nothing is ever delivered to a greenpng-run service.
 
 ## Principles
 
@@ -24,16 +24,17 @@ PHP 7.4+ / WordPress 6.0+ / MySQL 5.7+ or MariaDB (upward compatible through PHP
 [![Unit · PHP matrix](https://github.com/greenpng/wp-greenpng/actions/workflows/unit-matrix.yml/badge.svg)](https://github.com/greenpng/wp-greenpng/actions/workflows/unit-matrix.yml)
 [![Static · Security](https://github.com/greenpng/wp-greenpng/actions/workflows/static-security.yml/badge.svg)](https://github.com/greenpng/wp-greenpng/actions/workflows/static-security.yml)
 [![WP integration](https://github.com/greenpng/wp-greenpng/actions/workflows/wp-integration.yml/badge.svg)](https://github.com/greenpng/wp-greenpng/actions/workflows/wp-integration.yml)
+[![WP floor · MySQL 5.7](https://github.com/greenpng/wp-greenpng/actions/workflows/wp-floor-mysql57.yml/badge.svg)](https://github.com/greenpng/wp-greenpng/actions/workflows/wp-floor-mysql57.yml)
 [![E2E · Playwright](https://github.com/greenpng/wp-greenpng/actions/workflows/e2e-playwright.yml/badge.svg)](https://github.com/greenpng/wp-greenpng/actions/workflows/e2e-playwright.yml)
 
-Four suites run on every push, pull request, and manual dispatch (see `docs/adr/0008` for the full rationale):
+Five suites run on every push, pull request, and manual dispatch (see `docs/adr/0008` for the full rationale):
 
 | Suite | What it proves | Matrix |
 | :--- | :--- | :--- |
-| Unit | Plugin logic (stubbed WordPress API), 679 tests / 3,977 assertions | PHP 7.4 – 8.5 (8.4/8.5 experimental) |
+| Unit | Plugin logic (stubbed WordPress API), 968 tests / 5,592 assertions | PHP 7.4 – 8.5 (8.4/8.5 experimental) |
 | Static & security | WordPress coding standard, PHP 7.4 syntax compatibility, PHPStan level 6, JS component tests, secret scanning | 1 environment each |
 | WP integration | Real WordPress in Docker (wp-env): schema install, dbDelta idempotency, collect REST API contract (401/400/413/200/rate-limit), activate/deactivate/reactivate lifecycle, uninstall in **both** data modes | PHP {8.1, 8.3} × WP {6.0, 7.1}; PHP 7.4 + MySQL 5.7 floor on its own compose workflow |
-| E2E (Playwright) | Simulated customers in a real browser: first-time visitor, consent/DNT gating, crawler user-agent, collect API, admin settings, access rules, URL builder, Contact Form 7 conversion, WooCommerce order attribution, privacy policy registration | WP 7.1 + PHP 8.1 + WooCommerce + CF7 |
+| E2E (Playwright) | Simulated customers in a real browser: first-time visitor, consent/DNT gating, crawler user-agent, collect API, admin settings, access rules, URL builder, Contact Form 7 conversion, WooCommerce order attribution, privacy policy registration, plus the v1.1 admin surfaces — contacts & profile, scoring rules, behavior insights, webhooks CRUD (https-only storage, masked secrets, HMAC contract on the page), IP intelligence, campaigns, sessions | WP 7.1 + PHP 8.1 + WooCommerce + CF7 |
 
 All CI runs on free GitHub-hosted Ubuntu runners (public repositories); peak concurrency stays below the 20-job free-tier cap, and no paid runners are used.
 
@@ -46,7 +47,7 @@ tests/integration/       REST/lifecycle/uninstall arms for the wp-env matrix
 tests/e2e/               Playwright customer-simulation specs
 tests/stubs/             in-repo description of the WP 6.0+ API surface
 docs/                    architecture decisions and engineering specs (ADR + numbered docs)
-.github/workflows/       the four CI suites
+.github/workflows/       the five CI suites
 ```
 
 ## Running tests locally
@@ -57,6 +58,7 @@ vendor/bin/phpunit                                 # unit suite
 vendor/bin/phpcs --standard=phpcs.xml.dist         # WordPress coding standard
 vendor/bin/phpcs --standard=phpcs-compat.xml.dist \
     --runtime-set testVersion 7.4- plugin/         # PHP 7.4 compatibility
+./tools/phpstan-run.sh                             # PHPStan level 6 (wrapper script)
 node tests/js/gr-datagrid-test.js                  # JS component tests
 ```
 

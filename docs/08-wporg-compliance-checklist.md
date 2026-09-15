@@ -30,6 +30,7 @@
 - [ ] 蜘蛛 IP 段订阅默认关闭；DB-IP 数据更新仅经站长显式按钮（点击才出网）
 - [ ] 无广告拦截器规避端点；无伪装采集路径
 - [ ] **gr-probe.js 双模块披露**：安全模块默认输出（安全用途、GDPR 合法利益 Recital 49、无持久标识符、设置页一键关、readme 隐私段披露）；行为模块仅在站长启用**且**访客同意（WP Consent API）后输出
+- [ ] **出网 Webhook 披露**（v1.1，ADR-0016）：端点为站长自配（仅 https、opt-in、默认全关）；readme External services 段有条目、页面内附 HMAC 验签契约文档（四头形状 + `hash_equals` 等价代码）；代码中无任何 greenpng 自有接收端点
 
 ## 4. 数据与隐私
 

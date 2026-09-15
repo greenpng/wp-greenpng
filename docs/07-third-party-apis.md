@@ -14,7 +14,7 @@
 | Meta Conversions API | ✅ | **v1.0** | 关 + 同意门控 | Graph 版本号为**可过滤常量** `GR_META_API_VERSION`（档案硬编码的 v19.0 已停支持，教训） |
 | **DB-IP Lite（国家库）** | ✅ | **v1.0** | **随包预置（开箱即用）** | CC BY 4.0 可再分发；查询本地**零外呼**；readme/NOTICE 归属声明 + 数据日期；更新仅经**站长显式按钮**（点击才出网，opt-in 披露）；~4MB 文本数据 |
 | FCrDNS 爬虫验证 | ✅ | v1.0 | **开，但仅记录模式** | 系统 DNS，无凭据；IPv6 正查修复；失败一律放行（见 `10` §4）；验证经队列异步 |
-| 通用 Webhook（HMAC-SHA256） | ✅ | v1.1 | 关 | 签名串 `timestamp.body`；v1.2 附 Slack/飞书/企微/钉钉消息格式器（纯本地格式化，无凭据） |
+| 通用 Webhook（HMAC-SHA256） | ✅ | v1.1 | 关 | 四头签名（`X-Gr-Signature: sha256=<HMAC(原始 body)>` 等，ADR-0016）；v1.2 附 Slack/飞书/企微/钉钉消息格式器（纯本地格式化，无凭据） |
 | Cloudflare Turnstile | ✅ | v1.2 | 关 | 渐进式验证（登录/注册/表单连续失败 ≥2 次触发）；密钥配置后才加载 widget |
 | hCaptcha | ✅ | v1.2 | 关 | 第二人机验证提供方（替代 reCAPTCHA） |
 | Matomo（自建实例） | ✅ | v1.2 | 关 | 站长自有服务器，GPL 兼容 |
@@ -95,9 +95,10 @@ GreenPNG\Core\Http_Client::post('meta_capi', $endpoint, $payload);
 - 查询前置：本地允许列表短路 → transient 缓存（24h）→ 熔断器状态检查 → 才出网。
 - 免费额度 1,000 次/日；达限后当日自动停止查询并记录。
 
-### 5.6 出网 Webhook（v1.1）
-- 载荷：`{event, timestamp, site, data}`；头部 `X-GR-Event`、`X-GR-Timestamp`、`X-GR-Signature: sha256=<hmac(timestamp.body, secret)>`。
-- 验签文档（给接收方）：`hash_equals` 比较，时间戳容差 ±300s 防重放。
+### 5.6 出网 Webhook（v1.1，ADR-0016）
+- 目标是站长自配端点（仅 https、≤10 个、默认全关；无任何 greenpng 自有端点）；派发走 `Gr_Queue`（铁律 3），投递经 `Gr_Http_Client`（5s 超时 + per-endpoint 熔断）。
+- 载荷 = 事件 DTO 的 JSON（事件名/组/访客与会话的哈希形态/事件参数；**PII 零出网**——邮箱只出 hash）。头部四个：`X-Gr-Signature: sha256=<HMAC-SHA256(端点密钥, 原始 body)>`、`X-Gr-Event`、`X-Gr-Delivery`（32hex 去重 id）、`X-Gr-Timestamp`（接收方 ±300s 防重放）。
+- 签名体即发送体（`post_raw` 预编码直发、永不重编）；验签契约文档随页给出（`hash_equals` 等价一行代码）；端点密钥 ≥16 字符、信封存储、展示仅掩码；失败 60s/300s 两梯级重试，5 连败熔断至站主复位。
 
 ### 5.7 GeoIP（DB-IP Lite，v1.0，ADR-0007）
 - 数据文件随包分发（CC BY 4.0），readme + NOTICE 声明归属与数据日期；更新节奏随 release。

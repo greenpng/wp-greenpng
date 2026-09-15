@@ -68,7 +68,7 @@
 1. 先读 `docs/README.md` 找到对应的专项规范文档，按文档执行。
 2. 若任务与现有规范冲突：**停下来问人，不要自行决定**。
 3. 若任务涉及新的架构决策：在 `docs/adr/` 下新增一份 ADR，编号递增，先记录决策再写代码。
-4. v1.0 开发按 `docs/13` 任务清单执行；进度以该清单状态列为准。
+4. 版本进度以实施清单状态列为准：v1.0 已按 `docs/13` 交付（92 项全 ✅，v1.0.0/v1.0.1 已发布）；v1.1 已按 `docs/17` 交付（35 项全 ✅，v1.1.0 已发布）。后续版本开工前先在 `docs/` 新建实施清单（`18` 号顺延）并更新本条与 `docs/README.md` 索引。
 
 ### 3.2 写代码时
 - 严格遵循 `docs/04-naming-and-coding-standards.md` 的命名与编码规范（含 §3.11 双向兼容规范）。
@@ -92,8 +92,11 @@ vendor/bin/phpcs --standard=phpcs-compat.xml.dist --runtime-set testVersion 7.4-
 
 # 4. 单元测试
 vendor/bin/phpunit
+
+# 5. 静态分析（PHPStan L6；必须用包装脚本——本机 dealerdirect 插件写入与 FrankenPHP 环境下裸 phpstan 不可用，见 NOTES.md）
+./tools/phpstan-run.sh
 ```
-未跑上述检查、或检查未通过就宣称"完成"，视为任务失败。
+未跑上述五项检查、或检查未通过就宣称"完成"，视为任务失败。
 
 ### 3.4 报告结果时
 - 如实说明跑了哪些检查、哪些通过、哪些跳过。
@@ -134,12 +137,15 @@ vendor/bin/phpunit
 | `docs/00-project-charter.md` | 项目章程：范围与非目标 |
 | `docs/01-wp-plug-analysis-and-assessment.md` | 参考项目 wp-plug 的分析与评估结论（含不可移植清单） |
 | `docs/04-naming-and-coding-standards.md` | gr/GR 命名规范、编码规范与双向兼容规范 |
+| `docs/07-third-party-apis.md` | 第三方 API 收录裁定与统一 HTTP 客户端纪律 |
 | `docs/08-wporg-compliance-checklist.md` | WordPress.org 提交合规清单 |
 | `docs/10-security-engineering.md` | 安全工程规范（含 wp-plug 缺陷的正确做法） |
-| `docs/13-v1-0-implementation-plan.md` | **v1.0 实施清单：任务与进度的唯一真源** |
+| `docs/13-v1-0-implementation-plan.md` | **v1.0 实施清单**（92 项全 ✅，已发布） |
+| `docs/17-v1-1-implementation-plan.md` | **v1.1 实施清单**（35 项全 ✅，v1.1.0 已发布）；后续版本清单沿此编号顺延 |
 | `docs/14-iss-review-verdicts.md` | iss/ 同事审计报告的评审结论与核验记录（引用 iss/ 时以此为准） |
 | `plugin/greenpng.php` | 插件主入口 |
 | `plugin/readme.txt` | WordPress.org readme（含 External services 披露） |
+| `plugin/NOTICE` | 随包第三方数据归属（DB-IP Lite 等） |
 
 ---
 

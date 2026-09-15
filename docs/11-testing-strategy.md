@@ -73,10 +73,13 @@
 - CrawlerDetect 种子规则取子集作 UA 语料（命中 + 白名单两个方向）。
 - 夹具中的假密钥（`agy_live_*` 类字符串）替换为明显的占位符（`TEST_TOKEN_NOT_A_SECRET`）。
 
-## 5. CI（GitHub Actions）
+## 5. CI（GitHub Actions，ADR-0008 五工作流）
 
-- 矩阵：PHP 7.4 / 8.1 / 8.3 × WP 6.0 / latest × MySQL 5.7 / 8.0（MariaDB 由本地主验证站覆盖）。
-- 阶段：lint（php -l 全量）→ PHPCS + PHPCompatibility → PHPStan → PHPUnit → 生命周期冒烟 + 共存冒烟子集。
+- **Unit · PHP matrix**：桩态 WP 的领域层测试（PHP 7.4–8.5）。
+- **Static · Security**：WPCS + PHP 7.4 兼容 + PHPStan L6 + JS 组件测试 + gitleaks 全史密扫。
+- **WP integration**：wp-env 真栈（PHP{8.1,8.3} × WP{6.0,7.1}）——装库幂等、REST 契约、生命周期、卸载双模。
+- **WP floor**：PHP 7.4 + MySQL 5.7 地板独立 compose（`tests/integration/run.sh`）。
+- **E2E · Playwright**：真浏览器顾客模拟（v1.1 起，`tests/e2e/` 17 个 spec + `ci-seed.php` 数据种子，覆盖采集门控与 15 张后台页）；**CI 是 e2e 唯一实跑权威**——开发机无 Docker 时不可本地复跑，以 CI 轮为准。
 - 全部绿灯才可合并；报告中如实写明跳过项。
 
 ## 6. 性能回归
@@ -86,6 +89,6 @@
 
 ## 7. 不做的
 
-- v1 不引入 Playwright（无 SPA）；不追求行覆盖率数字（核心域 ≥70% 为门槛，不刷无意义断言）。
+- Playwright 自 v1.1 起仅用于后台页顾客模拟 e2e（ADR-0008 工作流，见 §5），不测 JS 单元行为（组件测试由 `tests/js/` 承担）；不追求行覆盖率数字（核心域 ≥70% 为门槛，不刷无意义断言）。
 - 不自建 HTML 测试报告页作为"通过证据"（参考项目的 `?agy_test_runner=1` 正是这种模式，且是安全后门）。
 - 不做 SQLite 方言兼容测试（ADR-0007：MySQL-only；`:8090` SQLite 站仅为参考环境）。

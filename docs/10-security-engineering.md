@@ -41,6 +41,8 @@ final class Ip_Resolver {
 
 > 落地形态（2026-09-10，C4 实装）：类名 `GreenPNG\Core\Gr_Secrets`（本节 `Gr_Core_Secrets` 为示意写法）。信封格式 base64(iv 12B + GCM tag 16B + 密文)；密钥 `hash('sha256', wp_salt('auth') . '|greenpng-secrets', true)` 每次调用派生、任何路径不落盘；openssl 不可用时 `store()` 拒绝写入（不降级明文）、`reveal()` 回 ''（未配置态）。
 
+> 落地形态（2026-09-15，v1.1 出网 Webhook，ADR-0016）：站主自配的端点签名密钥（≥16 字符）同走本信封存储；展示仅 `Gr_Secrets::mask()` 掩码（前2后2），永不回显明文。端点 URL 存储门为**纯结构校验**（scheme https + host 非空），SSRF 线上校验留在投递时（`wp_safe_remote_post` 自带，失败走 60s/300s 重试与熔断梯级，绝不静默丢）；端点 CRUD 每写留审计行。
+
 ## 3. 调试与测试端点（修正缺陷 S2）
 
 - **禁止**任何经 `$_GET` 触发的公开执行路径。测试代码不得随发布包分发（`build-zip.sh` 排除 `tests/`）。

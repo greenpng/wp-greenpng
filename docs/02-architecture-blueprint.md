@@ -121,12 +121,15 @@ interface Adapter_Interface {
 
 | 目录 | 职责 | 禁令 |
 | :--- | :--- | :--- |
-| `plugin/includes/core/` | Plugin 主控、Autoloader、Event DTO、Database 表名解析、Secrets 加密、Http_Client（熔断+超时）、**Gr_Queue** | 不含业务逻辑 |
+| `plugin/includes/admin/` | 20 页后台页面、List Table、共享筛选器、图表资产 | 只渲染，不含业务计算 |
+| `plugin/includes/core/` | Plugin 主控、Autoloader、Event DTO、Database 表名解析、Secrets 加密、Http_Client（熔断+超时）、**Gr_Queue**、GA4 MP / Meta CAPI 前送、GeoIP（DB-IP 本地查询）与机房段打包刷新 | 不含业务逻辑 |
 | `plugin/includes/security/` | IP 解析、CIDR、允许/封禁、FCrDNS、蜜罐（含时间差）、登录保护、浪涌折叠日志、UA 引擎（本地数据文件）、Blackhole 陷阱、威胁规则（默认仅记录） | 不直接 echo |
 | `plugin/includes/attribution/` | UTM/点击 ID 解析、触点持久化、5 种归因模型计算 | 不出网 |
-| `plugin/includes/funnel/` | 漏斗状态机、目标、A/B 分流与 Z 检验、弃购捕获 | 弃购邮件默认关闭 |
-| `plugin/includes/behavior/` | 停留/滚动/怒点计算、线索评分、RFM、用户质量 | 纯计算，不碰 $_POST |
-| `plugin/includes/integrations/` | capi/（GA4、Meta、TikTok、Webhook）+ ecosystem/（WooCommerce、表单插件适配器）+ geoip/（DB-IP Lite 本地查询） | 全部 opt-in（GeoIP 查询本地零外呼） |
+| `plugin/includes/funnel/` | 漏斗状态机、目标、A/B 分流与 Z 检验、A/B shortcode 与显著性 | 弃购邮件默认关闭 |
+| `plugin/includes/cart/` | 弃购捕获、延迟单事件、令牌核销（ADR-0015） | 挽回邮件默认关闭 |
+| `plugin/includes/behavior/` | 停留/滚动/怒点/死点计算 | 纯计算，不碰 $_POST |
+| `plugin/includes/crm/` | 线索评分引擎与规则、RFM 分层（ADR-0013） | 纯计算，不碰 $_POST |
+| `plugin/includes/integrations/` | ecosystem/（WooCommerce 与三个表单插件适配器 + 共享基座）+ webhook/（端点存储、总线分发、队列投递——ADR-0016）+ 适配器契约、生态探测、语义提取 | 全部 opt-in（GeoIP 查询本地零外呼）；无目标站点不加载适配器 |
 | `plugin/includes/rest/` | REST 控制器，一个资源一个类 | 禁止 `__return_true`（collect 除外） |
 | `plugin/includes/privacy/` | 同意门控、IP 匿名化（营销轨）、导出/擦除回调 | — |
 | `plugin/includes/storage/` | 每表一个 Repository；表结构迁移 | 唯一允许 `$wpdb` 的目录 |
