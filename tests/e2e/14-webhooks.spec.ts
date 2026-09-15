@@ -28,13 +28,16 @@ test( 'the owner registers a webhook endpoint and the page refuses http', async 
 	await expect( page.getByText( 'hash_equals' ).first() ).toBeVisible();
 
 	// http is refused at storage: the signature would be meaningless
-	// over the wire. The refusal notice leaves no row behind.
+	// over the wire. The refusal notice leaves no row behind — the
+	// endpoint table does not render at all while no endpoint is
+	// stored, so the count is the assertion (a not-contain on an
+	// absent element would wait out its timeout instead).
 	await page.fill( '#gr_wh_url', 'http://hooks.e2e.test/receive' );
 	await page.fill( '#gr_wh_secret', secret );
 	await page.locator( 'input[name="gr_wh_events[]"]' ).first().check();
 	await page.locator( 'button[value="add"]' ).click();
 	await expect( page.locator( '.notice' ) ).toContainText( 'https' );
-	await expect( endpointTable ).not.toContainText( 'hooks.e2e.test' );
+	await expect( endpointTable ).toHaveCount( 0 );
 
 	// The https twin passes: the endpoint table shows the host and the
 	// masked secret, never the secret itself.
@@ -57,6 +60,9 @@ test( 'the owner registers a webhook endpoint and the page refuses http', async 
 	await expect( endpointTable ).toContainText( 'Paused' );
 
 	await page.locator( 'button[value="delete"]' ).first().click();
-	await expect( endpointTable ).not.toContainText( 'hooks.e2e.test' );
+	// The delete returns the page to its empty state: the endpoint
+	// table stops rendering at all (count zero, same reasoning as the
+	// refusal arm) and the empty-state paragraph takes over.
+	await expect( endpointTable ).toHaveCount( 0 );
 	await expect( page.getByText( 'No endpoints configured yet' ) ).toBeVisible();
 } );
