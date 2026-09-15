@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { login, slug, adminPage, wpcli } from './helpers';
+import { adminPage, login, slug, wpcli } from './helpers';
 
 test( 'the owner sees a captured contact across the list, tags, and RFM tabs', async ( { page } ) => {
 	// The fixture rides the real capture path: hashed email plus an
 	// encrypted envelope, one custom tag, a fixed score, and a segment
-	// word from the engine's closed vocabulary.
+	// word from the engine's closed vocabulary. The seed answers with
+	// the contact id, which the profile step needs.
 	const out = wpcli( 'wp eval-file wp-content/plugins/greenpng/ci-seed.php seed-contact' );
-	expect( out, `seed-contact output: ${ out.slice( 0, 120 ) }` ).toMatch( /^contact \d+$/ );
+	const contactId = out.match( /^contact (\d+)$/ )?.[ 1 ] ?? '';
+	expect( contactId, `seed-contact output: ${ out.slice( 0, 120 ) }` ).toMatch( /^\d+$/ );
 
 	try {
 		await login( page );
@@ -19,9 +21,12 @@ test( 'the owner sees a captured contact across the list, tags, and RFM tabs', a
 		await expect( page.locator( 'tbody' ) ).toContainText( '37' );
 		await expect( page.locator( 'tbody' ) ).toContainText( 'champions' );
 
-		// The email cell carries the inline entry into the profile.
-		await page.getByRole( 'link', { name: 'Open profile' } ).first().click();
-		await expect( page ).toHaveURL( /contact_id=\d+/ );
+		// The profile opens directly at its slug: the list's inline
+		// "Open profile" action is a hover-revealed row action, so the
+		// id (not the link) is the stable entry.
+		await page.goto( adminPage( slug.contactsProfile, `&contact_id=${ contactId }` ) );
+		await expect( page.getByRole( 'heading', { name: 'Contact Profile' } ) ).toBeVisible();
+		await expect( page.locator( 'body' ) ).toContainText( 'E2E Contact' );
 
 		// Tags tab: the fixture tag shows as Custom with its count.
 		await page.goto( adminPage( slug.contacts, '&tab=tags' ) );

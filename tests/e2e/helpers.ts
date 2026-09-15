@@ -25,6 +25,7 @@ export const slug = {
 	bot: 'greenpng-bot',
 	ipintel: 'greenpng-ipintel',
 	contacts: 'greenpng-contacts',
+	contactsProfile: 'greenpng-contact-profile',
 	scoring: 'greenpng-scoring',
 	behavior: 'greenpng-behavior',
 	webhooks: 'greenpng-webhooks',

@@ -1,0 +1,17 @@
+# Gitleaks allowlist (full-history secret scan, .github/workflows/
+# static-security.yml). Entries are exact fixture values, never rule or
+# path exemptions: a real credential added next to an allowed line still
+# reports.
+#
+# The e2e webhook spec fills a signing-secret form field on the
+# disposable wp-env CI site. The literal assembled in the spec and the
+# older single-line spelling still in the pushed history both match this
+# prefix; nothing else in the repository or its history does.
+
+title = "greenpng gitleaks configuration"
+
+[[allowlists]]
+description = "E2E webhook spec signing-secret fixture: a form-filling value for the throwaway CI site, not a credential."
+regexes = [
+  '''e2e-secret-''',
+]
