@@ -10,7 +10,7 @@ declare global {
 
 /** wp-env default administrator (ephemeral CI site, not a secret). */
 export const ADMIN = {
-	username: 'admin',
+	username: process.env.E2E_ADMIN_USER ?? 'admin',
 	password: process.env.E2E_ADMIN_PASS ?? 'password',
 };
 
