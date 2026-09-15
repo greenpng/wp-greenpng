@@ -12,10 +12,15 @@ test( 'the owner registers a webhook endpoint and the page refuses http', async 
 	// characters, so the split lives in one place.
 	const secret = 'e2e-secret-01234567' + '89abcdefg';
 
-	// The endpoint table is the one widefat table; the add-or-edit
-	// form rides a classless layout table, so scoped locators keep
-	// every assertion off the form's own tbody.
-	const endpointTable = page.locator( 'table.widefat tbody' );
+	// Two widefat tables live on this page: the receiver verification
+	// contract (description rows keyed by the four header names) and,
+	// once a row exists, the endpoint table. Only the endpoint table
+	// carries a thead, and it is absent while no endpoint is stored —
+	// the empty state renders a paragraph instead.
+	const endpointTable = page
+		.locator( 'table.widefat' )
+		.filter( { has: page.locator( 'thead' ) } )
+		.locator( 'tbody' );
 
 	// The receiver verification contract is part of the page: the four
 	// header names and the constant-time comparison one-liner.
