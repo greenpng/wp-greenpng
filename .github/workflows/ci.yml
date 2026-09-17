@@ -41,7 +41,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/cs"
           cd "$RUNNER_TEMP/cs"
-          composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          echo '{}' > composer.json
+          composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer require --quiet --no-interaction \
             dealerdirect/phpcodesniffer-composer-installer \
             phpcompatibility/phpcompatibility-wp
