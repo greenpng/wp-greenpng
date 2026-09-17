@@ -1,0 +1,155 @@
+greenpng — bundled third-party data notices
+==================================================
+
+This file states the origin, license, and data date of every
+third-party data file shipped inside the plugin package, as required
+by the WordPress.org submission guidelines and docs/08.
+
+------------------------------------------------------------------
+1. Scanner user-agent rules — plugin/assets/data/
+------------------------------------------------------------------
+
+Files:
+  assets/data/gr-ua-crawlers.txt    (crawler patterns, matched
+                                     case-insensitively)
+  assets/data/gr-ua-exclusions.txt  (browser-token patterns stripped
+                                     from the agent before matching)
+
+Source:   JayBizzle/Crawler-Detect
+          https://github.com/JayBizzle/Crawler-Detect
+
+License:  MIT — Copyright (c) 2015-2020 Mark Beech (m@rkbee.ch)
+
+The pattern lists were extracted from the source's fixture arrays
+and re-hosted here as plain data under greenpng's own maintenance;
+each data file carries the copyright header inline. Behavior parity
+against the reference library was verified at extraction time
+(18/18 sample user agents identical verdicts).
+
+Data date: 2026-09-10 (1468 crawler patterns, 52 exclusion
+patterns). Later edits to these files are greenpng maintenance and
+are recorded in the repository changelog, not here.
+
+Permission notice (MIT, as required for substantial portions):
+
+  Permission is hereby granted, free of charge, to any person
+  obtaining a copy of this software and associated documentation
+  files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use,
+  copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software
+  is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+  OTHER DEALINGS IN THE SOFTWARE.
+
+------------------------------------------------------------------
+2. Country-level IP geolocation database — plugin/assets/data/
+------------------------------------------------------------------
+
+Files:
+  assets/data/gr-geoip-v4.bin    (IPv4 ranges, 9 bytes each: start,
+                                  end, country index)
+  assets/data/gr-geoip-v6.bin    (IPv6 ranges, 33 bytes each)
+  assets/data/gr-geoip.json      (country table, range counts,
+                                  build date, provenance)
+
+Source:   DB-IP — https://db-ip.com/
+          free "Country Lite" database
+
+License:  CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+          Attribution requirement is met by this notice and the
+          plugin readme's Attribution section; no additional
+          restrictions apply.
+
+The CSV was repacked into the plugin's fixed-width binary format by
+tools/pack-geoip.php; the country data itself is unchanged. The
+admin update button refreshes these files from the same source; the
+refresh writes to the uploads directory and never modifies the
+plugin directory.
+
+Data date: 2026-09 (357,325 IPv4 ranges, 359,845 IPv6 ranges, 251
+country codes, including the reserved-address code ZZ). Later
+refreshes record their own date in gr-geoip.json; this notice states
+the date of the copy bundled with the release.
+
+------------------------------------------------------------------
+3. Cloud-provider service ranges — plugin/assets/data/
+------------------------------------------------------------------
+
+Files:
+  assets/data/gr-dch.txt    (text CIDR list, one per line, with a
+                             provenance header)
+  assets/data/gr-dch.php    (packed start/end range arrays the
+                             runtime classifier loads once per
+                             request; generated, do not edit)
+
+Sources:
+  - AWS official public service ranges
+    https://ip-ranges.amazonaws.com/ip-ranges.json
+  - Google official public service ranges
+    https://www.gstatic.com/ipranges/goog.json
+  - Microsoft Azure official Service Tags (download page
+    https://www.microsoft.com/en-us/download/details.aspx?id=56519;
+    the dated JSON link is discovered from the page)
+  All three are published by the providers as public operational
+  data for exactly this purpose and are fetched without any account
+  or credentials.
+  - IP2Proxy LITE (PX database, DCH rows only — data center/web
+    hosting/colocation segments)
+    https://lite.ip2location.com/
+
+License:  The official cloud segment tables are public operational
+          data of their respective providers.
+          IP2Proxy LITE database is licensed under
+          CC BY-SA 4.0 — https://creativecommons.org/licenses/by-sa/4.0/
+          Attribution is met by this notice and the plugin readme;
+          terms also ask that users are told they can register at
+          lite.ip2location.com themselves to fetch updated copies
+          (stated on the plugin's IP Intelligence page).
+
+The build tool tools/pack-dch.php merges and sorts the per-family
+ranges (adjacent and overlapping ranges fold; IPv4 stays numeric,
+IPv6 as 32-char lowercase hex). The admin refresh button re-fetches
+the three official tables on the owner's explicit click and writes
+the merged copy to the uploads directory; it never modifies the
+plugin directory, and a failed refresh keeps the current data.
+
+Data date: 2026-09-15 (1,029 merged IPv4 ranges, 2,193 merged IPv6
+ranges in the bundled copy). Later refreshes record their own build
+date inside the packed file; this notice states the date of the copy
+bundled with the release.
+
+------------------------------------------------------------------
+4. MaxMind GeoLite2 country database — deliberately NOT bundled
+------------------------------------------------------------------
+
+The optional GeoLite2 Country database (MaxMind, https://www.maxmind.com/)
+is NOT distributed inside this plugin package, and this section
+states that absence as a matter of record: the GeoLite2 EULA
+(https://www.maxmind.com/en/geolite/eula) forbids redistribution,
+so no mmdb file ships here and none ever will.
+
+How it arrives: the site owner enters their own MaxMind license key
+on the IP Intelligence page and clicks the download button. The
+plugin then sends that license key to MaxMind's download endpoint
+(the only request it makes for this feature, no visitor data
+involved) and writes the received database into the site's own
+uploads directory. The owner may delete it there at any time; the
+bundled DB-IP Lite country data keeps answering lookups regardless.
+
+Origin and ownership of that file remain MaxMind's under the
+GeoLite2 EULA between MaxMind and the downloading site owner; the
+plugin only stores and reads it locally. This notice therefore
+carries no MaxMind attribution obligation of its own, and lists
+this section so the absence of bundled MaxMind data is stated
+where a reviewer would look for it.
