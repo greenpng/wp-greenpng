@@ -1,0 +1,100 @@
+name: CI
+
+# Plugin-artifact CI for the public repository. The public repo carries
+# only the plugin itself, so this pipeline validates exactly what is
+# published: every PHP file parses, the code stays PHP 7.4 compatible,
+# and a real wp-env site installs and activates the plugin from this
+# tree (plugin active, version markers agree, schema tables created,
+# collect endpoint answers its token gate). Dev-level suites (unit
+# matrix, integration matrix, E2E) live in the private development
+# repository and run locally per AGENTS; they are intentionally not
+# published here.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Syntax lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse every PHP file
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+
+  compat:
+    name: PHP 7.4 compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install PHPCompatibilityWP
+        run: |
+          mkdir -p "$RUNNER_TEMP/cs"
+          cd "$RUNNER_TEMP/cs"
+          composer require --quiet --no-interaction \
+            dealerdirect/phpcodesniffer-composer-installer \
+            phpcompatibility/phpcompatibility-wp
+
+      - name: Scan the published tree (7.4+)
+        run: |
+          "$RUNNER_TEMP/cs/vendor/bin/phpcs" -p . \
+            --standard=PHPCompatibilityWP \
+            --runtime-set testVersion 7.4- \
+            --ignore='*/assets/*,.github/*' \
+            --extensions=php \
+            --basepath=.
+
+  wp-env-smoke:
+    name: wp-env install & activate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Stage the plugin under its slug directory
+        run: |
+          mkdir -p build
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' ./ build/greenpng/
+
+      - name: Configure wp-env at the WordPress floor
+        run: printf '{"plugins":["./build/greenpng"],"env":{"phpVersion":"8.1","wordpress":"6.0"}}' > .wp-env.json
+
+      - name: Start wp-env
+        run: |
+          npm install --no-package-lock @wordpress/env
+          npx wp-env start
+
+      - name: Plugin active, version markers agree, schema installed
+        run: |
+          npx wp-env run cli wp plugin list --format=csv | grep -q '^greenpng,active'
+          header="$(sed -nE 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]+([0-9.]+)$/\1/p' greenpng.php | head -n1)"
+          runtime="$(npx wp-env run cli wp eval 'echo GR_VERSION;' 2>/dev/null | tr -d '[:space:]')"
+          echo "header=${header} runtime=${runtime}"
+          test "$header" = "$runtime"
+          tables="$(npx wp-env run cli wp db query 'SHOW TABLES' 2>/dev/null | grep -c 'wp_gr_')"
+          echo "schema tables: ${tables}"
+          test "$tables" -ge 15
+
+      - name: Collect endpoint answers its token gate
+        run: |
+          code="$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8888/wp-json/greenpng/v1/collect)"
+          echo "tokenless POST collect -> ${code}"
+          test "$code" = 401
+
+      - name: Teardown
+        if: always()
+        run: printf 'y\n' | npx wp-env destroy
