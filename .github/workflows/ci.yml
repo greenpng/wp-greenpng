@@ -41,6 +41,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/cs"
           cd "$RUNNER_TEMP/cs"
+          composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer require --quiet --no-interaction \
             dealerdirect/phpcodesniffer-composer-installer \
             phpcompatibility/phpcompatibility-wp
@@ -71,7 +72,14 @@ jobs:
           rsync -a --exclude='.git' --exclude='.github' --exclude='build' ./ build/greenpng/
 
       - name: Configure wp-env at the WordPress floor
-        run: printf '{"plugins":["./build/greenpng"],"env":{"phpVersion":"8.1","wordpress":"6.0"}}' > .wp-env.json
+        run: |
+          cat > .wp-env.json <<'JSON'
+          {
+            "core": "https://wordpress.org/wordpress-6.0.zip",
+            "phpVersion": "8.1",
+            "plugins": ["./build/greenpng"]
+          }
+          JSON
 
       - name: Start wp-env
         run: |
